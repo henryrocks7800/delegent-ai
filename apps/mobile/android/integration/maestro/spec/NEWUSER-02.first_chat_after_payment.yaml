@@ -1,0 +1,128 @@
+appId: com.sidekick.v2
+name: 'NEWUSER-02 — Post-payment: first chat replies as Barry, not Hermes'
+tags:
+  - live-only
+  - newuser
+env:
+  TEST_AGENT_NAME: ${MAESTRO_TEST_AGENT_NAME}
+# blocked-reason: needs a brand-new account and a live Stripe payment
+---
+# ============================================================================
+# Spec ID: NEWUSER-02
+# Friendly name: First chat after payment - identity + style assertions
+#
+# This is the second half of the new-user regression. NEWUSER-01 stops
+# at Stripe Checkout. After the operator drives Stripe Link + Pay (via
+# claude-in-chrome MCP or live human), the mobile app returns to its
+# MainActivity and shows the thank-you banner. NEWUSER-02 picks up
+# there and drives the very first chat send so we can verify:
+#
+#   1. The agent introduces itself as the user-chosen name (Barry),
+#      NOT as "Hermes Agent" / "Nous Research". This is defect #36 -
+#      the runner ignored SIDEKICK_AGENT_NAME until 2026-05-21.
+#   2. The reply contains no em-dashes (HERMES_PERSONALITY §6.3) - the
+#      defect-#38 partner that has bitten copy more than once.
+#   3. The reply contains no banned infrastructure vocabulary
+#      (architecture §16): Hermes, OpenRouter, Cloudflare, Fly, runner,
+#      container, machine, Supabase.
+#
+# Preconditions:
+#   - NEWUSER-01 has just driven the mobile to a Stripe Checkout page.
+#   - Operator (or claude-in-chrome MCP) has completed Stripe Link OTP
+#     (000000 in test mode) and tapped "Pay and subscribe".
+#   - Chrome's success_url redirects back to com.sidekick.v2 via the
+#     sidekick:// deep-link in the checkout-landing page.
+#   - The provisioner cron has fired at least once (or
+#     `npm run series4:provision-once` has been invoked manually) so
+#     hermes_instances.status flips to 'ready' within 90s.
+# ============================================================================
+
+# Step 1 - app is back on the chat home with the thank-you banner.
+# (If the deep-link return-to-app didn't fire automatically, fall back
+# to launching the app cold; the session JWT survives.)
+- runFlow:
+    when:
+      notVisible:
+        id: home.chatPanel.messageList
+    commands:
+      - launchApp:
+          appId: com.sidekick.v2
+
+- extendedWaitUntil:
+    visible:
+      id: home.chatPanel.messageList
+    timeout: 30000
+- takeScreenshot: newuser_02_01_chat_home_visible
+
+# Step 2 - either the post-payment thank-you banner is still visible
+# OR the chat surface has already moved on to the wake-up message.
+# Either is fine; both prove a real subscription is live. The wake-up
+# message contains the agent's chosen name so it doubles as an
+# early-stage identity check.
+- runFlow:
+    when:
+      visible:
+        text: "Got it"
+    commands:
+      - tapOn:
+          text: "Got it"
+- assertVisible:
+    id: home.chatPanel.messageList
+- takeScreenshot: newuser_02_02_thanks_or_wake
+
+# Step 3 - wait for the workspace to flip to ready. Mobile polls every
+# 1.5s for /api/chat/runs status; the workspace banner ("Preparing
+# workspace" / "Online") is the visible signal.
+- extendedWaitUntil:
+    notVisible:
+      text: ".*Preparing workspace.*"
+    timeout: 120000
+- takeScreenshot: newuser_02_03_workspace_ready
+
+# Step 4 - send the introduction question. We avoid apostrophes and
+# punctuation because `adb shell input text` silently drops escapes.
+- tapOn:
+    id: home.chatPanel.input
+- inputText: 'Tell me your full name and what skills you have available right now'
+- takeScreenshot: newuser_02_04_message_typed
+- extendedWaitUntil:
+    visible:
+      id: home.chatPanel.sendButton
+    timeout: 5000
+- tapOn:
+    id: home.chatPanel.sendButton
+
+# Step 5 - the user message appears immediately (optimistic) and the
+# assistant placeholder starts thinking. Within 30s for in-app chat the
+# real reply lands (per R-CHAT-01 SLO).
+- extendedWaitUntil:
+    notVisible:
+      text: ".*(Thinking|still working|coworker took too long).*"
+    timeout: 60000
+- takeScreenshot: newuser_02_05_reply_landed
+
+# Step 6 - LOAD-BEARING IDENTITY ASSERTIONS. The agent must say it is
+# Barry, must NOT use the upstream model name, and must NOT leak
+# infrastructure vocab.
+- assertVisible:
+    text: ".*${TEST_AGENT_NAME}.*"
+# Negative claims - any leak is a P0.
+- assertNotVisible:
+    text: ".*(Hermes Agent|Hermes|Nous Research|nous research).*"
+- assertNotVisible:
+    text: ".*(OpenRouter|openrouter\\.ai|Cloudflare|Fly Machine|Supabase|runner image|container image).*"
+- takeScreenshot: newuser_02_06_identity_correct
+
+# Step 7 - the reply must be em-dash free (HERMES_PERSONALITY §6.3).
+- assertNotVisible:
+    text: ".*—.*"
+
+# Step 8 - the reply must not render orphan bullets (defect #38). We
+# can't easily assert "no bullet character with empty body" via
+# Maestro's text matcher, so this is best-effort: ensure no line
+# starts with '•' followed by less than 2 chars of body.
+- assertNotVisible:
+    text: "^•\\s*$"
+- assertNotVisible:
+    text: "^•\\s{1,3}$"
+- takeScreenshot: newuser_02_07_no_orphan_bullets

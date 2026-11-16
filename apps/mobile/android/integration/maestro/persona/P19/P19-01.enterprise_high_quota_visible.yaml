@@ -1,0 +1,22 @@
+appId: com.sidekick.v2
+name: P19-01 — Enterprise — composer up + large quota label (~2M tokens)
+tags:
+  - persona:P19
+  - enterprise
+  - quota
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel.input"
+# Enterprise tier doesn't put any quota-warning vocabulary in front of
+# the user — the quota is so high it's effectively unlimited.
+- assertNotVisible:
+    text: ".*near.*limit.*"
+- assertNotVisible:
+    text: ".*Quota exhausted.*"

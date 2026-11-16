@@ -1,0 +1,16 @@
+appId: com.sidekick.v2
+name: P00-N01 — Unknown deep link from cold start lands on landing (not crash)
+tags:
+  - persona:P00
+  - unhappy-path
+  - deep-link
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*"
+    timeout: 30000
+- assertVisible:
+    text: ".*Continue with Google.*"
+# App is still alive after a malformed launch path.

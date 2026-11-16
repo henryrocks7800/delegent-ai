@@ -1,0 +1,137 @@
+appId: com.sidekick.v2
+name: AUTH-03 — Wrong or Short Code Cannot Sign In
+tags:
+  - auth
+  - live-only
+---
+# ============================================================================
+# Spec ID: AUTH-03 — Wrong or Short Code Cannot Sign In
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Signed-out app. The seed-and-signin script's
+# preamble does `pm clear` and cold-launches the app, so by the time
+# this spec runs we land on the login screen.
+#
+# What this spec verifies:
+#   1. After requesting a sign-in code, the OTP input + Sign in
+#      button appear. The input accepts up to 8 chars (DN1.4-05 fix
+#      pinned the maxLength).
+#   2. With FEWER than 8 chars entered, Sign in remains disabled
+#      (`canVerifyOtp` requires `sanitizedOtp.length === 8` — see
+#      App.tsx around line 667).
+#   3. With a wrong 8-char code, tapping Sign in surfaces an error
+#      caption (login.emailStatus), the user stays on the login
+#      screen, and no leak of provider internals appears.
+#
+# The valid-code branch (spec Step 3 in the scaffold) is NOT
+# automated here — it requires reading the actual code from the
+# test inbox, which the test orchestrator does not have. 2026-09-28:
+# the code is requested for the test account the pack signs in
+# (MAESTRO_TEST_EMAIL); it used to be requested for
+# qa+test@example.test, which asked the live sign-in service to
+# create an account for an address nobody owns. That branch is exercised end-to-end by AUTH-01 (the
+# live-only happy-path sign-in) — also blocked on a real OTP
+# mailbox fixture.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.emailInput"
+    timeout: 30000
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+
+# Step 1 — type a known test address and request a code.
+- tapOn:
+    id: "login.emailInput"
+- inputText: ${MAESTRO_TEST_EMAIL}
+- hideKeyboard
+- assertVisible:
+    id: "login.emailSubmit"
+- tapOn:
+    id: "login.emailSubmit"
+
+# Step 2 — wait for the OTP entry surface. After a successful
+# `signInWithOtp`, the app sets `emailSentTo` and renders the OTP
+# input + verify button.
+- extendedWaitUntil:
+    visible:
+      id: "login.emailOtpInput"
+    timeout: 20000
+- assertVisible:
+    id: "login.emailOtpInput"
+- assertVisible:
+    id: "login.emailOtpVerify"
+
+# Step 3 — enter FEWER than 8 chars. Sign in must remain disabled.
+# Maestro doesn't expose `accessibilityState.disabled` directly, so
+# we tap the button and assert the app is STILL on the login screen
+# afterwards (the emailInput field is still visible). A disabled
+# Pressable swallows the tap so navigation never happens.
+- tapOn:
+    id: "login.emailOtpInput"
+- inputText: "12345"
+- hideKeyboard
+- tapOn:
+    id: "login.emailOtpVerify"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailOtpInput"
+- takeScreenshot: "auth_03_01_short_code_does_not_sign_in"
+
+# Step 4 — replace with a wrong full-length (8-char) code. The
+# Verify button is enabled now; tap. Supabase rejects the code and
+# the app sets `loginStatus` to the rejection message (a calm
+# "That email link could not sign you in..." or supabase-mapped
+# copy). User stays on the login screen, no leaks.
+- tapOn:
+    id: "login.emailOtpInput"
+- eraseText: 8
+- inputText: "00000000"
+- hideKeyboard
+- tapOn:
+    id: "login.emailOtpVerify"
+
+# Wait for either the status text to update OR the verifying spinner
+# to settle back to a normal label. We hard-wait the rejection by
+# looking for the login.emailStatus testID — it's always rendered
+# when emailStatus is non-null.
+- extendedWaitUntil:
+    visible:
+      id: "login.emailStatus"
+    timeout: 20000
+- assertVisible:
+    id: "login.emailStatus"
+
+# Still on login screen.
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailOtpInput"
+
+# No app shell leak — should NOT see chat home / drawer triggers.
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "main-menu-button"
+- assertNotVisible:
+    id: "header.profileButton"
+- takeScreenshot: "auth_03_02_wrong_code_keeps_user_on_login"
+
+# Leak guards — error copy must not expose provider internals.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*supabase\\.co.*"
+- assertNotVisible:
+    text: ".*Hermes Agent.*"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*HTTP 4.*"
+- assertNotVisible:
+    text: ".*HTTP 5.*"

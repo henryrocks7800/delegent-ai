@@ -1,0 +1,217 @@
+appId: com.sidekick.v2
+name: 'SWEEP-01 - Every burger-menu row opens its screen and comes back'
+tags:
+  - sweep
+  - live-only
+# blocked-reason: iOS cloud sweep: signs in with a session minted outside the app (MAESTRO_ACCESS_TOKEN); runs in the EAS Maestro workflow
+---
+# "If it can be clicked, click it" for the whole navigation drawer.
+#
+# Navigation model, learned the hard way: once the drawer is open it COVERS the
+# burger button, so re-tapping `main-menu-button` between rows fails with
+# "Element not found". That is exactly how the first version died, having
+# successfully opened Skills. The drawer carries its own back arrow which
+# returns to the menu list, and that is the route a real user takes. It has an
+# accessibility label rather than a testID, so it is matched on 'Back'.
+#
+# Every row is verified by POSITIVE evidence that the promised screen arrived.
+# A row that silently does nothing is precisely the defect this hunts, so
+# "did not crash" is never accepted as a pass.
+- runFlow: ../sweep-shared/signin.yaml
+
+- tapOn:
+    id: 'main-menu-button'
+- extendedWaitUntil:
+    visible:
+      id: 'menu.skillsRow'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_00_menu'
+
+# --- Skills -----------------------------------------------------------------
+- tapOn:
+    id: 'menu.skillsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Skills.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_01_skills'
+- tapOn:
+    text: 'Back'
+
+# --- Commands ---------------------------------------------------------------
+- extendedWaitUntil:
+    visible:
+      id: 'menu.commandsRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.commandsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Commands.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_02_commands'
+- tapOn:
+    text: 'Back'
+
+# --- Routines ---------------------------------------------------------------
+- extendedWaitUntil:
+    visible:
+      id: 'menu.routinesRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.routinesRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Routines.*'
+    timeout: 30000
+- takeScreenshot: 'sweep_01_03_routines'
+- tapOn:
+    text: 'Back'
+
+# --- Connections ------------------------------------------------------------
+# Network-backed, so a longer budget. A permanently spinning Connections
+# screen is a real defect and must fail rather than be waited away.
+- extendedWaitUntil:
+    visible:
+      id: 'menu.connectionsRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.connectionsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Connections.*'
+    timeout: 40000
+- takeScreenshot: 'sweep_01_04_connections'
+- tapOn:
+    text: 'Back'
+
+# --- How-to guides ----------------------------------------------------------
+- extendedWaitUntil:
+    visible:
+      id: 'menu.howtoRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.howtoRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*How-to.*|.*guides.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_05_howto'
+- tapOn:
+    text: 'Back'
+
+# --- FAQs -------------------------------------------------------------------
+- scrollUntilVisible:
+    element:
+      id: 'menu.faqsRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.faqsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*FAQ.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_06_faqs'
+- tapOn:
+    text: 'Back'
+
+# --- Help -------------------------------------------------------------------
+- scrollUntilVisible:
+    element:
+      id: 'menu.helpRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.helpRow'
+- extendedWaitUntil:
+    visible:
+      id: 'help.messageInput'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_07_help'
+- tapOn:
+    text: 'Back'
+
+# --- Monthly capacity -------------------------------------------------------
+- scrollUntilVisible:
+    element:
+      id: 'menu.capacityRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.capacityRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*capacity.*|.*Capacity.*'
+    timeout: 30000
+- takeScreenshot: 'sweep_01_08_capacity'
+- tapOn:
+    text: 'Back'
+
+# --- Legal: Terms, Privacy, Open source notices -----------------------------
+- scrollUntilVisible:
+    element:
+      id: 'menu.termsRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.termsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Terms.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_09_terms'
+- tapOn:
+    text: 'Back'
+
+- scrollUntilVisible:
+    element:
+      id: 'menu.privacyRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.privacyRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Privacy.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_10_privacy'
+- tapOn:
+    text: 'Back'
+
+- scrollUntilVisible:
+    element:
+      id: 'menu.noticesRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.noticesRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*notices.*|.*Notices.*|.*Open source.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_01_11_notices'
+- tapOn:
+    text: 'Back'
+
+# --- Back to the app --------------------------------------------------------
+- scrollUntilVisible:
+    element:
+      id: 'menu.homeRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.homeRow'
+- extendedWaitUntil:
+    visible:
+      id: 'tab.dashboard'
+    timeout: 30000
+- takeScreenshot: 'sweep_01_12_back_home'
+
+# Nothing internal may have leaked onto any screen in that tour.
+- assertNotVisible:
+    text: '.*service_role.*'
+- assertNotVisible:
+    text: '.*Traceback.*'
+- assertNotVisible:
+    text: '.*NaN.*'

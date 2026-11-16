@@ -1,0 +1,40 @@
+appId: com.sidekick.v2
+name: Production - setup plan checkout new user
+# blocked-reason: needs a signed-in account with no subscription, and pressing the button opens a live Stripe Checkout (the pack's test account is a subscriber, and Stripe is live). Run it on purpose with --include-blocked and an unsubscribed account.
+---
+# Someone with no plan lands on the plan screen and "Start your free month"
+# hands off to Stripe Checkout in the browser. The flow stops on Stripe's
+# page and never enters payment details.
+#
+# 2026-09-28: one plan now (Delegent AI, first month free on Android), so the
+# old Studio tile is gone; the pack skips this flow unless asked, see above.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 30000
+- takeScreenshot: "production_setup_plan_checkout_new_user_01_plan"
+- assertVisible:
+    id: "plan.agentCard"
+- tapOn:
+    id: "billing.checkoutButton"
+# Chrome's first-run screens can sit in front of Stripe's page.
+- runFlow:
+    when:
+      visible: "Accept & continue|Accept and continue"
+    commands:
+      - tapOn:
+          text: "Accept & continue|Accept and continue"
+- runFlow:
+    when:
+      visible: "No thanks|No, thanks|Not now"
+    commands:
+      - tapOn:
+          text: "No thanks|No, thanks|Not now"
+- extendedWaitUntil:
+    visible: 'checkout.stripe.com|Stripe|Start trial|Subscribe|temporarily unavailable'
+    timeout: 30000
+- takeScreenshot: "production_setup_plan_checkout_new_user_02_checkout"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

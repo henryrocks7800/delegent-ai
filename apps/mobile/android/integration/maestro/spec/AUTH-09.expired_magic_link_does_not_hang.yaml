@@ -1,0 +1,62 @@
+appId: com.sidekick.v2
+name: AUTH-09 — Expired Magic Link Does Not Hang
+tags:
+  - auth
+  - release
+---
+# ============================================================================
+# Spec ID: AUTH-09 — Expired Magic Link Does Not Hang
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: release. Launches the app with an expired/garbage callback URL via
+# `launchApp.arguments`. No live provider state needed — the app should land
+# back on login without hanging.
+# ============================================================================
+- launchApp:
+    clearState: true
+    arguments:
+      "android.intent.extra.TEXT": "sidekick://auth/callback?access_token=expired&refresh_token=expired&type=magiclink"
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 20000
+- takeScreenshot: "auth_09_01_back_on_login_after_bad_link"
+
+# The login surface must be fully rendered, not a half-state
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+
+# No authenticated shell visible
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "input"
+- assertNotVisible:
+    id: "header.profileButton"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "setup.stepIndicator"
+
+# No infinite loading
+- assertNotVisible:
+    id: "shell.productStateLoading"
+
+# No leaked previous-user data
+- assertNotVisible:
+    text: "Atlas"
+- assertNotVisible:
+    text: "Nova"
+
+# No leaked provider internals
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "expired"
+- assertNotVisible:
+    text: "Supabase"
+- takeScreenshot: "auth_09_02_no_hang"

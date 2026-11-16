@@ -1,0 +1,29 @@
+appId: com.sidekick.v2
+name: v1.2.7 D9 — chat holds at the bottom across re-renders
+---
+# At the bottom of the chat, new content (a reply) must not yank the list
+# away: the newest message is on screen when it lands. Maestro cannot read
+# scroll positions, so the proof is that the reply is visible without any
+# scrolling after it arrives.
+#
+# 2026-09-28: WebView chat. The flow used to type "say hello" without sending
+# it (leaving a draft on the account); it now sends one message that asks for
+# a known word and checks its reply is in view.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- scroll
+- takeScreenshot: "v127_d9_chat_after_scroll"
+- tapOn:
+    id: "input"
+- inputText: "D9 probe: reply with only the word GRAPE."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*grape\\W*"
+    timeout: 120000
+- takeScreenshot: "v127_d9_chat_after_reply"
+- assertVisible:
+    id: "input"

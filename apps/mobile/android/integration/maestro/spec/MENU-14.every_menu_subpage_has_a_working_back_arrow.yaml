@@ -1,0 +1,103 @@
+appId: com.sidekick.v2
+name: MENU-14 — Every Menu Subpage Has a Working Back Arrow
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-14 — Every Menu Subpage Has a Working Back Arrow
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# The menu's pages (Terms, Skills & use cases, FAQs, How-to guides) open
+# inside the drawer, and Back returns to the menu list each time; a last Back
+# closes the drawer on the chat.
+#
+# 2026-09-28: the Monthly capacity page is gone (How-to guides takes its
+# place here); the menu reopens at its top after a page closes, so rows
+# below the fold are scrolled to each time.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+# Terms.
+- scrollUntilVisible:
+    element:
+      id: "menu.termsRow"
+    direction: DOWN
+- tapOn:
+    id: "menu.termsRow"
+- extendedWaitUntil:
+    visible:
+      text: "Delegent AI Terms of Service"
+    timeout: 8000
+- takeScreenshot: "menu_14_01_terms_subpage"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- takeScreenshot: "menu_14_02_back_on_menu"
+
+# Skills & use cases.
+- tapOn:
+    id: "menu.skillsRow"
+- extendedWaitUntil:
+    visible:
+      text: "Skills & use cases"
+    timeout: 8000
+- takeScreenshot: "menu_14_03_skills_subpage"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "menu.skillsRow"
+    timeout: 8000
+
+# FAQs.
+- scrollUntilVisible:
+    element:
+      id: "menu.faqsRow"
+    direction: DOWN
+- tapOn:
+    id: "menu.faqsRow"
+- extendedWaitUntil:
+    visible:
+      text: "FAQs"
+    timeout: 8000
+- takeScreenshot: "menu_14_04_faqs_subpage"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+# How-to guides.
+- tapOn:
+    id: "menu.howtoRow"
+- extendedWaitUntil:
+    visible:
+      text: "How-to guides"
+    timeout: 8000
+- takeScreenshot: "menu_14_05_howto_subpage"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "menu.howtoRow"
+    timeout: 8000
+
+# Final Back closes the drawer on the chat.
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 8000
+- takeScreenshot: "menu_14_06_back_to_chat"
+- assertNotVisible:
+    text: "service_role"

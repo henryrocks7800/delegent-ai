@@ -1,0 +1,28 @@
+appId: com.sidekick.v2
+name: Production - home chat keyboard aware composer
+---
+# When the chat box is focused the keyboard rises and the composer rises with
+# it: the tools row and the send button stay on screen above the keyboard.
+#
+# 2026-09-28 (redesign): the composer's controls are the chat document's
+# element ids (see home.chat_panel_first_land). The typed word is erased at
+# the end so the flow never leaves a draft on the account.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- assertVisible:
+    id: "attachBtn"
+- tapOn:
+    id: "input"
+- takeScreenshot: "production_home_chat_keyboard_aware_01_focused"
+# The keyboard pushed the composer up rather than covering it.
+- assertVisible:
+    id: "attachBtn"
+- inputText: "key"
+- takeScreenshot: "production_home_chat_keyboard_aware_02_typed"
+- assertVisible:
+    text: "key"
+- assertVisible:
+    id: "sendBtn"
+- eraseText: 10
+- hideKeyboard

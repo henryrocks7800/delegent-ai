@@ -1,0 +1,58 @@
+appId: com.sidekick.v2
+name: PROF-06 — Profile Capacity Card Matches Usage State
+tags:
+  - prof
+  - blocked
+# blocked-reason: retired: the Monthly capacity page went with the agent engine; its numbers are the Monthly allowance card on Plan & billing, checked by production/menu.capacity_page.yaml
+---
+# ============================================================================
+# Spec ID: PROF-06 — Profile Capacity Card Matches Usage State
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Single-state variant — runs with whichever
+# --usage state the runner has seeded for the user. To keep one
+# Maestro flow file per spec ID (the test infra can't switch users
+# mid-flow), this spec exercises the **near-limit** variant
+# specifically — seed --profile ready-runner --usage near-limit.
+# The comfortable variant is covered by MENU-09 (Profile + drawer
+# share the same usageSummary). The hard-limited variant is covered
+# by MENU-11. Each one verifies the SAME signal in a different
+# surface, so the contract is preserved across three test files
+# without needing a single multi-user flow.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Open Profile via the header avatar
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.capacityCard"
+    timeout: 15000
+- assertVisible:
+    id: "profile.capacityCard"
+- takeScreenshot: "prof_06_01_profile_open"
+
+# Near-limit warning copy + Studio plan badge tone (warning) +
+# "This month so far" header on the capacity card.
+- assertVisible:
+    text: "This month so far"
+- assertVisible:
+    text: ".*approaching this month.*capacity.*"
+- assertVisible:
+    text: "Studio"
+- takeScreenshot: "prof_06_02_near_limit_state"
+
+# Comfortable / hard-limited copy must NOT appear on this near-limit user
+- assertNotVisible:
+    text: "Plenty of room"
+- assertNotVisible:
+    text: "used everything"
+
+- assertNotVisible:
+    text: "service_role"

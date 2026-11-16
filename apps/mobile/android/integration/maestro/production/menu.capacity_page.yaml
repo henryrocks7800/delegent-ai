@@ -1,0 +1,32 @@
+appId: com.sidekick.v2
+name: Production - Monthly capacity page
+---
+# How much of the month is left: the allowance card on Plan & billing shows
+# the share used, when it refreshes, top-up credit and Talk minutes.
+#
+# 2026-09-28: the Monthly capacity page and its menu row are gone; since the
+# agent engine the same numbers are the "Monthly allowance" card on Plan &
+# billing, which is what this flow now reads. The id is kept so the pack's
+# coverage records stay continuous.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.setupGuideRow"
+- extendedWaitUntil:
+    visible:
+      text: "Monthly allowance"
+    timeout: 20000
+- takeScreenshot: "production_menu_capacity_page_01"
+- assertVisible:
+    text: "\\d+% used"
+- assertVisible:
+    text: "Refreshes on .*"
+- assertVisible:
+    text: "Top-up credit"
+- assertVisible:
+    text: "Talk"
+- assertNotVisible:
+    text: "provider quota id|raw ledger|internal meter|tokens"

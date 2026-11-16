@@ -1,0 +1,36 @@
+appId: com.sidekick.v2
+name: Production - Connections opens complete
+---
+# Connections opens with every card and its count in place, and a group opens
+# to its apps. Alex, 2026-09-28: "for a split second it shows two connections
+# and then they all load". The menu now reads both connection services as it
+# opens and the account's last complete list is shown at once. Replaces
+# files.empty_drawer_state: the Files drawer went with the runners on
+# 2026-09-18.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.connectionsRow"
+- extendedWaitUntil:
+    visible:
+      id: "connections.summary"
+    timeout: 20000
+- takeScreenshot: "production_connections_list_opens_complete_01"
+- assertVisible:
+    text: "\\d+ apps? connected"
+- assertNotVisible:
+    text: "Checking what’s connected…"
+- tapOn:
+    text: "Email"
+- extendedWaitUntil:
+    visible:
+      text: "Gmail"
+    timeout: 10000
+- assertVisible:
+    text: "Outlook"
+- takeScreenshot: "production_connections_list_opens_complete_02_email"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider|composio|Composio"

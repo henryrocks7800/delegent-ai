@@ -1,0 +1,19 @@
+appId: com.sidekick.v2
+name: P14-N01 — After sign out, the home chat surface is gone (unhappy path)
+tags:
+  - signs-out
+  - persona:P14
+  - multi-device
+  - unhappy-path
+---
+- launchApp:
+    clearState: true
+# Fresh launch with clearState lands on the unauthenticated landing.
+- extendedWaitUntil:
+    visible:
+      text: ".*Continue with Google.*|.*Continue with email.*"
+    timeout: 30000
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "input"

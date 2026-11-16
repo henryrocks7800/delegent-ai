@@ -1,0 +1,33 @@
+appId: com.sidekick.v2
+name: Production - Use cases page
+---
+# Skills & use cases opens from the menu, a category opens to its examples,
+# and back returns to the menu.
+#
+# 2026-09-28 (redesign): the row has been menu.skillsRow since 2026-08-03 (the
+# flow still asked for menu.useCasesRow); categories open in place and lead
+# to a page per category.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.skillsRow"
+- extendedWaitUntil:
+    visible:
+      text: "Inbox & messages"
+    timeout: 15000
+- takeScreenshot: "production_menu_use_cases_page_01"
+- assertVisible:
+    text: "Skills & use cases"
+- tapOn:
+    text: "Inbox & messages"
+- assertVisible:
+    text: "See all skills"
+- takeScreenshot: "production_menu_use_cases_page_02"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "menu.skillsRow"
+    timeout: 10000

@@ -1,0 +1,66 @@
+appId: com.sidekick.v2
+name: ONB-03 — Blank Coworker Name Uses Safe Default or Shows Safe Error
+tags:
+  - onb
+  - live-only
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+# ============================================================================
+# Spec ID: ONB-03 — Blank Coworker Name Uses Safe Default or Shows Safe Error
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Authenticated, unonboarded user (seed --profile
+# onboarding). The Finish setup tap with a blank name must not silently
+# pass through to a half-onboarded state.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 15000
+- takeScreenshot: "onb_03_01_onboarding"
+
+# Step 1 — leave name empty, tick the terms, then tap Finish.
+- tapOn:
+    id: "onboarding.termsCheckbox"
+- takeScreenshot: "onb_03_02_terms_only"
+
+# Tap Finish setup with blank name. Either:
+#  (a) Finish is disabled and the tap is a no-op — user stays on this screen.
+#  (b) Finish is enabled and the app advances using a safe default name.
+# Both branches are acceptable per the spec, but the failure mode "tap
+# silently succeeds and the user lands in an undefined state" is not.
+- tapOn:
+    id: "onboarding.finishButton"
+
+# Assert the app is NOT now in an authenticated-but-incoherent state.
+# Either the user is still on onboarding OR they've moved to a coherent
+# next screen (plan picker / chat home).
+- runFlow:
+    when:
+      visible:
+        id: "onboarding.agentNameInput"
+    commands:
+      - takeScreenshot: "onb_03_03_stayed_on_onboarding"
+      - assertVisible:
+          id: "onboarding.agentNameInput"
+      - assertVisible:
+          id: "onboarding.finishButton"
+- runFlow:
+    when:
+      notVisible:
+        id: "onboarding.agentNameInput"
+    commands:
+      - takeScreenshot: "onb_03_03_advanced_with_safe_default"
+      - assertNotVisible:
+          id: "onboarding.agentNameInput"
+      - assertNotVisible:
+          text: "service_role"
+
+- assertNotVisible:
+    text: "undefined"
+- assertNotVisible:
+    text: "null"
+- assertNotVisible:
+    text: "Supabase"

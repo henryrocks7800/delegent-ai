@@ -1,0 +1,12 @@
+node_modules
+dist
+.firebase
+*.log
+.DS_Store
+.env
+.env.local
+# Phase 11 Playwright evidence (screenshots, traces, JUnit) — kept on disk
+# only; reports are file paths, never inline images.
+tests/evidence/
+playwright-report/
+test-results/

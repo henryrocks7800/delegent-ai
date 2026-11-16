@@ -1,0 +1,77 @@
+appId: com.sidekick.v2
+name: MENU-01 — Open Menu and Close by Backdrop
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-01 — Open Menu and Close by Backdrop
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+#
+# 1. Tap the burger menu (main-menu-button).
+# 2. Every menu row is there (scrolling for the ones below the fold); tap the
+#    backdrop beside the drawer.
+# 3. The drawer closes on the chat.
+#
+# 2026-09-28: the agent-engine menu (no Files or Monthly capacity rows); the
+# backdrop is tapped by screen share rather than pixels, since the drawer's
+# width is a share of the screen.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- takeScreenshot: "menu_01_01_chat_home"
+
+# Step 1 — open the menu.
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- takeScreenshot: "menu_01_02_drawer_open"
+
+# Step 2 — the rows.
+- assertVisible:
+    id: "menu.connectionsRow"
+- assertVisible:
+    id: "menu.freshChatRow"
+- assertVisible:
+    id: "menu.skillsRow"
+- assertVisible:
+    id: "menu.howtoRow"
+- assertVisible:
+    id: "menu.setupGuideRow"
+- scrollUntilVisible:
+    element:
+      id: "menu.faqsRow"
+    direction: DOWN
+- assertVisible:
+    id: "menu.helpRow"
+- scrollUntilVisible:
+    element:
+      id: "menu.signOutButton"
+    direction: DOWN
+- assertVisible:
+    id: "menu.websiteRow"
+- assertVisible:
+    id: "menu.termsRow"
+- assertVisible:
+    id: "menu.privacyRow"
+
+# Close by tapping the backdrop strip at the right edge, beside the drawer.
+- tapOn:
+    point: "97%,30%"
+- extendedWaitUntil:
+    notVisible:
+      id: "drawer.backdropDismiss"
+    timeout: 6000
+- takeScreenshot: "menu_01_03_drawer_closed"
+
+# Step 3 — the chat again.
+- assertVisible:
+    id: "input"
+- assertNotVisible:
+    text: "service_role|runner URL"

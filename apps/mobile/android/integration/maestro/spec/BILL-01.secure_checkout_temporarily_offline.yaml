@@ -1,0 +1,89 @@
+appId: com.sidekick.v2
+name: BILL-01 — Secure Checkout Temporarily Offline
+tags:
+  - bill
+  - live-only
+# blocked-reason: needs a signed-in account with no subscription; the test account the pack signs in is a subscriber
+---
+# ============================================================================
+# Spec ID: BILL-01
+# Friendly name: Secure Checkout Temporarily Offline
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires a signed-in onboarded user AND a checkout API
+# stub that returns `unavailable`. The harness:
+#   1. Signs in via sign-in-via-admin-link.mjs
+#   2. Completes onboarding so the user lands on the plan picker
+#   3. Either (a) sets EXPO_PUBLIC_SIDEKICK_API_BASE_URL to a service that
+#      returns the unavailable error, or (b) intercepts the checkout
+#      request via a local Worker fixture
+# Then this flow runs.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Missing negative checkout flow.
+# **Precondition:** Authenticated, onboarded, unsubscribed user; checkout
+# API returns unavailable.
+#
+# **Flow and assertions:**
+# 1. Plan picker — select a plan; tap Open secure checkout.
+# 2. Checkout error card — title "Checkout is temporarily offline" or
+#    equivalent; safe retry copy; user stays unsubscribed; retry possible.
+#    No Stripe IDs / API URLs / stack traces / secret-looking values visible.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 15000
+- takeScreenshot: "bill_01_01_plan_picker_visible"
+
+# Step 1 — assert plan picker is rendered, select Studio, tap Open secure checkout.
+# We rely on testIDs only: the displayLg heading "Pick a plan, meet your coworker"
+# wraps across two lines on the device, and Maestro's text matcher is per-line,
+# so a substring on the whole sentence is fragile.
+- assertVisible:
+    id: "setup.stepIndicator"
+- assertVisible:
+    id: "billing.checkoutButton"
+- tapOn:
+    id: "setup.plan.studio"
+- takeScreenshot: "bill_01_02_studio_selected"
+- tapOn:
+    id: "billing.checkoutButton"
+
+# Step 2 — the checkout error card MUST appear with the honest title and
+# safe retry copy. The plan picker MUST remain on screen (user still
+# unsubscribed). We pin the title verbatim — broad regex could let a
+# different error card pass.
+- extendedWaitUntil:
+    visible:
+      text: "Checkout is temporarily offline"
+    timeout: 15000
+- takeScreenshot: "bill_01_03_error_card_visible"
+- assertVisible:
+    text: "Checkout is temporarily offline"
+- assertVisible:
+    id: "billing.checkoutButton"
+- assertVisible:
+    id: "setup.stepIndicator"
+
+# Spec rule: no Stripe IDs / API URLs / stack traces / secret-looking values.
+- assertNotVisible:
+    text: "cs_test_"
+- assertNotVisible:
+    text: "cs_live_"
+- assertNotVisible:
+    text: "sk_live"
+- assertNotVisible:
+    text: "sk_test"
+- assertNotVisible:
+    text: "pi_"
+- assertNotVisible:
+    text: "https://"
+- assertNotVisible:
+    text: "TypeError"
+- assertNotVisible:
+    text: "stack trace"
+- assertNotVisible:
+    text: "service_role"

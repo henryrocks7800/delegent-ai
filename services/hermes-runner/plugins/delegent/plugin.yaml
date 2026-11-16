@@ -1,0 +1,27 @@
+name: delegent-platform
+label: Delegent
+kind: platform
+version: 1.0.0
+description: >
+  Delegent AI in-app chat as a first-class Hermes messenger. Routes app
+  messages through the gateway pipeline so the agent gets durable per-user
+  sessions, slash commands, and /goal natively (no Telegram dependency).
+  See docs/CHAT_ROUTE_B_DESIGN.md.
+author: Delegent AI
+optional_env:
+  - name: DELEGENT_PLATFORM_ENABLED
+    description: "Set to 1/true to boot the Delegent platform alongside the api_server."
+    prompt: "Enable Delegent in-app platform?"
+    password: false
+  - name: DELEGENT_PLATFORM_PORT
+    description: "Loopback port the inbound listener binds (default 8644)."
+    prompt: "Inbound listener port"
+    password: false
+  - name: DELEGENT_RELAY_URL
+    description: "URL replies are POSTed to (the runner wrapper, which forwards to the Worker). Unset = log-only."
+    prompt: "Outbound relay URL"
+    password: false
+  - name: DELEGENT_PLATFORM_SECRET
+    description: "Shared secret for inbound/outbound auth (defaults to SIDEKICK_RUNNER_SHARED_SECRET)."
+    prompt: "Platform shared secret"
+    password: true

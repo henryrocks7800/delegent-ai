@@ -1,0 +1,52 @@
+appId: com.sidekick.v2
+name: AUTH-10 — Keyboard Never Hides Login Email or Code Buttons
+tags:
+  - auth
+  - release
+---
+# ============================================================================
+# Spec ID: AUTH-10 — Keyboard Never Hides Login Email or Code Buttons
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: release. Pure on-device UI behavior on the signed-out login surface.
+#
+# ----- Spec body ------------------------------------------------------------
+# Precondition: signed-out app.
+# 1. Tap the email input — soft keyboard opens.
+# 2. With the keyboard open, the email submit button must still be visible.
+# 3. Hide keyboard; the submit button remains visible.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.emailInput"
+    timeout: 15000
+- takeScreenshot: "auth_10_01_login"
+
+# Step 1 — tap the email input to bring up the keyboard, then type to keep it open
+- tapOn:
+    id: "login.emailInput"
+- inputText: "qa+auth10@example.test"
+- takeScreenshot: "auth_10_02_keyboard_up"
+
+# Step 2 — with keyboard up, the email submit + email input must still be
+# visible. If the layout regression returned (composer pushed off-screen),
+# this assertion fails.
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+
+# Step 3 — close the keyboard and verify the form is still usable
+- hideKeyboard
+- takeScreenshot: "auth_10_03_keyboard_down"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+- assertVisible:
+    id: "login.googleButton"
+
+- assertNotVisible:
+    text: "service_role"

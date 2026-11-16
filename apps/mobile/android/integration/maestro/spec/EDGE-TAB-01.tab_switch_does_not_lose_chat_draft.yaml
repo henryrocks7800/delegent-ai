@@ -1,0 +1,67 @@
+appId: com.sidekick.v2
+name: EDGE-TAB-01 - switching to Files tab and back preserves chat input draft
+# Phase 9 Edge Batch 3.
+#
+# Why this matters
+# ----------------
+# Users sometimes flip to the Files tab mid-message to check what they
+# saved earlier, then come back to finish typing. If the draft text in
+# the composer is lost during the tab transition, that's a frustrating
+# data-loss bug.
+#
+# Preconditions
+# -------------
+# - User signed in.
+# - Chat panel reachable.
+#
+# What the test does
+# ------------------
+# 1. Land on chat panel.
+# 2. Type a unique draft into the composer.
+# 3. Tap the Files tab.
+# 4. Wait for the Files surface.
+# 5. Tap back to the Chat tab.
+# 6. Assert the draft text is still in the composer.
+#
+# Fixtures: none.
+
+tags:
+  - edge
+  - tab
+  - composer
+# blocked-reason: retired: the Chat / Files tab bar went with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "your digital assistant|your AI coworker|What shall we build|Message Alex|Message"
+    timeout: 60000
+- assertVisible:
+    id: "home.chatPanel.input"
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "EDGE-TAB-01 draft text here"
+- hideKeyboard
+- takeScreenshot: "edge_tab_01_typed"
+# Switch to Files tab.
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible: "No files yet|Anything your coworker saves|Files|Refresh"
+    timeout: 30000
+- takeScreenshot: "edge_tab_01_files_tab"
+# Switch back to Chat tab.
+- tapOn:
+    id: "tab.dashboard"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- takeScreenshot: "edge_tab_01_back_to_chat"
+# CRITICAL: the draft must still be in the composer.
+- assertVisible:
+    text: "EDGE-TAB-01 draft text here"
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

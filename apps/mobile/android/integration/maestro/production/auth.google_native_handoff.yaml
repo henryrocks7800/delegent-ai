@@ -1,0 +1,40 @@
+appId: com.sidekick.v2
+name: Production - Google native handoff
+---
+# "Continue with Google" hands off to Google's own account sheet (or says
+# honestly that sign-in needs setup). It fails closed: if the button is still
+# on screen after the tap, nothing handed off. The flow then backs out of
+# Google's sheet rather than choosing an account, and the app must come back
+# on sign-in.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 60000
+- takeScreenshot: "production_auth_google_native_handoff_01_login"
+- tapOn:
+    text: "Continue with Google"
+- extendedWaitUntil:
+    visible: "Google|Choose an account|Use another account|Checking info…|Checking info\\.\\.\\.|Checking info|sign-in needs setup|couldn't complete|Couldn't complete"
+    timeout: 30000
+- takeScreenshot: "production_auth_google_native_handoff_02_provider_or_error"
+- assertNotVisible:
+    text: "Continue with Google"
+# Google can stack a second screen of its own ("Sign in with ease", a
+# phone-number lookup) behind the account sheet, so back out until the
+# sign-in screen is back rather than pressing Back once (2026-09-28).
+- repeat:
+    times: 3
+    while:
+      notVisible:
+        id: "login.googleButton"
+    commands:
+      - pressKey: Back
+      - waitForAnimationToEnd:
+          timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 30000
+- takeScreenshot: "production_auth_google_native_handoff_03_back_on_sign_in"

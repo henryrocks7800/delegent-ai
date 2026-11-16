@@ -1,0 +1,74 @@
+appId: com.sidekick.v2
+name: AUTH-08 — Privacy From Login Opens, Scrolls, and Closes
+tags:
+  - auth
+  - release
+---
+# ============================================================================
+# Spec ID: AUTH-08 — Privacy From Login Opens, Scrolls, and Closes
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: release. No provider state needed; entirely UI on the login surface.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- takeScreenshot: "auth_08_01_login"
+# 2026-09-28: on a tall phone the legal links sit below the fold of the
+# sign-in screen, so scroll to them before asserting.
+# The sign-in screen never goes idle (its chip row loops), so each swipe
+# waits out Maestro's settle timeout (about 30s) before the next check;
+# the default 20s scroll limit ran out before it looked again.
+- scrollUntilVisible:
+    element:
+      id: "login.privacyLink"
+    direction: DOWN
+    timeout: 60000
+- assertVisible:
+    id: "login.privacyLink"
+- assertVisible:
+    text: "Privacy Policy"
+
+# Step 1 — tap Privacy link via testID (post-DN1.3-02 fix). The link is now
+# a real Pressable, not a nested <Text onPress> span, so the tap reliably
+# fires the press handler.
+- tapOn:
+    id: "login.privacyLink"
+
+# Step 2 — Privacy modal opens. The X close icon is sticky at the top; the
+# bottom "Close Privacy Policy" Button is below many screens of scrollable
+# text. Exercise the scroll via swipe (proves the sheet is scrollable) and
+# dismiss via the always-reachable closeIcon.
+- extendedWaitUntil:
+    visible:
+      id: "privacy.modal"
+    timeout: 8000
+- takeScreenshot: "auth_08_02_privacy_open"
+- assertVisible:
+    id: "privacy.closeIcon"
+- swipe:
+    start: 50%, 70%
+    end: 50%, 30%
+
+# Step 3 — close via the X icon
+- tapOn:
+    id: "privacy.closeIcon"
+- extendedWaitUntil:
+    notVisible:
+      id: "privacy.modal"
+    timeout: 6000
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+- takeScreenshot: "auth_08_03_back_on_login"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"

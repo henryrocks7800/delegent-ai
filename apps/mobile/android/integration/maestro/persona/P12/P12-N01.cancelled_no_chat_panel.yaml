@@ -1,0 +1,21 @@
+appId: com.sidekick.v2
+name: P12-N01 — Cancelled-elapsed must NOT expose chat composer (unhappy path)
+tags:
+  - persona:P12
+  - unhappy-path
+  - paywall
+# blocked-reason: needs a seeded account state (cancelled, period ended); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Choose your plan.*|.*Studio.*|.*Pro Office.*"
+    timeout: 30000
+# The chat input must NOT be available — only the picker.
+- assertNotVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    id: "home.chatPanel.sendButton"
+- assertNotVisible:
+    id: "home.chatPanel.micButton"

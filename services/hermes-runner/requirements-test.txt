@@ -1,0 +1,7 @@
+-r requirements.txt
+httpx==0.28.1
+pytest==8.3.5
+# The image gets cryptography transitively from Hermes' extras, so the vault
+# imports there. Without it here the credential routes fail closed with 503 and
+# the contract test silently stops exercising the real encrypt/decrypt path.
+cryptography==49.0.0

@@ -1,0 +1,54 @@
+appId: com.sidekick.v2
+name: CHAT-STREAM-02 — Stop button cancels a streaming run mid-flight
+tags:
+  - chat
+  - streaming
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-STREAM-02
+# Friendly name: Stop button cancels a streaming run mid-flight
+#
+# A long answer can be stopped: the chat's stop button shows while a reply is
+# being written, tapping it ends the run, and the next message still works.
+#
+# 2026-09-28: the stop control is the chat document's stopBtn now (it used to
+# be a native pill under the bubble), and the follow-up asks for one known
+# word so its reply can be recognised.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Ask for a long answer so the stop button stays up long enough to tap.
+- tapOn:
+    id: "input"
+- inputText: "Write a detailed 800-word history of the London Underground, in paragraphs."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      id: "stopBtn"
+    timeout: 20000
+- takeScreenshot: "chat_stream_02_01_running"
+- tapOn:
+    id: "stopBtn"
+- extendedWaitUntil:
+    notVisible:
+      id: "stopBtn"
+    timeout: 20000
+- takeScreenshot: "chat_stream_02_02_stopped"
+
+# A following message still works.
+- tapOn:
+    id: "input"
+- inputText: "Reply with only the word KIWI."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*kiwi\\W*"
+    timeout: 120000
+- takeScreenshot: "chat_stream_02_03_next_message_works"

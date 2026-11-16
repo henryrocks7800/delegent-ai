@@ -1,0 +1,22 @@
+appId: com.sidekick.v2
+name: P00-11 — Re-launching after pm clear returns to landing
+tags:
+  - persona:P00
+  - landing
+  - lifecycle
+---
+# After the app's data is cleared, a launch lands on sign-in with nothing of
+# the signed-in shell showing. 2026-09-28: the Files tab it also checked went
+# with the tab bar; the header's profile button stands in for the shell.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 60000
+- assertVisible:
+    text: ".*Continue with Google.*"
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "header.profileButton"

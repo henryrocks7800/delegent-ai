@@ -1,0 +1,48 @@
+appId: com.sidekick.v2
+name: CHAT-07 — Chat History Comes Back After Relaunch
+tags:
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-07 — Chat History Comes Back After Relaunch
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# A message and its reply are still there after the app is closed and opened
+# again, without sending anything new.
+#
+# 2026-09-28: the flow makes its own history (one probe and its reply) instead
+# of asserting five pairs planted by the retired seeding scripts, which wrote
+# them into the live database.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 1 — a probe and its reply.
+- tapOn:
+    id: "input"
+- inputText: "CHAT07 probe: reply with only the word QUINCE."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*quince\\W*"
+    timeout: 120000
+- takeScreenshot: "chat_07_01_history_made"
+
+# Step 2 — close the app and open it again: both are still there.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      text: "CHAT07 probe: reply with only the word QUINCE\\."
+    timeout: 20000
+- assertVisible:
+    text: "(?i)\\W*quince\\W*"
+- takeScreenshot: "chat_07_02_history_persisted_after_relaunch"
+- assertNotVisible:
+    text: "service_role|.*API call failed.*"

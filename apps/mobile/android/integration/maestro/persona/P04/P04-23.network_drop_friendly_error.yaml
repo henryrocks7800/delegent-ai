@@ -1,0 +1,25 @@
+appId: com.sidekick.v2
+name: P04-23 — Composer stays usable after send (network-drop sanity)
+tags:
+  - persona:P04
+  - unhappy-path
+  - network
+---
+# Maestro can't drop the network mid-flow, so we just verify the
+# composer remains in a usable state after sending a message. If a
+# response is slow or fails, the composer should still be interactive
+# rather than permanently broken.
+- launchApp:
+    clearState: false
+- runFlow: ../../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "input"
+- inputText: "test"
+- tapOn:
+    id: "sendBtn"
+- assertVisible:
+    id: "input"

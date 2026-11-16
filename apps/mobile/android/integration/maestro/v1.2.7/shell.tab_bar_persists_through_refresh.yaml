@@ -1,0 +1,35 @@
+appId: com.sidekick.v2
+name: v1.2.7 D5 — bottom tab bar stays mounted across productState refreshes
+# blocked-reason: retired: the Chat / Files tab bar went with the runners on 2026-09-18
+---
+# Before v1.2.7 the bottom tab bar (Chat / Files) disappeared
+# intermittently because Shell unmounted whenever productState
+# transitioned back to 'loading' (e.g. after AppState resumed). The
+# shell-latch keeps Shell rendered once authReadyForShell was ever
+# true, so the tabs remain.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "tab.dashboard"
+    timeout: 10000
+- assertVisible:
+    id: "tab.dashboard"
+- assertVisible:
+    id: "tab.artifacts"
+- takeScreenshot: "v127_d5_tab_bar_present_initial"
+# Background the app and bring it forward — this fires AppState=='active'
+# which historically retriggered productState.refresh() and the flicker.
+- pressKey: HOME
+- waitForAnimationToEnd
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "tab.dashboard"
+    timeout: 6000
+- assertVisible:
+    id: "tab.dashboard"
+- assertVisible:
+    id: "tab.artifacts"
+- takeScreenshot: "v127_d5_tab_bar_present_after_resume"

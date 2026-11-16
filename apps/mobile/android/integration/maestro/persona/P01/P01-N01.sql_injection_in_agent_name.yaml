@@ -1,0 +1,30 @@
+appId: com.sidekick.v2
+name: P01-N01 — SQL-ish chars in agent name stored verbatim, no schema damage
+tags:
+  - persona:P01
+  - unhappy-path
+  - injection
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 30000
+- tapOn:
+    id: "onboarding.agentNameInput"
+- inputText: "Robert DROP TABLE--"
+- runFlow:
+    when:
+      visible:
+        text: ".*[Aa]ccept.*[Tt]erms.*|.*I accept.*"
+    commands:
+      - tapOn:
+          text: ".*[Aa]ccept.*[Tt]erms.*|.*I accept.*"
+- tapOn:
+    id: "onboarding.finishButton"
+- extendedWaitUntil:
+    visible:
+      text: ".*Robert.*|.*Riley.*|.*Choose your plan.*"
+    timeout: 15000

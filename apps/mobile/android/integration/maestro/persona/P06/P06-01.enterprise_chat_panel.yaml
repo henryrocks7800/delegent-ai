@@ -1,0 +1,17 @@
+appId: com.sidekick.v2
+name: P06-01 — Enterprise-suite active user lands on chat with no quota concerns
+tags:
+  - persona:P06
+  - chat
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*[Cc]apacity full.*"
+- assertNotVisible:
+    text: ".*nearly full.*"

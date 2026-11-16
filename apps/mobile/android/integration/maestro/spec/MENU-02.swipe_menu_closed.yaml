@@ -1,0 +1,51 @@
+appId: com.sidekick.v2
+name: MENU-02 — Swipe Menu Closed
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-02 — Swipe Menu Closed
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). The drawer's PanResponder (App.tsx:2048-2065)
+# claims a horizontal left-swipe with dx < -8 and closes the drawer if
+# the release point is dx < -60 OR vx < -0.4.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Open the drawer
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- takeScreenshot: "menu_02_01_drawer_open"
+
+# Perform a clear left swipe ACROSS the drawer surface (the drawer sheet
+# is the right-side panel; coordinates start mid-screen-right and end
+# at the far left, covering > 60px so the PanResponder release branch
+# fires its onClose).
+- swipe:
+    start: "850, 1200"
+    end: "100, 1200"
+    duration: 400
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 8000
+- assertVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "menu.homeRow"
+- assertNotVisible:
+    id: "menu.signOutButton"
+- takeScreenshot: "menu_02_02_drawer_closed"

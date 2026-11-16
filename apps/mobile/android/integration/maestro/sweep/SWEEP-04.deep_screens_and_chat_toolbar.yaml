@@ -1,0 +1,148 @@
+appId: com.sidekick.v2
+name: 'SWEEP-04 - Deeper screens: skill categories, plan picker, chat toolbar'
+tags:
+  - sweep
+  - live-only
+# blocked-reason: iOS cloud sweep: signs in with a session minted outside the app (MAESTRO_ACCESS_TOKEN); runs in the EAS Maestro workflow
+---
+# SWEEP-01 proved each menu row ARRIVES. This goes a level deeper: the screens
+# behind those screens, which is where a row that "opens" can still be empty,
+# stuck or dead.
+#
+# Deliberately read-only on anything that spends money or changes the account.
+# The plan picker is opened and looked at, never submitted.
+- runFlow: ../sweep-shared/signin.yaml
+
+# --- Skills, one level down into a category ---------------------------------
+- tapOn:
+    id: 'main-menu-button'
+- extendedWaitUntil:
+    visible:
+      id: 'menu.skillsRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.skillsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Money & bookkeeping.*'
+    timeout: 20000
+# A category must open and show real use cases, not an empty shell.
+- tapOn:
+    text: '.*Money & bookkeeping.*'
+- extendedWaitUntil:
+    visible:
+      text: '.*Back.*|.*bookkeeping.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_04_01_skill_category'
+- assertNotVisible:
+    text: '.*undefined.*'
+- assertNotVisible:
+    text: '.*\[object Object\].*'
+# Unwind tolerantly: a category may open its own screen OR expand in place, so
+# the depth to unwind is not fixed. A hard second 'Back' failed with "Element
+# not found" once already, at the menu root where no Back exists.
+- runFlow:
+    when:
+      visible:
+        text: 'Back'
+    commands:
+      - tapOn:
+          text: 'Back'
+- runFlow:
+    when:
+      visible:
+        text: 'Back'
+    commands:
+      - tapOn:
+          text: 'Back'
+
+# --- Monthly capacity, then through to the plan picker ----------------------
+- scrollUntilVisible:
+    element:
+      id: 'menu.capacityRow'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: 'menu.capacityRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*capacity.*|.*Capacity.*'
+    timeout: 30000
+- takeScreenshot: 'sweep_04_02_capacity'
+
+# The capacity screen must show a real figure, not a placeholder. This account
+# is on a live plan with a live quota, so a zero or a dash here is a defect.
+- assertNotVisible:
+    text: '.*NaN.*'
+- assertNotVisible:
+    text: '.*undefined.*'
+
+# "See plans" is the route to the picker. It spends nothing by itself.
+- runFlow:
+    when:
+      visible:
+        id: 'capacity.seePlans'
+    commands:
+      - tapOn:
+          id: 'capacity.seePlans'
+      - extendedWaitUntil:
+          visible:
+            text: '.*Studio.*|.*Pro Office.*|.*plan.*'
+          timeout: 30000
+      - takeScreenshot: 'sweep_04_03_plan_picker'
+      # Prices must render as real money.
+      - assertNotVisible:
+          text: '.*NaN.*'
+      - assertNotVisible:
+          text: '.*undefined.*'
+      - assertNotVisible:
+          text: '.*£0\.00.*'
+
+# --- Back to chat and exercise the composer toolbar -------------------------
+# These buttons open native pickers or overlays. The test proves each RESPONDS,
+# then backs out, rather than completing a capture or an upload.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: 'tab.dashboard'
+    timeout: 60000
+- tapOn:
+    id: 'tab.dashboard'
+- extendedWaitUntil:
+    visible:
+      text: '.*Message.*'
+    timeout: 60000
+- takeScreenshot: 'sweep_04_04_chat'
+
+# Every toolbar control must be present and labelled. The send button was
+# missing its label until 2026-08-13, so this asserts the whole row.
+- assertVisible:
+    text: 'Attach a file'
+- assertVisible:
+    text: 'Take a photo'
+- assertVisible:
+    text: 'Send message'
+- takeScreenshot: 'sweep_04_05_toolbar_labelled'
+
+# The Help control inside the chat toolbar opens the toolbar tour again.
+- runFlow:
+    when:
+      visible:
+        text: '.*Help.*'
+    commands:
+      - tapOn:
+          text: '.*Help.*'
+      - takeScreenshot: 'sweep_04_06_help_tour'
+      - runFlow:
+          when:
+            visible:
+              text: 'Close'
+          commands:
+            - tapOn:
+                text: 'Close'
+
+- assertNotVisible:
+    text: '.*service_role.*'
+- assertNotVisible:
+    text: '.*Traceback.*'

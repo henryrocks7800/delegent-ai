@@ -1,0 +1,19 @@
+appId: com.sidekick.v2
+name: P00-06 - Tap Email me a sign-in code reveals email input
+tags:
+  - persona:P00
+  - landing
+  - email-signin
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*"
+    timeout: 30000
+- tapOn:
+    text: ".*Email me a sign-in code.*"
+- extendedWaitUntil:
+    visible:
+      text: ".*email.*|.*you@example.com.*|.*Enter.*"
+    timeout: 6000

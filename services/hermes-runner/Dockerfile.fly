@@ -1,0 +1,230 @@
+# Series 4 — Fly Machines golden Hermes runner image.
+#
+# Used by the FlyMachinesProvider to boot per-user runner Machines. Hermes is
+# installed at BUILD time via install-hermes.sh — customer Machines do not
+# clone repos, install pip packages, or run apt-get at provisioning time.
+#
+# Image contract (verified by services/hermes-runner/scripts/verify-golden-image.sh):
+#   - hermes, hermes-agent, hermes-acp callable on PATH
+#   - /etc/delegent/hermes-image.json records the pinned Hermes version + commit
+#   - FastAPI wrapper serves /healthz, /health, /tasks, /files on :8642
+#   - GET /healthz returns { ok, runner, hermesAvailable, workspaceReady }
+#   - No customer secrets baked in (FLY_API_TOKEN, OPENROUTER_API_KEY, runner
+#     shared secret, Supabase keys, etc. are injected at Machine create time)
+#   - Per-user Fly volume mounts at /data/hermes (= HERMES_HOME), so Hermes'
+#     durable state.db/memories/sessions AND the workspace/ subdir persist
+#
+# Build (from repo root):
+#   docker build -f services/hermes-runner/Dockerfile.fly \
+#     -t delegent-hermes-runner:local .
+#
+# Verify:
+#   bash services/hermes-runner/scripts/verify-golden-image.sh
+
+# ---------------------------------------------------------------------------
+# Stage 1: hermes-installer — fat layer; gets pruned of build chaff in stage 2
+# ---------------------------------------------------------------------------
+FROM python:3.11-slim-bookworm AS hermes-installer
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+# System deps for the install:
+#  - git: clone the pinned Hermes tag
+#  - build-essential / libffi-dev / libssl-dev: native wheel builds for
+#    some of Hermes's [all] extras
+#  - ca-certificates / curl / gnupg: TLS + outbound calls + NodeSource repo key
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        ca-certificates curl git gnupg \
+        build-essential libffi-dev libssl-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+# Node.js 22 (NodeSource) — required so install-hermes.sh can `npm install` the
+# Hermes Node-side browser deps (the `agent-browser` CLI declared in the repo's
+# package.json). package.json sets engines.node >=20; Debian bookworm's apt
+# nodejs is 18 (too old), so we pin the NodeSource 22.x repo — matching upstream
+# install.sh's NODE_VERSION=22. The resulting node_modules/ under the Hermes src
+# tree is carried into the runtime image with the rest of /opt/hermes-agent.
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version && npm --version
+
+COPY services/hermes-runner/scripts/install-hermes.sh /tmp/install-hermes.sh
+RUN chmod +x /tmp/install-hermes.sh && /tmp/install-hermes.sh
+COPY services/hermes-runner/scripts/patch-hermes-compression.py /tmp/patch-hermes-compression.py
+RUN python /tmp/patch-hermes-compression.py /opt/hermes-agent
+
+# ---------------------------------------------------------------------------
+# Stage 2: runtime — slim image with site-packages + our FastAPI wrapper
+# ---------------------------------------------------------------------------
+FROM python:3.11-slim-bookworm AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    SIDEKICK_WORKSPACE_DIR=/data/hermes/workspace \
+    HERMES_HOME=/data/hermes \
+    DELEGENT_SKILLS_DIR=/opt/delegent/skills \
+    PATH=/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Runtime-only system deps (no compilers in the final image).
+#
+# The second group is the agent document toolchain's *system* side:
+#   - tesseract-ocr + tesseract-ocr-eng: the OCR engine + English language
+#     data that `pytesseract` shells out to (photo / scanned-PDF OCR).
+#   - poppler-utils: provides pdftoppm/pdfinfo that `pdf2image` shells out to
+#     when rasterising a scanned PDF before OCR.
+#   - fonts-dejavu-core: a base font so matplotlib renders text without
+#     missing-glyph warnings on a headless box.
+# The matching Python libraries are installed from wheels just below.
+#
+# The third group brings the runtime to parity with upstream Hermes' own
+# Dockerfile system deps (nodejs npm ripgrep ffmpeg procps git openssh-client),
+# which our prior image was missing — so several toolsets silently degraded:
+#   - ripgrep: Hermes' fast file_search backend (falls back to slow scans).
+#   - ffmpeg: TTS voice-message encoding + audio/video tooling.
+#   - procps: `ps` etc. for the process/terminal toolset's introspection.
+#   - git + openssh-client: real dev tasks (clone/push, ssh) in terminal/code.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        ca-certificates curl gnupg \
+        libffi8 libssl3 \
+        tesseract-ocr tesseract-ocr-eng poppler-utils fonts-dejavu-core \
+        ripgrep ffmpeg procps git openssh-client \
+ && rm -rf /var/lib/apt/lists/*
+
+# Node.js 22 (NodeSource) — the runtime needs `node` to RUN the `agent-browser`
+# CLI (its node_modules is carried from the installer stage via the
+# /opt/hermes-agent COPY below). Matches the installer stage + upstream Hermes.
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version && npm --version
+
+# Carry the Python site-packages + console-script shims + Hermes source tree
+# + image provenance manifest from the installer stage. Everything else
+# (apt build deps, git, etc.) is left behind to keep the runtime image lean.
+COPY --from=hermes-installer /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=hermes-installer /usr/local/bin/hermes /usr/local/bin/hermes
+COPY --from=hermes-installer /usr/local/bin/hermes-agent /usr/local/bin/hermes-agent
+COPY --from=hermes-installer /usr/local/bin/hermes-acp /usr/local/bin/hermes-acp
+COPY --from=hermes-installer /opt/hermes-agent /opt/hermes-agent
+COPY --from=hermes-installer /etc/delegent/hermes-image.json /etc/delegent/hermes-image.json
+
+# Security hardening (red-team remediation 2026-06-09) — prune Hermes' upstream
+# offensive "red-teaming" skill bundle (godmode / auto_jailbreak / parseltongue;
+# its own SKILL.md: "Jailbreak LLMs ... bypass safety filters on GPT, Claude,
+# Gemini, Grok"). A consumer AI-coworker product must not ship LLM-jailbreak
+# attack tooling that a paying customer could aim at third-party services. The
+# runtime first-init copies bundled skills from here to the per-user volume, so
+# removing it at the image source keeps it out of every newly provisioned runner.
+# rm -rf is fail-safe: if a future Hermes bump renames or relocates the skill this
+# no-ops rather than failing the build, so re-audit `ls /opt/hermes-agent/skills`
+# on each Hermes upgrade. Enforced absent by verify-golden-image.sh.
+RUN rm -rf /opt/hermes-agent/skills/red-teaming \
+           /opt/hermes-agent/website/docs/user-guide/skills/bundled/red-teaming
+
+# FastAPI wrapper + its tiny pinned requirements.
+WORKDIR /app
+COPY services/hermes-runner/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Agent document toolchain (FREE / open-source) — PDF read/extract, OCR,
+# CSV/Excel, and Office (xlsx/pptx/docx) authoring. Installed at BUILD time
+# from prebuilt wheels into the system site-packages the `delegent` runtime
+# user imports, so the Hermes agent can handle documents out of the box.
+# This is a build-time install only; the live server path never self-upgrades
+# its runtime (R-UPG-02). All pins resolve to cp311/manylinux_2_28 wheels, so
+# no compiler is needed in this runtime stage. See requirements-documents.txt
+# for the per-package capability + wheel-build notes.
+COPY services/hermes-runner/requirements-documents.txt /app/requirements-documents.txt
+RUN pip install --no-cache-dir -r /app/requirements-documents.txt
+
+COPY services/hermes-runner/server.py /app/server.py
+COPY services/hermes-runner/run_journal.py /app/run_journal.py
+COPY --chmod=0755 services/hermes-runner/entrypoint.sh /app/entrypoint.sh
+
+# Route B (docs/CHAT_ROUTE_B_DESIGN.md): the custom `delegent` gateway platform
+# that makes in-app chat a first-class Hermes messenger (durable per-user
+# sessions + slash commands + /goal). Bundled alongside Hermes' own platform
+# plugins (irc/teams/...) so the gateway auto-discovers it; activated per-runner
+# by DELEGENT_PLATFORM_ENABLED. Markdown-only Python, no extra deps.
+COPY services/hermes-runner/plugins/delegent /opt/hermes-agent/plugins/platforms/delegent
+
+# REMOVED 2026-08-06: headless Chromium + Playwright for the Hermes `browser`
+# toolset.
+#
+# It was installed for capability parity with upstream Hermes, and then never
+# used. Checked before removing, against every assistant message this product
+# has ever produced (508 of them, all users, all time): **zero** invocations of
+# browser_navigate, browser_click, browser_snapshot, browser_screenshot or
+# browser_type. The only matches for "browser" were prose like "open it in your
+# browser". Search and page extraction go through Firecrawl's HTTP API instead
+# (web_search / web_extract), which returns a page in about a second with no
+# browser at all.
+#
+# It was not free to keep. Chromium was the bulk of a ~1 GB image, slowing every
+# build, every provision and every re-image. Worse, it set a RAM FLOOR: because
+# rendering a page needs 1.5-2 GB, every tier was raised to 2/3/4 GB purely so
+# the browser would not OOM (see DEFAULT_COMPUTE_TIER_BY_PLAN). That memory was
+# billed on every runner, every month, for a toolset nobody called. Alex's own
+# runner sat on 1 GB for months and never noticed, which is the practical proof.
+#
+# If real page interaction is ever needed, prefer a hosted browser API over
+# reinstating this: the cost here is not the install, it is the floor it puts
+# under every machine we run.
+#
+# NOTE: PLAYWRIGHT_BROWSERS_PATH remains in SAFE_SUBPROCESS_PASSTHROUGH_ENV in
+# server.py, which is harmless (it simply resolves to nothing) and is left so
+# reinstating is a one-line change here.
+
+# Delegent Hermes skills library — read-only shared runtime asset that the
+# agent reads via MANIFEST.json + skills/<slug>/SKILL.md. The path is
+# referenced by the agent's system prompt and by the DELEGENT_SKILLS_DIR
+# env var (set above). 51 skills, ~700 KB; Markdown-first by design, plus the
+# code-backed operator skills' first-party Python helper scripts (no third-party
+# executable code) to limit supply-chain risk.
+COPY services/hermes-runner/skills/delegent /opt/delegent/skills
+
+# Central encrypted key vault CLI — the ONE tool the agent + skills use to store
+# and USE any credential (encrypted at rest via the shared credential store). On
+# PATH as `delegent-keys`.
+COPY --chmod=0755 services/hermes-runner/bin/delegent-keys /usr/local/bin/delegent-keys
+
+# The other half of the same job: services the user signed into with their own
+# provider account. That grant is held off this machine on purpose, so this CLI
+# borrows a short-lived access token per command instead of storing one here.
+COPY --chmod=0755 services/hermes-runner/bin/delegent-connect /usr/local/bin/delegent-connect
+
+# Non-root runtime user. The per-user Fly volume mounts at HERMES_HOME
+# (/data/hermes) so the durable store -- state.db, memories/, sessions/ -- AND
+# the workspace/ subdir all persist on the volume (2026-06-11 fix; previously
+# the volume mounted one level deeper at .../workspace, leaving state.db on
+# ephemeral disk). /data/hermes is created + chowned to delegent BEFORE the
+# volume attaches, so Fly's fresh-volume init copies that ownership and the
+# delegent user can write state.db + create the workspace subdir at runtime.
+RUN groupadd --system --gid 4242 delegent \
+ && useradd  --system --uid 4242 --gid 4242 --shell /usr/sbin/nologin \
+            --home-dir /home/delegent --create-home delegent \
+ && mkdir -p /data/hermes/workspace \
+ && chown -R delegent:delegent /data/hermes /app /home/delegent
+
+USER delegent
+
+EXPOSE 8642
+
+# Note: SIDEKICK_RUNNER_SHARED_SECRET, SIDEKICK_WORKER_PROXY_URL,
+# SIDEKICK_USER_ID, etc. are injected at Machine create time. No customer
+# or provider secrets are baked into the image.
+#
+# entrypoint.sh re-execs uvicorn with SIDEKICK_RUNNER_SHARED_SECRET moved
+# from the exec-time environment onto an inherited fd, so the same-uid agent
+# cannot recover it from /proc/<pid>/environ (defect hunt 2026-06-10).
+CMD ["/app/entrypoint.sh"]

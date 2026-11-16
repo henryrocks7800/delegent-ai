@@ -1,0 +1,19 @@
+appId: com.sidekick.v2
+name: P03-02 — Composer indicates busy state while provisioning
+tags:
+  - persona:P03
+  - provisioning
+  - unhappy-path
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+# The header status badge should reflect non-ready state.
+- assertVisible:
+    text: ".*Preparing.*|.*Setting up.*|.*Limited.*|.*Needs attention.*"
+- assertNotVisible:
+    text: ".*Online.*"

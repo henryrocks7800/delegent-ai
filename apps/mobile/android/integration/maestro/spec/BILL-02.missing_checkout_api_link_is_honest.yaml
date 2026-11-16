@@ -1,0 +1,76 @@
+appId: com.sidekick.v2
+name: BILL-02 — Missing Checkout API Link Is Honest
+tags:
+  - bill
+  - live-only
+# blocked-reason: needs a signed-in account with no subscription; the test account the pack signs in is a subscriber
+---
+# ============================================================================
+# Spec ID: BILL-02
+# Friendly name: Missing Checkout API Link Is Honest
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires a signed-in onboarded user. State is reproducible
+# by removing or pointing `EXPO_PUBLIC_SIDEKICK_API_BASE_URL` to an empty
+# string in the device's env at app start. The harness:
+#   1. Signs the user in via the admin link script
+#   2. Builds the APK with no SIDEKICK_API_BASE_URL set (or with the missing
+#      base URL fixture) so the mobile checkout call surfaces the
+#      `missing_api_base` reason and renders "Checkout isn't connected yet".
+# Then this flow runs against that build.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Missing — honest failure copy when checkout endpoint isn't
+# configured.
+# **Precondition:** Authenticated, onboarded, unsubscribed user; no checkout
+# API base URL configured.
+#
+# **Flow and assertions:**
+# 1. Plan picker — tap Open secure checkout.
+# 2. Error card — title "Checkout isn't connected yet" or equivalent;
+#    safe explanation; no leaked URLs/credentials.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 15000
+- takeScreenshot: "bill_02_01_plan_picker_visible"
+
+# testIDs only — the displayLg heading wraps across two lines on the device.
+- assertVisible:
+    id: "setup.stepIndicator"
+- assertVisible:
+    id: "billing.checkoutButton"
+
+- tapOn:
+    id: "setup.plan.studio"
+- takeScreenshot: "bill_02_02_studio_selected"
+- tapOn:
+    id: "billing.checkoutButton"
+
+# The checkoutErrorTitle for missing_api_base is rendered exactly.
+- extendedWaitUntil:
+    visible:
+      text: "Checkout isn’t connected yet"
+    timeout: 15000
+- takeScreenshot: "bill_02_03_error_card_visible"
+- assertVisible:
+    text: "Checkout isn’t connected yet"
+- assertVisible:
+    id: "billing.checkoutButton"
+- assertVisible:
+    id: "setup.stepIndicator"
+
+# No leaks: no URLs of any kind, no service-role mentions, no stack traces
+- assertNotVisible:
+    text: "https://"
+- assertNotVisible:
+    text: "http://"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "anon key"
+- assertNotVisible:
+    text: "TypeError"

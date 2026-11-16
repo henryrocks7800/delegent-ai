@@ -1,0 +1,75 @@
+appId: com.sidekick.v2
+name: CHAT-STREAM-03 — Live file creation appears in Files drawer
+tags:
+  - chat
+  - streaming
+  - files
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: CHAT-STREAM-03
+# Friendly name: Live file creation appears in Files drawer
+# Requires: provisioned runner with streaming image.
+#
+# End-to-end alignment under streaming: the agent uses its file tool
+# to create a new file in the workspace, the SSE event flows to mobile,
+# the assistant bubble + tool-call card render, and the Files tab
+# picks it up on Refresh.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+# Explicit tool instruction — `openrouter/auto` routes to varied models;
+# the more directly we name the tool, the more reliably the model calls
+# write_file instead of chatting about it.
+- inputText: "Use your write_file tool to create the file notes/stream-test.md containing the words: hello stream"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Wait for the assistant to confirm the write tool finished. We watch
+# for run completion text — the agent's final message after the write_file
+# tool reports success.
+- extendedWaitUntil:
+    visible:
+      text: ".*[Ff]ile created.*|.*stream-test.md.*saved.*|.*notes/stream-test.*"
+    timeout: 90000
+
+# Open Files → Refresh. We refresh once for the cold list, then sleep
+# briefly to let the network round-trip complete before scrolling +
+# asserting against the rendered FlatList.
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 10000
+# Two refreshes spaced out a few seconds apart — the first warms the
+# worker/runner round-trip; the second guarantees the response includes
+# the newly-flushed file. Without the wait the runner's /files endpoint
+# can miss the brand-new write by 200-500ms.
+- tapOn:
+    id: "files.refreshButton"
+- waitForAnimationToEnd:
+    timeout: 8000
+- tapOn:
+    id: "files.refreshButton"
+- waitForAnimationToEnd:
+    timeout: 4000
+# NOTES is below the fold on a Pixel 10 viewport with all six seeded
+# directories visible. scrollUntilVisible walks the FlatList until the
+# new stream-test.md row enters the assertion viewport.
+- scrollUntilVisible:
+    element:
+      text: ".*stream-test.*"
+    timeout: 30000
+    direction: DOWN
+    visibilityPercentage: 30
+- assertVisible:
+    id: "files.directory.notes"

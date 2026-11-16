@@ -1,0 +1,86 @@
+appId: com.sidekick.v2
+name: AUTH-07 — Terms From Login Opens, Scrolls, and Closes
+tags:
+  - auth
+  - release
+---
+# ============================================================================
+# Spec ID: AUTH-07
+# Friendly name: Terms From Login Opens, Scrolls, and Closes
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: release. No provider state needed; entirely UI on the login surface.
+#
+# ----- Spec body ------------------------------------------------------------
+# 1. Login — tap the "Terms of Service" link.
+# 2. Terms modal — assert title visible; scroll; assert "Close Terms" visible.
+# 3. Login after close — tap Close Terms; modal disappears; login still usable.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- takeScreenshot: "auth_07_01_login"
+# 2026-09-28: on a tall phone the legal links sit below the fold of the
+# sign-in screen, so scroll to them before asserting.
+# The sign-in screen never goes idle (its chip row loops), so each swipe
+# waits out Maestro's settle timeout (about 30s) before the next check;
+# the default 20s scroll limit ran out before it looked again.
+- scrollUntilVisible:
+    element:
+      id: "login.termsLink"
+    direction: DOWN
+    timeout: 60000
+- assertVisible:
+    id: "login.termsLink"
+- assertVisible:
+    text: "Terms of Service"
+
+# Step 1 — tap Terms link via testID (post-DN1.3-02 fix). The link is now
+# a real Pressable, not a nested <Text onPress> span, so the tap reliably
+# fires the press handler.
+- tapOn:
+    id: "login.termsLink"
+
+# Step 2 — Terms modal opens. The X close icon (terms.closeIcon) is sticky
+# at the top of the sheet; the bottom Button (terms.closeButton) lives below
+# many screens of scrollable terms text. The spec asks us to "scroll to the
+# bottom" and confirm the Close button is visible there, then tap to close.
+# We exercise the scroll via swipe (verifies the sheet IS scrollable) then
+# dismiss via the always-reachable closeIcon.
+- extendedWaitUntil:
+    visible:
+      id: "terms.modal"
+    timeout: 8000
+- takeScreenshot: "auth_07_02_terms_open"
+- assertVisible:
+    id: "terms.closeIcon"
+# Swipe inside the modal area to confirm the content is scrollable. We don't
+# attempt to scroll all the way to the bottom Close button — the Terms text
+# is many screens long and the per-step scroll budget is small.
+- swipe:
+    start: 50%, 70%
+    end: 50%, 30%
+
+# Step 3 — tap the X close icon; modal disappears; login surface still
+# functional.
+- tapOn:
+    id: "terms.closeIcon"
+- extendedWaitUntil:
+    notVisible:
+      id: "terms.modal"
+    timeout: 6000
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+- takeScreenshot: "auth_07_03_back_on_login"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"

@@ -1,0 +1,20 @@
+appId: com.sidekick.v2
+name: P17-N01 — Reinstall doesn't reset agent name (unhappy path)
+tags:
+  - persona:P17
+  - upgrade
+  - data-preservation
+  - unhappy-path
+# blocked-reason: needs the app reinstalled mid-flow
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+# Riley was set in the persona setup; it must survive the reinstall.
+- assertVisible:
+    text: ".*Riley.*"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"

@@ -1,0 +1,88 @@
+appId: com.sidekick.v2
+name: FILES-02 — Refresh Files Shows Loading Then Ready
+tags:
+  - files
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: FILES-02 — Refresh Files Shows Loading Then Ready
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). The Files screen's Refresh button (testID
+# `files.refreshButton`) toggles label between "Refresh" and
+# "Refreshing…" while the runner-files endpoint is in flight. After
+# the fetch settles, the label returns to "Refresh" and the runner
+# file list root renders.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Open Files via the bottom tab (faster than going via the menu)
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+- assertVisible:
+    id: "files.runnerFileList"
+- assertVisible:
+    id: "files.refreshButton"
+- assertVisible:
+    text: "Refresh"
+- takeScreenshot: "files_02_01_files_ready"
+
+# Tap Refresh — the button's label flips to "Refreshing…" while the
+# fetch is in flight, then back to "Refresh" on settle. The loading
+# window is often shorter than Maestro's poll cycle (~50ms) when
+# the runner is reachable, so we don't hard-assert that the
+# "Refreshing…" frame is observable; instead we tap twice in quick
+# succession (double-tap-protection via the disabled-during-loading
+# guard at App.tsx:1208) — if the guard works, only one fetch runs
+# and the button settles back to "Refresh" cleanly.
+- doubleTapOn:
+    id: "files.refreshButton"
+
+# After the fetch(es) settle, the label returns to "Refresh" and the
+# runner file list root is still rendered.
+- extendedWaitUntil:
+    visible:
+      text: "Refresh"
+    timeout: 15000
+- assertVisible:
+    text: "Refresh"
+- assertVisible:
+    id: "files.refreshButton"
+- assertVisible:
+    id: "files.runnerFileList"
+- assertNotVisible:
+    text: "Refreshing…"
+- takeScreenshot: "files_02_02_files_ready_again"
+
+# Step 3 — verify a fresh single-tap Refresh also completes cleanly.
+- tapOn:
+    id: "files.refreshButton"
+- extendedWaitUntil:
+    visible:
+      text: "Refresh"
+    timeout: 15000
+- assertVisible:
+    text: "Refresh"
+- assertVisible:
+    id: "files.runnerFileList"
+- takeScreenshot: "files_02_03_after_single_refresh"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "stack trace"
+- assertNotVisible:
+    text: "Traceback"
+- assertNotVisible:
+    text: "10.0.2.2"

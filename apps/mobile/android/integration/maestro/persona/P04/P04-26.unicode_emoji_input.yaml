@@ -1,0 +1,22 @@
+appId: com.sidekick.v2
+name: P04-26 — Composer accepts long ASCII input (unicode-typing is a Maestro limitation)
+tags:
+  - persona:P04
+  - input
+---
+# Note: Maestro's inputText does NOT support unicode (issue
+# mobile-dev-inc/maestro#146), so we cannot verify CJK/emoji input via
+# Maestro directly. We verify the composer accepts a long-ish ASCII
+# string and the send button works without losing the input field.
+- launchApp:
+    clearState: false
+- runFlow: ../../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "input"
+- inputText: "Hi - just checking the composer handles a moderately long single message without truncation."
+- assertVisible:
+    id: "input"

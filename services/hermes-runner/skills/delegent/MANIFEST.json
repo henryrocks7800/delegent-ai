@@ -1,0 +1,741 @@
+{
+  "name": "delegent-hermes-skills-library",
+  "version": "1.0.0",
+  "created": "2026-05-18T22:01:02.097956Z",
+  "format": "SKILL.md folder packages",
+  "count": 33,
+  "skills": [
+    {
+      "slug": "core-client-intake",
+      "title": "Client Intake And Task Scoping",
+      "category": "core",
+      "risk_level": "low",
+      "description": "Use to turn vague user requests into a clear plan, scope, permissions, and deliverables.",
+      "path": "skills/core-client-intake/SKILL.md",
+      "activation_phrases": [
+        "start a project",
+        "help me plan",
+        "what do you need from me",
+        "scope this task"
+      ],
+      "related": [
+        "core-permissions-and-credentials",
+        "core-project-handover"
+      ]
+    },
+    {
+      "slug": "core-permissions-and-credentials",
+      "title": "Permissions, Credentials And API Key Handling",
+      "category": "core",
+      "risk_level": "high",
+      "description": "Use whenever the assistant needs login details, API keys, OAuth access, payment details, or account setup.",
+      "path": "skills/core-permissions-and-credentials/SKILL.md",
+      "activation_phrases": [
+        "api key",
+        "password",
+        "log in",
+        "connect my account",
+        "give you access",
+        "credentials"
+      ],
+      "related": [
+        "security-audit"
+      ]
+    },
+    {
+      "slug": "connected-services",
+      "title": "Using The User's Connected Services",
+      "category": "core",
+      "risk_level": "medium",
+      "description": "Use whenever the user asks you to DO something with a service they connected on the Connections screen - Gmail, Google Calendar, Google Sheets, Google Docs, Notion, Trello, Asana, ClickUp, Google Tasks, Zendesk, Jira, Confluence, OneDrive, HubSpot, Salesforce, Stripe, YouTube, Reddit, LinkedIn, Instagram, Facebook Pages, PDF.co, Freshdesk, Firecrawl, AgentMail, Figma, Shopify, Webflow, QuickBooks, Slack, Google Drive, GitHub, Dropbox, Outlook, Microsoft Teams, FreeAgent. Holds the exact call shapes, and says which of the two commands each service needs, so you never hunt for a command-line tool that does not exist.",
+      "path": "skills/connected-services/SKILL.md",
+      "activation_phrases": [
+        "post to slack",
+        "message my team",
+        "check my slack",
+        "search my slack",
+        "save to my google drive",
+        "what is in my google drive",
+        "my github repos",
+        "my connected accounts",
+        "what am I connected to",
+        "check my outlook",
+        "what is in my inbox",
+        "catch me up on teams",
+        "connect google calendar",
+        "what is on my calendar",
+        "check my calendar",
+        "read my gmail",
+        "check my gmail",
+        "connect gmail",
+        "what is in my gmail",
+        "who owes me money",
+        "connect quickbooks",
+        "check quickbooks",
+        "put this in a google sheet",
+        "add a row to my spreadsheet",
+        "connect google sheets",
+        "read my google sheet",
+        "write this up in a google doc",
+        "connect google docs",
+        "read my google doc",
+        "connect notion",
+        "what is in my notion",
+        "add this to my notion",
+        "read my notion page",
+        "add a row to my notion database",
+        "connect trello",
+        "what is on my trello board",
+        "add a card to trello",
+        "move the trello card",
+        "connect asana",
+        "what is on my plate in asana",
+        "add a task to asana",
+        "complete the asana task",
+        "connect clickup",
+        "what is overdue in clickup",
+        "add a task to clickup",
+        "update the clickup task",
+        "connect google tasks",
+        "what is on my task list",
+        "connect zendesk",
+        "which tickets need me",
+        "connect jira",
+        "what is assigned to me in jira",
+        "connect confluence",
+        "what does our wiki say",
+        "connect onedrive",
+        "find a file in onedrive",
+        "connect hubspot",
+        "which deals have gone quiet",
+        "connect salesforce",
+        "what is in my pipeline",
+        "connect stripe",
+        "what came in this week",
+        "connect youtube",
+        "how did my channel do",
+        "connect reddit",
+        "what are people saying on reddit",
+        "connect linkedin",
+        "draft a linkedin post",
+        "connect instagram",
+        "my instagram comments",
+        "connect facebook",
+        "my facebook page",
+        "connect pdf.co",
+        "convert this pdf",
+        "connect freshdesk",
+        "my freshdesk tickets",
+        "connect firecrawl",
+        "crawl this website",
+        "connect agentmail",
+        "your own inbox",
+        "connect figma",
+        "what is in this figma file",
+        "connect shopify",
+        "what sold this week",
+        "connect webflow",
+        "update my website content"
+      ],
+      "related": [
+        "core-permissions-and-credentials"
+      ]
+    },
+    {
+      "slug": "core-project-handover",
+      "title": "Project Handover And Evidence Pack",
+      "category": "core",
+      "risk_level": "low",
+      "description": "Use at the end of any task to produce a useful handover with evidence, files, blockers, and next steps.",
+      "path": "skills/core-project-handover/SKILL.md",
+      "activation_phrases": [
+        "summarise what you did",
+        "handover",
+        "what changed",
+        "finish this task",
+        "evidence"
+      ],
+      "related": [
+        "core-client-intake"
+      ]
+    },
+    {
+      "slug": "core-time-awareness",
+      "title": "Knowing The Time (dates, clocks and timezones)",
+      "category": "core",
+      "risk_level": "low",
+      "description": "Apply whenever you are about to state a time, date, deadline, or schedule: check the real clock first, use the user's own timezone, and never quote a time that has already passed. Load this for every task that touches 'now', 'today', 'when', a due date, or a scheduled run.",
+      "path": "skills/core-time-awareness/SKILL.md",
+      "activation_phrases": [
+        "what time is it",
+        "what is the date today",
+        "which timezone",
+        "set my timezone",
+        "when does this run",
+        "how long until",
+        "is it too late",
+        "remind me at",
+        "schedule this for"
+      ],
+      "related": [
+        "operations-manager",
+        "new-user-onboarding-coach"
+      ]
+    },
+    {
+      "slug": "autonomous-bookkeeper",
+      "title": "Bookkeeping That Files Into Your Accounting System",
+      "category": "finance",
+      "risk_level": "high",
+      "description": "Use when the user wants receipt processing, bookkeeping, expense categorisation, reconciliation, or VAT prep filed into their accounting tool. Recommends QuickBooks and FreeAgent first, but works with any accounting tool that has an API.",
+      "path": "skills/autonomous-bookkeeper/SKILL.md",
+      "activation_phrases": [
+        "be my accountant",
+        "bookkeeping",
+        "receipts",
+        "reconcile",
+        "expenses",
+        "VAT return",
+        "QuickBooks",
+        "FreeAgent",
+        "Xero"
+      ],
+      "related": [
+        "cashflow-dashboard"
+      ]
+    },
+    {
+      "slug": "cashflow-dashboard",
+      "title": "Cashflow Dashboard And Forecast",
+      "category": "finance",
+      "risk_level": "medium",
+      "description": "Use to build cashflow trackers, simple forecasts, runway views, and monthly business dashboards.",
+      "path": "skills/cashflow-dashboard/SKILL.md",
+      "activation_phrases": [
+        "cashflow",
+        "runway",
+        "dashboard",
+        "forecast",
+        "monthly finances"
+      ],
+      "related": [
+        "spreadsheet-excel"
+      ]
+    },
+    {
+      "slug": "agent-email-inbox",
+      "title": "Agent Mail - Your Agent Gets Its Own Inbox (you own it)",
+      "category": "communications",
+      "risk_level": "medium",
+      "description": "Agent Mail (bring-your-own, user-owned): give the agent its OWN dedicated email inbox that the USER owns. The user creates a brand-new free email for the agent (Gmail or Outlook recommended), turns on 2-step, mints an app password, and connects it; the credential lives encrypted only on that user's runner and the operator holds nothing. Connect is verified with a real IMAP + SMTP login and finishes by sending a proof test message. Prefer over exposing the user's personal mailbox.",
+      "path": "skills/agent-email-inbox/SKILL.md",
+      "activation_phrases": [
+        "agent mail",
+        "give my agent an email",
+        "my agent's own email",
+        "set up email for my agent",
+        "email inbox",
+        "set up email",
+        "assistant inbox",
+        "email account for my agent",
+        "manage my inbox"
+      ],
+      "related": [
+        "customer-support-desk",
+        "core-permissions-and-credentials"
+      ]
+    },
+    {
+      "slug": "phone-concierge-twilio",
+      "title": "Phone Concierge And Call Handling Setup",
+      "category": "communications",
+      "risk_level": "high",
+      "description": "Use when the user wants a business phone number, receptionist, call routing, transcription, or Twilio-style voice workflow.",
+      "path": "skills/phone-concierge-twilio/SKILL.md",
+      "activation_phrases": [
+        "phone concierge",
+        "answer calls",
+        "Twilio",
+        "phone number",
+        "receptionist",
+        "call handling",
+        "set up a phone line"
+      ],
+      "related": [
+        "agent-email-inbox",
+        "core-permissions-and-credentials"
+      ]
+    },
+    {
+      "slug": "customer-support-desk",
+      "title": "Customer Support Desk Operator",
+      "category": "operations",
+      "risk_level": "medium",
+      "description": "Use for support inbox triage, refunds recommendations, customer replies, escalation, and helpdesk workflows.",
+      "path": "skills/customer-support-desk/SKILL.md",
+      "activation_phrases": [
+        "customer support",
+        "helpdesk",
+        "support tickets",
+        "respond to customers",
+        "refund",
+        "complaint"
+      ],
+      "related": [
+        "agent-email-inbox"
+      ]
+    },
+    {
+      "slug": "crm-sales-pipeline",
+      "title": "CRM And Sales Pipeline Assistant",
+      "category": "sales",
+      "risk_level": "medium",
+      "description": "Use for CRM setup, lead tracking, customer follow-ups, meeting notes, pipeline updates, and sales admin.",
+      "path": "skills/crm-sales-pipeline/SKILL.md",
+      "activation_phrases": [
+        "CRM",
+        "sales pipeline",
+        "HubSpot",
+        "Pipedrive",
+        "Salesforce",
+        "leads",
+        "follow-up",
+        "be my sales assistant"
+      ],
+      "related": [
+        "lead-research",
+        "agent-email-inbox"
+      ]
+    },
+    {
+      "slug": "lead-research",
+      "title": "Lead Research And Outreach Prep",
+      "category": "sales",
+      "risk_level": "medium",
+      "description": "Use to research prospects, qualify leads, draft outreach, and prepare CRM-ready records.",
+      "path": "skills/lead-research/SKILL.md",
+      "activation_phrases": [
+        "lead research",
+        "prospecting",
+        "find customers",
+        "outreach",
+        "sales emails",
+        "research some leads"
+      ],
+      "related": [
+        "crm-sales-pipeline"
+      ]
+    },
+    {
+      "slug": "invoice-chasing",
+      "title": "Invoice Chasing And Credit Control",
+      "category": "finance",
+      "risk_level": "medium",
+      "description": "Use for polite overdue invoice follow-up, escalation cadence, and cash collection admin.",
+      "path": "skills/invoice-chasing/SKILL.md",
+      "activation_phrases": [
+        "chase invoices",
+        "late payment",
+        "credit control",
+        "unpaid invoice",
+        "payment reminder"
+      ],
+      "related": [
+        "agent-email-inbox",
+        "cashflow-dashboard"
+      ]
+    },
+    {
+      "slug": "property-income-mtd",
+      "title": "Landlord Tax And Making Tax Digital (MTD)",
+      "category": "finance",
+      "risk_level": "high",
+      "description": "Use to get a landlord's property income and expenses into Making Tax Digital shape: digital records per property, the cumulative quarterly figures, and the deadlines. Prepares the numbers for the user's MTD software or accountant; never files anything with HMRC.",
+      "path": "skills/property-income-mtd/SKILL.md",
+      "activation_phrases": [
+        "making tax digital",
+        "MTD",
+        "landlord tax",
+        "rental income",
+        "property income",
+        "quarterly update",
+        "my rental properties"
+      ],
+      "related": [
+        "autonomous-bookkeeper",
+        "spreadsheet-excel",
+        "file-workspace-manager"
+      ]
+    },
+    {
+      "slug": "website-builder",
+      "title": "Build And Manage Your Website",
+      "category": "development",
+      "risk_level": "medium",
+      "description": "Build a simple NEW website and deploy it live on Firebase Hosting (free), then keep updating it on request. Auth is a Firebase service-account key the user pastes once (generated on a DESKTOP browser); it is stored in the central encrypted vault, never in chat. Every deploy is verified by reading the live URL back before claiming live. Use to build, publish, update, or change a website.",
+      "path": "skills/website-builder/SKILL.md",
+      "activation_phrases": [
+        "build me a website",
+        "create a website",
+        "make me a website",
+        "update my website",
+        "change my site",
+        "make it live",
+        "publish my website",
+        "edit my homepage"
+      ],
+      "related": []
+    },
+    {
+      "slug": "operations-manager",
+      "title": "Be My Operations Manager",
+      "category": "productivity",
+      "risk_level": "high",
+      "description": "Use the moment the user wants the whole picture pulled together or wants you to run things for them: inbox, calendar and tasks in one brief, then act on approval. Umbrella skill that aggregates connected blocks read-only and executes tiered by risk, with approve-before-execute for anything irreversible.",
+      "path": "skills/operations-manager/SKILL.md",
+      "activation_phrases": [
+        "be my operations manager",
+        "run my day",
+        "what needs my attention",
+        "brief me",
+        "manage my operations",
+        "what's on my plate",
+        "sort my day",
+        "get me up to speed"
+      ],
+      "related": [
+        "autonomous-bookkeeper",
+        "website-builder",
+        "core-permissions-and-credentials"
+      ]
+    },
+    {
+      "slug": "database-setup",
+      "title": "Database Setup And Admin",
+      "category": "development",
+      "risk_level": "high",
+      "description": "Use to design, install, configure, migrate, backup, and query databases safely.",
+      "path": "skills/database-setup/SKILL.md",
+      "activation_phrases": [
+        "database",
+        "Postgres",
+        "Supabase",
+        "SQL",
+        "migration",
+        "schema"
+      ],
+      "related": [
+        "security-audit"
+      ]
+    },
+    {
+      "slug": "browser-automation",
+      "title": "Browser Automation And Form Filling",
+      "category": "automation",
+      "risk_level": "high",
+      "description": "Use to automate browser tasks, fill forms, monitor pages, or interact with non-API services while respecting site rules.",
+      "path": "skills/browser-automation/SKILL.md",
+      "activation_phrases": [
+        "browser automation",
+        "fill form",
+        "submit claim",
+        "web portal",
+        "no API",
+        "do a browser task"
+      ],
+      "related": []
+    },
+    {
+      "slug": "security-audit",
+      "title": "Security And Secret Hygiene Audit",
+      "category": "security",
+      "risk_level": "high",
+      "description": "Use to check repos, apps, docs, logs, and public surfaces for secrets, unsafe claims, auth risks, and security gaps.",
+      "path": "skills/security-audit/SKILL.md",
+      "activation_phrases": [
+        "security audit",
+        "secrets",
+        "vulnerability",
+        "safe",
+        "data leak",
+        "privacy audit",
+        "run a security check"
+      ],
+      "related": [
+        "core-permissions-and-credentials"
+      ]
+    },
+    {
+      "slug": "spreadsheet-excel",
+      "title": "Spreadsheet And Excel Builder",
+      "category": "office",
+      "risk_level": "medium",
+      "description": "Use to build spreadsheets, formulas, dashboards, pivot summaries, budgets, trackers, or CSV transformations.",
+      "path": "skills/spreadsheet-excel/SKILL.md",
+      "activation_phrases": [
+        "Excel",
+        "spreadsheet",
+        "CSV",
+        "formula",
+        "dashboard",
+        "pivot table"
+      ],
+      "related": [
+        "cashflow-dashboard"
+      ]
+    },
+    {
+      "slug": "report-writer",
+      "title": "Report Writer And Research Dossier",
+      "category": "office",
+      "risk_level": "medium",
+      "description": "Use to research, structure, draft, cite, and polish reports, briefings, and dossiers.",
+      "path": "skills/report-writer/SKILL.md",
+      "activation_phrases": [
+        "write report",
+        "research",
+        "briefing",
+        "dossier",
+        "summary"
+      ],
+      "related": [
+        "proposal-writer"
+      ]
+    },
+    {
+      "slug": "proposal-writer",
+      "title": "Proposal, Tender And Grant Response Writer",
+      "category": "office",
+      "risk_level": "medium",
+      "description": "Use to draft proposals, tenders, grant responses, scopes of work, and client pitches.",
+      "path": "skills/proposal-writer/SKILL.md",
+      "activation_phrases": [
+        "proposal",
+        "tender",
+        "grant",
+        "scope of work",
+        "RFP",
+        "bid"
+      ],
+      "related": [
+        "report-writer"
+      ]
+    },
+    {
+      "slug": "workflow-automation",
+      "title": "Workflow Automation Designer",
+      "category": "automation",
+      "risk_level": "medium",
+      "description": "Use to map business processes, identify automation points, and build API/browser/file-based workflows.",
+      "path": "skills/workflow-automation/SKILL.md",
+      "activation_phrases": [
+        "automate this",
+        "workflow",
+        "SOP",
+        "process",
+        "make this automatic",
+        "set up a workflow"
+      ],
+      "related": [
+        "browser-automation"
+      ]
+    },
+    {
+      "slug": "file-workspace-manager",
+      "title": "Cloud Workspace And File Manager",
+      "category": "files",
+      "risk_level": "medium",
+      "description": "Use to organise the assistant's cloud workspace, folders, generated files, downloads, and user-provided documents.",
+      "path": "skills/file-workspace-manager/SKILL.md",
+      "activation_phrases": [
+        "files",
+        "folder",
+        "workspace",
+        "save this",
+        "home directory",
+        "organise documents"
+      ],
+      "related": [
+        "website-builder"
+      ]
+    },
+    {
+      "slug": "social-content-marketing",
+      "title": "Social Content And Marketing Operator",
+      "category": "marketing",
+      "risk_level": "medium",
+      "description": "Use to draft posts, newsletters, blogs, campaign plans, and content calendars.",
+      "path": "skills/social-content-marketing/SKILL.md",
+      "activation_phrases": [
+        "social media",
+        "marketing",
+        "blog",
+        "newsletter",
+        "LinkedIn",
+        "content calendar"
+      ],
+      "related": []
+    },
+    {
+      "slug": "voice-note-triage",
+      "title": "Voice Note Triage",
+      "category": "communications",
+      "risk_level": "medium",
+      "description": "Use to turn voice notes/transcripts into tasks, summaries, draft replies, and action plans.",
+      "path": "skills/voice-note-triage/SKILL.md",
+      "activation_phrases": [
+        "voice note",
+        "transcribe",
+        "audio summary",
+        "dictation",
+        "what did I say"
+      ],
+      "related": [
+        "agent-email-inbox"
+      ]
+    },
+    {
+      "slug": "procurement-supplier-manager",
+      "title": "Procurement And Supplier Manager",
+      "category": "operations",
+      "risk_level": "medium",
+      "description": "Use to compare suppliers, request quotes, track purchase orders, and manage vendor follow-ups.",
+      "path": "skills/procurement-supplier-manager/SKILL.md",
+      "activation_phrases": [
+        "supplier",
+        "procurement",
+        "purchase order",
+        "quote",
+        "vendor",
+        "manage my suppliers"
+      ],
+      "related": [
+        "agent-email-inbox"
+      ]
+    },
+    {
+      "slug": "new-user-onboarding-coach",
+      "title": "New User Onboarding Coach",
+      "category": "delegent",
+      "risk_level": "low",
+      "description": "Use to help a new Delegent user understand their assistant, workspace, plans, limits, files, and safe first tasks.",
+      "path": "skills/new-user-onboarding-coach/SKILL.md",
+      "activation_phrases": [
+        "how do I use this",
+        "get started",
+        "new user",
+        "onboarding",
+        "what can you do"
+      ],
+      "related": [
+        "core-client-intake",
+        "file-workspace-manager"
+      ]
+    },
+    {
+      "slug": "monthly-capacity-advisor",
+      "title": "Monthly Capacity And Upgrade Advisor",
+      "category": "delegent",
+      "risk_level": "medium",
+      "description": "Use when a user asks about monthly capacity, token usage, plan limits, near-limit warnings, or upgrading.",
+      "path": "skills/monthly-capacity-advisor/SKILL.md",
+      "activation_phrases": [
+        "monthly capacity",
+        "tokens",
+        "usage",
+        "limit",
+        "upgrade plan",
+        "quota"
+      ],
+      "related": [
+        "autonomous-bookkeeper"
+      ]
+    },
+    {
+      "slug": "plan-upgrade-advisor",
+      "title": "Plan Upgrade And Billing Guide",
+      "category": "delegent",
+      "risk_level": "medium",
+      "description": "Use to explain Studio, Pro Office, Enterprise, billing management, proration, cancellation, and capacity choices.",
+      "path": "skills/plan-upgrade-advisor/SKILL.md",
+      "activation_phrases": [
+        "which plan",
+        "upgrade",
+        "downgrade",
+        "billing",
+        "cancel subscription",
+        "pricing"
+      ],
+      "related": [
+        "monthly-capacity-advisor"
+      ]
+    },
+    {
+      "slug": "hermes-agent-skill-builder",
+      "title": "Hermes Agent Skill Builder",
+      "category": "meta",
+      "risk_level": "medium",
+      "description": "Use when the user wants to create, refine, package, or audit a new skill for the Hermes/Delegent agent.",
+      "path": "skills/hermes-agent-skill-builder/SKILL.md",
+      "activation_phrases": [
+        "create a skill",
+        "skill library",
+        "SKILL.md",
+        "teach the agent",
+        "new workflow"
+      ],
+      "related": [
+        "core-client-intake",
+        "security-audit"
+      ]
+    },
+    {
+      "slug": "pdf-document-creation",
+      "title": "PDF Documents And Forms (create and fill)",
+      "category": "office",
+      "risk_level": "low",
+      "description": "The single PDF skill: create polished PDFs (invoices, quotes, receipts, statements, letters, reports) AND fill an existing PDF form reliably, keeping the real form-field values editable and screen-reader friendly while also baking the visible text into the page so it prints everywhere.",
+      "path": "skills/pdf-document-creation/SKILL.md",
+      "activation_phrases": [
+        "make a PDF",
+        "create a PDF invoice",
+        "PDF invoice",
+        "generate a PDF",
+        "PDF report",
+        "save as PDF",
+        "export to PDF",
+        "fill a PDF form",
+        "fill in this PDF",
+        "fill out the PDF",
+        "complete this PDF form",
+        "PDF form",
+        "edit a PDF",
+        "read this scan"
+      ],
+      "related": [
+        "report-writer",
+        "autonomous-bookkeeper",
+        "spreadsheet-excel"
+      ]
+    },
+    {
+      "slug": "connect-telegram",
+      "title": "Connect Telegram",
+      "category": "delegent",
+      "risk_level": "low",
+      "description": "Use to walk the user through linking their Telegram account so they can chat with you from Telegram as well as the app.",
+      "path": "skills/connect-telegram/SKILL.md",
+      "activation_phrases": [
+        "connect telegram",
+        "set up telegram",
+        "link telegram",
+        "use telegram",
+        "message you on telegram",
+        "talk to you on telegram"
+      ],
+      "related": [
+        "new-user-onboarding-coach"
+      ]
+    }
+  ]
+}

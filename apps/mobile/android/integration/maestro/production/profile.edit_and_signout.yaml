@@ -1,0 +1,46 @@
+appId: com.sidekick.v2
+name: Production - Profile edit and sign out
+---
+# Profile shows the account, its allowance and the three actions (edit,
+# manage plan, sign out); Edit profile opens the name fields and Cancel closes
+# them again without saving anything. Signing out itself is
+# session.restore_and_signout's job, so this flow leaves the session alone.
+#
+# 2026-09-28: the edit toggle has a test id now (profile.editToggle), so the
+# editing fields are checked instead of parked; the allowance card is
+# profile.agentAllowance on the agent engine.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.editToggle"
+    timeout: 15000
+- takeScreenshot: "production_profile_edit_and_signout_01"
+- assertVisible:
+    id: "profile.managePlanButton"
+- assertVisible:
+    id: "profile.signOutButton"
+- assertVisible:
+    text: "Edit profile"
+- tapOn:
+    id: "profile.editToggle"
+- extendedWaitUntil:
+    visible:
+      id: "profile.displayNameInput"
+    timeout: 10000
+- assertVisible:
+    id: "profile.agentNameInput"
+- takeScreenshot: "production_profile_edit_and_signout_02_editing"
+- tapOn:
+    id: "profile.editToggle"
+- assertNotVisible:
+    id: "profile.displayNameInput"
+- scrollUntilVisible:
+    element:
+      id: "profile.agentAllowance"
+    direction: DOWN
+- assertNotVisible:
+    text: "raw provider|runner URL|service role"

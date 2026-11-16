@@ -1,0 +1,115 @@
+appId: com.sidekick.v2
+name: MAIN-EVENT-02 — Real Runner Creates File and Files Tab Shows It
+tags:
+  - main-event
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: MAIN-EVENT-02 — Real Runner Creates File and Files Tab Shows It
+#
+# The second half of the main-event journey: chat → real Fly runner →
+# runner uses its file-write tool to materialise a known text file on
+# the runner's filesystem → Files tab shows the file → contents
+# verified.
+#
+# Builds directly on MAIN-EVENT-01 (which proved chat → reply works).
+# Same pre-step (sign in as qa@example.com via
+# sign-in-via-admin-link.mjs, NO seed mutation).
+#
+# Echo tokens are random alphanumeric strings to defeat Android's
+# keyboard auto-suggest substitution. The first MAIN-EVENT-02 run
+# observed the previously-typed token "DELEGENT-MAINEVT-ACK-NOW"
+# being auto-substituted in place of the new "DELEGENT-MAINEVT-FILE-..."
+# tokens — the keyboard learned the earlier phrase and offered it
+# as a suggestion that Maestro's per-char typing then accepted.
+#
+# Tokens used to scope assertions to THIS run's output:
+#   - File name:  rplzk8c1npgy.txt   (lowercase, no English words)
+#   - File body:  RPLZK8C1NPGY-BODY
+#   - Ack token:  RPLZK8C1NPGY-DONE  (in the assistant reply after
+#                 the tool call completes)
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "main_event_02_01_chat_home"
+
+# Step 1 — give the runner a deterministic file-write task.
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "Task: write a small text file in your home directory called rplzk8c1npgy.txt containing exactly the line RPLZK8C1NPGY-BODY and nothing else. After the file is saved reply with ONLY the literal token RPLZK8C1NPGY-DONE and no other text."
+- hideKeyboard
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Step 2 — wait for the runner to confirm completion via the
+# unique ack token. File-write tool calls add roughly 10-30s on top
+# of the LLM reply window; budget 180s for cold-start + tool round
+# trip + LLM reply.
+- extendedWaitUntil:
+    visible:
+      text: ".*RPLZK8C1NPGY-DONE.*"
+    timeout: 180000
+- assertVisible:
+    text: ".*RPLZK8C1NPGY-DONE.*"
+- assertVisible:
+    id: "home.chatPanel.message.assistant"
+- takeScreenshot: "main_event_02_02_file_done_ack"
+
+# Step 3 — switch to Files. The runner-files endpoint re-fetches
+# on tab focus; the file we just asked the runner to write should
+# appear within a single Refresh cycle. Try one Refresh tap to
+# nudge if needed.
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+- tapOn:
+    id: "files.refreshButton"
+- extendedWaitUntil:
+    visible:
+      text: "Refresh"
+    timeout: 30000
+
+# Step 4 — assert the file name appears in the file list. This is
+# the proof the runner's filesystem write made it back through the
+# Worker proxy into the app's runner-files response.
+- extendedWaitUntil:
+    visible:
+      text: ".*rplzk8c1npgy\\.txt.*"
+    timeout: 30000
+- assertVisible:
+    text: ".*rplzk8c1npgy\\.txt.*"
+- takeScreenshot: "main_event_02_03_file_listed"
+
+# Step 5 — tap the file card to preview. The preview body should
+# carry our marker line.
+- tapOn:
+    text: ".*rplzk8c1npgy\\.txt.*"
+- extendedWaitUntil:
+    visible:
+      text: ".*RPLZK8C1NPGY-BODY.*"
+    timeout: 15000
+- assertVisible:
+    text: ".*RPLZK8C1NPGY-BODY.*"
+- takeScreenshot: "main_event_02_04_file_preview"
+
+# No provider/internal leaks anywhere on Files surface.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"
+- assertNotVisible:
+    text: "stack trace"
+- assertNotVisible:
+    text: "Traceback"

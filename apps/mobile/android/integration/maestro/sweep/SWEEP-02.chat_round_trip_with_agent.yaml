@@ -1,0 +1,79 @@
+appId: com.sidekick.v2
+name: 'SWEEP-02 - Chat sends to the agent and a real reply comes back'
+tags:
+  - sweep
+  - live-only
+# blocked-reason: iOS cloud sweep: signs in with a session minted outside the app (MAESTRO_ACCESS_TOKEN); runs in the EAS Maestro workflow
+---
+# The product's whole point, exercised end to end: type, send, and get a real
+# answer back from the live agent through the Worker and the per-user runner.
+#
+# Alex authorised talking to his agent as much as needed rather than testing
+# around it, on the grounds that a limited test misses bugs. So this sends a
+# real message and waits for a real reply. The message is self-identifying,
+# harmless and answerable without tools, so it cannot start real work in his
+# workspace and anyone reading the transcript later sees instantly why it is
+# there.
+#
+# ⚠️ THE CHAT IS A WEBVIEW, and this cost the first version of this flow.
+# App.tsx carries testIDs like `home.chatPanel.input` and
+# `home.chatPanel.sendButton` INSIDE A COMMENT BLOCK (around line 220): they
+# document the deleted native chat, which was removed on 2026-06-10, and no
+# such element exists at runtime. The live composer is an HTML
+# `<textarea id="input">` inside the WebView, unreachable by native testID.
+#
+# So this drives the WebView the only way native automation can: by the text
+# WKWebView publishes to the accessibility tree. That is also a fair proxy for
+# what a screen-reader user can reach, so a failure here is worth knowing about
+# for two reasons.
+- runFlow: ../sweep-shared/signin.yaml
+
+- tapOn:
+    id: 'tab.dashboard'
+- extendedWaitUntil:
+    visible:
+      id: 'home.chatPanel'
+    timeout: 30000
+- takeScreenshot: 'sweep_02_01_chat_open'
+
+# The composer placeholder names the agent, so its presence proves the WebView
+# booted, took its init payload and rendered against the real account rather
+# than sitting blank.
+- extendedWaitUntil:
+    visible:
+      text: '.*Message.*'
+    timeout: 60000
+- takeScreenshot: 'sweep_02_02_composer_ready'
+
+- tapOn:
+    text: '.*Message.*'
+- inputText: 'Automated iOS test. Please reply with the single word ACKNOWLEDGED and do no other work.'
+- takeScreenshot: 'sweep_02_03_typed'
+
+# NO hideKeyboard here. The composer is an HTML textarea inside a WebView and
+# exposes no standard dismiss action, so Maestro fails with "Couldn't hide the
+# keyboard". Tapping send directly works with the keyboard still up.
+#
+# The send button had NO aria-label until 2026-08-13: it was the only control in
+# the toolbar without one, which made it invisible to this test AND unreadable
+# to a screen reader. Labelling it fixed both at once.
+- tapOn:
+    text: 'Send message'
+- takeScreenshot: 'sweep_02_04_sent'
+
+# A real reply must come back. Generous budget because the runner may be cold
+# starting, which is a known characteristic and not a defect. No reply at all
+# still fails.
+- extendedWaitUntil:
+    visible:
+      text: '.*ACKNOWLEDGED.*'
+    timeout: 240000
+- takeScreenshot: 'sweep_02_05_replied'
+
+# It must be a reply, not an error card wearing one's clothes.
+- assertNotVisible:
+    text: '.*Something went wrong.*'
+- assertNotVisible:
+    text: '.*service_role.*'
+- assertNotVisible:
+    text: '.*Traceback.*'

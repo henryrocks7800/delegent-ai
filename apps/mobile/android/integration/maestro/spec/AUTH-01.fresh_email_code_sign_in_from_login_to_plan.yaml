@@ -1,0 +1,129 @@
+appId: com.sidekick.v2
+name: 'AUTH-01 — Fresh Email Code Sign-In, From Login to Plan'
+tags:
+  - auth
+  - live-only
+env:
+  TEST_EMAIL: ${MAESTRO_TEST_EMAIL}
+  SUPABASE_URL: ${SUPABASE_URL}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+# blocked-reason: needs to read a sign-in code from the test inbox mid-flow, which the pack cannot do
+---
+# ============================================================================
+# Spec ID: AUTH-01
+# Friendly name: Fresh Email Code Sign-In: From Login to Plan
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. The release-gate Maestro run does NOT include this flow.
+# A live-test pipeline runs it with these env vars:
+#   MAESTRO_TEST_EMAIL — a fresh test address Supabase has no user for
+#   MAESTRO_TEST_OTP   — the actual code minted by Supabase for that email
+# The outer harness mints the OTP via `node scripts/sign-in-via-admin-link.mjs`
+# (which already exists in this repo) or its sibling that captures the email
+# body. Without those vars, this flow is skipped — there is no way to
+# fake-pass it.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Missing as a single composed user journey.
+# **Precondition:** Fresh signed-out app, test email can receive/read the OTP,
+# user has no completed onboarding or subscription.
+#
+# **Flow and assertions:**
+# 1. Login screen — assert wordmark + Google + email field + email submit
+#    + Terms + Privacy visible; type email; submit.
+# 2. Email code requested — assert exact-email copy, resend cooldown,
+#    OTP input + verify visible.
+# 3. OTP entry — enter the real code; tap Sign in; login screen must leave.
+# 4. First authenticated screen — "Name your coworker" if unonboarded, or
+#    "Pick a plan, meet your coworker" if onboarded-but-unsubscribed.
+#
+# **Backend/provider assertions:** Supabase user exists; session is real;
+# no service-role/private fields visible.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- takeScreenshot: "auth_01_01_login_visible"
+
+# Step 1 — Login screen assertions
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+- assertVisible:
+    text: "Continue with email"
+- assertVisible:
+    text: "Continue with Google"
+
+# OTP UI must NOT be present before submit
+- assertNotVisible:
+    id: "login.emailOtpInput"
+- assertNotVisible:
+    id: "login.emailOtpVerify"
+
+# Type the email and tap submit
+- tapOn:
+    id: "login.emailInput"
+- inputText: ${TEST_EMAIL}
+- hideKeyboard
+- takeScreenshot: "auth_01_02_email_typed"
+- tapOn:
+    id: "login.emailSubmit"
+
+# Step 2 — Email code requested state
+- extendedWaitUntil:
+    visible:
+      id: "login.emailOtpInput"
+    timeout: 15000
+- takeScreenshot: "auth_01_03_otp_input_visible"
+- assertVisible:
+    id: "login.emailOtpInput"
+- assertVisible:
+    id: "login.emailOtpVerify"
+- assertVisible:
+    id: "login.emailStatus"
+# Resend should now be cooldown, not the original CTA.
+- assertNotVisible:
+    text: "Email me a sign-in code"
+
+# Step 3 — mint a fresh OTP via Supabase admin generate_link (this supersedes
+# the OTP the app's signInWithOtp call emailed and we can't read), then type
+# it into the OTP input and verify.
+- runScript: mint_otp.js
+- assertTrue: ${output.mintError === ''}
+- tapOn:
+    id: "login.emailOtpInput"
+- inputText: ${output.otp}
+- hideKeyboard
+- takeScreenshot: "auth_01_04_otp_entered"
+- tapOn:
+    id: "login.emailOtpVerify"
+
+# Step 4 — first authenticated screen. After a successful sign-in the
+# login screen MUST disappear. We use positive `id:` matches and a
+# strict "login is gone" check — not a broad regex — so a stuck-on-login
+# state will fail the flow.
+- extendedWaitUntil:
+    notVisible:
+      id: "login.googleButton"
+    timeout: 20000
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "login.emailInput"
+- takeScreenshot: "auth_01_05_post_auth"
+
+# Backend-derived leak assertions (UI-visible side of the spec rule)
+- assertNotVisible:
+    text: "service role"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"
+- assertNotVisible:
+    text: "runner URL"

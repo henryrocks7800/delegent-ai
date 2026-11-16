@@ -1,0 +1,109 @@
+appId: com.sidekick.v2
+name: FILES-04 — Storage Not Ready Still Looks Friendly
+tags:
+  - files
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: FILES-04 — Storage Not Ready Still Looks Friendly
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). The seeded runner has a STUB base_url
+# (http://10.0.2.2:9999/runner-stub) that the Worker proxy cannot
+# reach — the runner files endpoint will surface an unavailable
+# state through the App's RunnerFiles state machine. The user-facing
+# contract: friendly copy, no crash, no provider internals leaked.
+#
+# This is the closest live test of FILES-04's "not_ready" path
+# without a real runner OR an instrumented fixture that lets us pin
+# the response to `storageStatus: 'not_ready'` specifically. The
+# difference between the runner-unavailable error and the
+# runner-storage-not-ready state is a copy variant — both must be
+# friendly and both must hide provider internals. Logged in
+# BATCH-5-REPORT.md as a follow-up: real `not_ready` payload would
+# need a runner instrumentation fixture.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Open Files
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+- assertVisible:
+    id: "files.runnerFileList"
+- takeScreenshot: "files_04_01_files_open"
+
+# The runner's stub base_url is unreachable, so the refresh fires
+# the friendly-copy path. We tolerate either the "Files didn't
+# refresh" error-card variant OR the "still coming online" not_ready
+# variant (the runner contract permits either depending on whether
+# the Worker proxy reports 'unavailable' or pin-aligns the response
+# to 'not_ready'). Either way, the user sees a friendly state and
+# the Refresh button stays reachable.
+- tapOn:
+    id: "files.refreshButton"
+- extendedWaitUntil:
+    visible:
+      id: "files.refreshButton"
+    timeout: 30000
+- assertVisible:
+    id: "files.refreshButton"
+- takeScreenshot: "files_04_02_after_refresh"
+
+# Hard contract assertions: NO crash, NO provider/internal leak text
+# anywhere on the screen — regardless of which friendly-copy variant
+# fired.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"
+- assertNotVisible:
+    text: "anon key"
+- assertNotVisible:
+    text: "Railway"
+- assertNotVisible:
+    text: "Cloudflare"
+- assertNotVisible:
+    text: "OpenRouter"
+- assertNotVisible:
+    text: "Hermes"
+- assertNotVisible:
+    text: "runner-stub"
+- assertNotVisible:
+    text: "10.0.2.2"
+- assertNotVisible:
+    text: "stack trace"
+- assertNotVisible:
+    text: "Traceback"
+- assertNotVisible:
+    text: "TypeError"
+- assertNotVisible:
+    text: "fetch failed"
+- assertNotVisible:
+    text: "ECONNREFUSED"
+
+# The runner files area is still rendered (the screen didn't blank
+# out into a raw error wall) — the user can still reach the
+# authenticated shell (header.profileButton + main-menu-button +
+# both tabs).
+- assertVisible:
+    id: "files.runnerFileList"
+- assertVisible:
+    id: "header.profileButton"
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "tab.artifacts"
+- assertVisible:
+    id: "tab.dashboard"
+- takeScreenshot: "files_04_03_shell_intact"

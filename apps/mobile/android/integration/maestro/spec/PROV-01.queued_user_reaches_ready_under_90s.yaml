@@ -1,0 +1,68 @@
+appId: com.sidekick.v2
+name: PROV-01 — A paying user with status=queued reaches Online within 90 s
+tags:
+  - provisioning
+  - cron
+  - blocked
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+# Spec source: docs/architecture/SYSTEM_ARCHITECTURE.md §6 step 14
+# ("Cron tick — every few minutes") and §6 step 19 ("status is ready").
+# The architecture's measured cold-provision budget is 100-135 s (raised from
+# a never-met 30-90 s on 2026-08-16; see R-PROV-05). NOTE: the 90 s timeouts
+# below are NOT that budget and were deliberately left alone - the runner
+# lane (cron-provisioning-emulator-observed.sh) already blocks until
+# status=ready before invoking this flow, so these measure UI settle time
+# only. The filename still says under_90s for historical continuity; the
+# shell lane and PARITY_MATRIX both reference that exact path.
+# This flow holds
+# the user-visible side of that contract.
+#
+# Preconditions (run via scripts/regression/cron-provisioning-emulator-observed.sh):
+#   1. The target test user is signed in on the emulator.
+#   2. The user has an active Stripe subscription in Supabase.
+#   3. hermes_instances row is in `status=queued` with a non-null
+#      provisioning_requested_at (the harness enqueues this directly).
+#   4. The harness invokes `npm run series4:provision-once` AFTER the flow
+#      starts, so the assertion below proves the path: queued -> claimed
+#      -> Fly create -> /healthz -> mobile observes Online.
+#
+# Defect this regression-guards: J3 in OPERATIONS_TRACKER.md. Before the
+# 2026-05-21 defect hunt, every paying user sat at `queued` forever
+# because no scheduler was deployed. None of the 700+ existing tests
+# caught it because they all stub the provider/store in-process.
+
+- launchApp:
+    clearState: false
+
+# Wait up to 90 s for the chat panel to land. This proves the user
+# reached the authenticated shell at all (auth + subscription gates).
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 90000
+
+# The header status pill text is the user-facing signal that the
+# provisioner completed. Architecture §6 step 19 → "Online pill, chat
+# surface unlocks". The label is short and stable across copy passes,
+# so we anchor on the literal "Online" text below the agent name.
+- extendedWaitUntil:
+    visible:
+      text: "Online"
+    timeout: 90000
+
+- takeScreenshot: "prov_01_online_pill_visible"
+
+# Hard-block the failure shapes we don't want to silently regress to:
+- assertNotVisible:
+    text: "Preparing your workspace|Workspace coming online|Still setting up|queued"
+- assertNotVisible:
+    text: "Hermes|runner|machine|container|Cloudflare|Fly|Supabase|OpenRouter"
+
+# Belt + braces: the composer must be unlocked (not disabled while
+# "preparing"), because the architecture says the user can send a
+# message the moment status flips to ready.
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertVisible:
+    id: "home.chatPanel.micButton"

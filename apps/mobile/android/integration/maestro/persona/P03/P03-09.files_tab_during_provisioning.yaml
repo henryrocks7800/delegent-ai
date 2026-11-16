@@ -1,0 +1,26 @@
+appId: com.sidekick.v2
+name: P03-09 - Files tab during provisioning shows still-coming-online copy
+tags:
+  - persona:P03
+  - provisioning
+  - files
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.filesRow"
+    timeout: 4000
+- tapOn:
+    id: "menu.filesRow"
+- extendedWaitUntil:
+    visible:
+      text: ".*coming online.*|.*Setting up.*|.*Preparing.*|.*Workspace.*"
+    timeout: 10000

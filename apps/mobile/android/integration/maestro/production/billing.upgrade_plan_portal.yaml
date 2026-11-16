@@ -1,0 +1,29 @@
+appId: com.sidekick.v2
+name: Production - upgrade and portal
+---
+# Profile's "Manage plan" opens the plan inside the app, never the Stripe
+# portal: the portal is cancel-only, so an upgrade path that led there could
+# not upgrade (defects D3/D6). Cancelling is its own button and is not pressed.
+#
+# 2026-09-28: rewritten; this flow used to follow "Manage plan" into Chrome.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.managePlanButton"
+    timeout: 30000
+- takeScreenshot: "production_billing_upgrade_plan_portal_01"
+- tapOn:
+    id: "profile.managePlanButton"
+- extendedWaitUntil:
+    visible:
+      text: "Monthly allowance"
+    timeout: 20000
+- takeScreenshot: "production_billing_upgrade_plan_portal_02"
+- assertNotVisible:
+    text: "CURRENT SUBSCRIPTION|BILLING INFORMATION|checkout.stripe.com|billing.stripe.com"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

@@ -1,0 +1,57 @@
+appId: com.sidekick.v2
+name: CHAT-13 — Send And Reply Keep Newest Bubble Visible
+tags:
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-13 — Send And Reply Keep Newest Bubble Visible
+# Source of truth: DN1.4-04 (Batch 7 — chat bubble clip + bottom-pin
+# regression).
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# At the bottom of the chat, a sent message and then its reply are each on
+# screen when they land, and the composer is never pushed off the bottom.
+# CHAT-09 covers the other branch (scrolled up, never yanked back).
+#
+# 2026-09-28: rewritten for the WebView chat; bubbles are matched by their
+# text (they have no Android ids), and the probe asks for one known word so
+# the reply can be recognised.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 1 — send a recognisable probe.
+- tapOn:
+    id: "input"
+- inputText: "CHAT13 probe: reply with only the word LEMON."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+
+# Step 2 — the new bubble is on screen straight away.
+- extendedWaitUntil:
+    visible:
+      text: "CHAT13 probe: reply with only the word LEMON\\."
+    timeout: 15000
+- takeScreenshot: "chat_13_01_user_bubble_visible_after_send"
+- assertVisible:
+    id: "input"
+
+# Step 3 — the reply is on screen when it lands, composer still in place.
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*lemon\\W*"
+    timeout: 120000
+- takeScreenshot: "chat_13_02_assistant_bubble_visible_after_reply"
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "sendBtn"
+
+# Step 4 — leak guards. Provider-specific phrases only: bare "Worker" or
+# "Fly" would hit "coworker" and "fly through".
+- assertNotVisible:
+    text: "service_role|.*Hermes Agent.*|.*hermes_instances.*|.*OpenRouter.*|.*Cloudflare Worker.*|.*Worker URL.*|.*Traceback.*|.*HTTP 502.*"
+- takeScreenshot: "chat_13_03_composer_still_visible_after_reply"

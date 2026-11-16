@@ -1,0 +1,43 @@
+appId: com.sidekick.v2
+name: EDGE-BACK-01 — Android Back From Menu Returns to Chat
+tags:
+  - edge
+  - live-only
+---
+# ============================================================================
+# Spec ID: EDGE-BACK-01 — Android Back From Menu Returns to Chat
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# With the menu open, Android Back closes it onto the chat, composer intact,
+# and never signs the person out or leaves the app.
+#
+# 2026-09-28: waits on the menu's first row and the chat's element ids; the
+# greeting and menu texts it used to wait for ("What shall we build",
+# "Monthly capacity") are gone.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 15000
+- takeScreenshot: "edge_back_01_drawer_open"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 10000
+- takeScreenshot: "edge_back_01_after_back"
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "attachBtn"
+- assertNotVisible:
+    id: "menu.homeRow"
+- assertNotVisible:
+    text: "Continue with Google"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

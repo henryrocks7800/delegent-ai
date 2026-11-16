@@ -1,0 +1,97 @@
+appId: com.sidekick.v2
+name: 'SWEEP-03 - Files and Profile screens load, expand and edit-toggle'
+tags:
+  - sweep
+  - live-only
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# The other two tabs. Read-mostly by design: this opens, expands and inspects,
+# and it toggles Edit on the profile WITHOUT saving, so nothing about Alex's
+# real account is changed by a test run.
+# Self-sufficient: the cloud runner neither preserves state between flows nor
+# runs them in listed order, so this signs in for itself. See sweep-shared.
+- runFlow: ../sweep-shared/signin.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'tab.artifacts'
+    timeout: 60000
+
+# --- Files ------------------------------------------------------------------
+- tapOn:
+    id: 'tab.artifacts'
+- extendedWaitUntil:
+    visible:
+      id: 'files.runnerFileList'
+    timeout: 60000
+- takeScreenshot: 'sweep_03_01_files'
+
+# The list must resolve to real content, not sit on an error card.
+- assertNotVisible:
+    text: ".*Files didn't refresh.*"
+- assertVisible:
+    id: 'files.refreshButton'
+
+# Refresh is a button a user will press, so press it.
+- tapOn:
+    id: 'files.refreshButton'
+- extendedWaitUntil:
+    visible:
+      id: 'files.runnerFileList'
+    timeout: 60000
+- takeScreenshot: 'sweep_03_02_files_refreshed'
+
+# Expanding a folder is the main interaction on this screen.
+- runFlow:
+    when:
+      visible:
+        id: 'files.collapseToggle'
+    commands:
+      - tapOn:
+          id: 'files.collapseToggle'
+      - takeScreenshot: 'sweep_03_03_files_toggled'
+
+# --- Profile ----------------------------------------------------------------
+# Reached from the header avatar, which is itself a control worth clicking.
+- tapOn:
+    id: 'header.profileButton'
+- extendedWaitUntil:
+    visible:
+      id: 'profile.editToggle'
+    timeout: 30000
+- takeScreenshot: 'sweep_03_04_profile'
+
+# The plan card must state something real, and Manage plan must be present.
+- assertVisible:
+    id: 'profile.capacityCard'
+- assertVisible:
+    id: 'profile.managePlanButton'
+
+# Toggle edit mode on and straight back off. The inputs must appear, proving
+# the control works, and nothing is saved.
+- tapOn:
+    id: 'profile.editToggle'
+- extendedWaitUntil:
+    visible:
+      id: 'profile.displayNameInput'
+    timeout: 20000
+- assertVisible:
+    id: 'profile.agentNameInput'
+- takeScreenshot: 'sweep_03_05_profile_editing'
+- tapOn:
+    id: 'profile.editToggle'
+- takeScreenshot: 'sweep_03_06_profile_closed'
+
+# Back to chat, and the shell must still be intact after all of that.
+- tapOn:
+    id: 'tab.dashboard'
+- extendedWaitUntil:
+    visible:
+      id: 'home.chatPanel'
+    timeout: 30000
+
+- assertNotVisible:
+    text: '.*service_role.*'
+- assertNotVisible:
+    text: '.*Traceback.*'
+- assertNotVisible:
+    text: '.*undefined.*'

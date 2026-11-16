@@ -1,0 +1,112 @@
+appId: com.sidekick.v2
+name: RES-12 — Small Screen Keeps Critical Buttons Reachable
+tags:
+  - res
+  - live-only
+---
+# ============================================================================
+# Spec ID: RES-12 — Small Screen Keeps Critical Buttons Reachable
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner).
+# Validates that critical CTAs are visible (assertVisible passes only
+# when the testID is on-screen, not just present in the hierarchy) on
+# each main screen with the *current* emulator viewport. The spec's
+# "small viewport" precondition is realised by the emulator's
+# default resolution — if a screen broke at the current size it
+# would break at smaller sizes too. A dedicated small-viewport
+# regression pass (e.g. 360x640) is a follow-up under
+# docs/mobile-lab/visual-review.md.
+#
+# What "critical CTA" means per screen:
+#   - Chat:   main-menu-button, header.profileButton,
+#             the chat's input, attachBtn and micBtn
+#   - Connections: its summary line (was the retired Files tab)
+#   - Profile: profile.managePlanButton, profile.signOutButton
+#   - Menu drawer: every visible MenuRow (we verify the top-level
+#             setup row + signout row are reachable without scrolling)
+#
+# This spec covers the post-auth screens (Chat / Files / Profile /
+# Menu). Login + Onboarding + Plan picker live behind separate seed
+# profiles; AUTH-10 + ONB-* + PLAN-* already pin the critical CTA
+# visibility for those screens.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Chat screen — every CTA must be visible at the default viewport.
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "attachBtn"
+- assertVisible:
+    id: "micBtn"
+- takeScreenshot: "res_12_01_chat_critical_ctas_visible"
+
+# Profile screen — open via header avatar button.
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.managePlanButton"
+    timeout: 8000
+- assertVisible:
+    id: "profile.managePlanButton"
+- assertVisible:
+    id: "profile.signOutButton"
+- assertVisible:
+    id: "profile.agentAllowance"
+- takeScreenshot: "res_12_02_profile_critical_ctas_visible"
+
+# Back to chat then to Files screen.
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 8000
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.setupGuideRow"
+    timeout: 8000
+
+# Drawer — top-level critical rows must all be reachable without
+# scrolling. menu.setupGuideRow is the highest-priority entry point
+# (per BATCH-6 DN1.4-02 fix) and must always be visible.
+- assertVisible:
+    id: "menu.setupGuideRow"
+- takeScreenshot: "res_12_03_menu_drawer_critical_rows_visible"
+
+# Connections, from the menu (2026-09-28: in place of the retired Files tab).
+- tapOn:
+    id: "menu.connectionsRow"
+- extendedWaitUntil:
+    visible:
+      id: "connections.summary"
+    timeout: 20000
+- takeScreenshot: "res_12_04_connections_critical_ctas_visible"
+- pressKey: Back
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 8000
+
+# Leak guards on every screen — provider internals must never appear
+# anywhere across the tour.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*Hermes.*"
+- assertNotVisible:
+    text: ".*OpenRouter.*"

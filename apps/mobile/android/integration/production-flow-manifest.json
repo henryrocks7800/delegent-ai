@@ -1,0 +1,366 @@
+{
+  "schemaVersion": 1,
+  "appId": "com.sidekick.v2",
+  "driver": "maestro-native-android",
+  "evidenceRoot": "docs/mission/evidence/production-mobile-ui",
+  "defaultState": "signed_out",
+  "flows": [
+    {
+      "id": "launch.signed_out_shell",
+      "title": "Signed-out launch shell",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/launch.signed_out_shell.yaml",
+      "requiredState": "signed_out",
+      "pages": ["Login", "Terms"],
+      "happyPath": ["Fresh launch shows Delegent AI login, Google, email, and Terms affordances."],
+      "negativePaths": ["Signed-in-only tabs, profile data, runner details, and fake workspace state stay hidden before auth."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "auth.google_native_handoff",
+      "title": "Google native handoff",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/auth.google_native_handoff.yaml",
+      "requiredState": "signed_out",
+      "pages": ["Login"],
+      "happyPath": ["Continue with Google opens the native Google/Play Services surface when configured."],
+      "negativePaths": ["Missing provider config or cancellation returns to Login with honest setup/retry copy and no fake success."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "auth.email_login_route",
+      "title": "Email login route",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/auth.email_login_route.yaml",
+      "requiredState": "signed_out",
+      "pages": ["Login", "Email login"],
+      "happyPath": ["The email box accepts the test account's address, a code is sent, and the box for the code appears; no code is entered."],
+      "negativePaths": ["Invalid email, rate-limit, setup, and offline states show bounded copy without success."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "auth.email_magic_link_callback",
+      "title": "Email magic-link callback",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/auth.email_magic_link_callback.yaml",
+      "requiredState": "magic_link",
+      "pages": ["Login", "Email login", "Home"],
+      "happyPath": ["A signed-in person who opens an expired or invalid sign-in link stays signed in on the chat (the pack's own sign-in uses a real magic link before signed-in flows)."],
+      "negativePaths": ["A bad callback never ends a good session, crashes, loops on loading or shows internal error text."],
+      "backendObservables": ["auth", "auth-email"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "auth.returning_active_subscriber_bypass",
+      "title": "Returning active subscriber bypass",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/auth.returning_active_subscriber_bypass.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Login", "Home"],
+      "happyPath": ["A restored active subscriber session bypasses Login and lands directly on the Home chat surface."],
+      "negativePaths": ["Expired or signed-out sessions do not leak the authenticated shell."],
+      "backendObservables": ["auth", "billing", "onboarding"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "onboarding.first_run_validation",
+      "title": "First-run onboarding validation",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/onboarding.first_run_validation.yaml",
+      "requiredState": "authenticated_unonboarded",
+      "pages": ["Onboarding", "Home"],
+      "happyPath": ["Whatever a launch lands on is checked: onboarding's app step, its naming step (Finish locked until the Terms are accepted), or the chat with no onboarding over it. The flow never completes onboarding."],
+      "negativePaths": ["Finish setup is blocked until required acknowledgement and valid/default agent name exist."],
+      "backendObservables": ["onboarding"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "setup.plan_picker_one_step",
+      "title": "Setup plan picker (one step)",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/setup.plan_picker_one_step.yaml",
+      "requiredState": "authenticated_unsubscribed",
+      "pages": ["Setup guide"],
+      "happyPath": ["An account with no plan sees one plan card, its price and one button; a subscriber lands on the chat instead."],
+      "negativePaths": ["No messenger step and no retired tiers (Studio, Pro Office, Enterprise)."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "setup.plan_checkout_new_user",
+      "title": "Plan checkout for new user",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/setup.plan_checkout_new_user.yaml",
+      "requiredState": "authenticated_unsubscribed",
+      "pages": ["Setup guide", "Stripe/checkout"],
+      "happyPath": ["An account with no plan presses Start your free month and reaches Stripe Checkout; the flow stops before any payment details. Skipped by default: it needs an unsubscribed account and Stripe is live."],
+      "negativePaths": ["Checkout offline, missing auth, invalid price, and cancel states show bounded copy without granting entitlement."],
+      "backendObservables": ["checkout", "billing", "webhook"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "home.chat_panel_first_land",
+      "title": "Home chat panel first land",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/home.chat_panel_first_land.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Home"],
+      "happyPath": ["A paying user lands in the chat: menu and profile buttons in the header, the composer with Attach, Voice and help, no scrolling needed."],
+      "negativePaths": ["No WhatsApp or Signal copy, no preparing/getting-ready state, no provider or infrastructure names on screen."],
+      "backendObservables": ["auth"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "home.chat_send_text_message",
+      "title": "Home chat send + reply",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/home.chat_send_text_message.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Home"],
+      "happyPath": ["A message sent from the composer appears at once as the person's own bubble, and the coworker's reply arrives (the message asks for one known word so the reply can be recognised)."],
+      "negativePaths": ["No 'getting ready' copy, no raw backend vocab leaks, no Telegram fallback messaging."],
+      "backendObservables": ["chat", "usage"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "home.chat_keyboard_aware",
+      "title": "Home chat keyboard-aware composer",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/home.chat_keyboard_aware.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Home"],
+      "happyPath": ["When the chat input is focused the Android keyboard rises and the composer (send + attach) rises with it so it stays reachable."],
+      "negativePaths": ["Composer never sits hidden under the keyboard; no overlap with the message list scroll."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "billing.current_plan_no_checkout",
+      "title": "Current plan without checkout",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/billing.current_plan_no_checkout.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Profile", "Monthly capacity"],
+      "happyPath": ["Plan & billing shows a subscriber's plan with Go to chat, and nothing that would start a second checkout."],
+      "negativePaths": ["Past due/cancelled state does not claim active entitlement or hide management recovery."],
+      "backendObservables": ["billing", "usage"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "billing.upgrade_plan_portal",
+      "title": "Upgrade and billing portal",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/billing.upgrade_plan_portal.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Profile", "Setup guide"],
+      "happyPath": ["Profile's Manage plan opens the plan inside the app, never the Stripe portal."],
+      "negativePaths": ["The cancel-only Stripe portal is never offered as an upgrade path; Cancel subscription is a separate button and is not pressed."],
+      "backendObservables": ["billing"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "billing.deep_link_returns",
+      "title": "Stripe deep-link returns",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/billing.deep_link_returns.yaml",
+      "requiredState": "billing_deeplink",
+      "pages": ["Stripe/checkout", "Home"],
+      "happyPath": ["The checkout success link re-reads the account and thanks only a subscriber the record shows is one; the cancel link leaves the chat as it was."],
+      "negativePaths": ["Stripe cancel or malformed return keeps the user unsubscribed/unchanged with safe copy."],
+      "backendObservables": ["billing", "webhook"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "connections.list_opens_complete",
+      "title": "Connections opens complete",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/connections.list_opens_complete.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Burger menu", "Connections"],
+      "happyPath": ["Connections opens with every card and the count in place, never two cards and then the rest, and the Email group opens to Gmail and Outlook."],
+      "negativePaths": ["No 'Checking what's connected' once a list is known, no provider names or internals."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "profile.edit_and_signout",
+      "title": "Profile edit and sign out",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/profile.edit_and_signout.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Profile"],
+      "happyPath": ["Profile shows the account, its allowance and Edit profile / Manage plan / Sign out; Edit opens the name fields and Cancel closes them without saving. Signing out is session.restore_and_signout's job."],
+      "negativePaths": ["Save failure keeps edits editable and sign-out clears restored session state."],
+      "backendObservables": ["auth", "onboarding"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "menu.main_navigation",
+      "title": "Burger menu navigation",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/menu.main_navigation.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Burger menu"],
+      "happyPath": ["Burger menu opens and lists Chat / Connections / Start a fresh chat / Skills & use cases / How-to guides / Plan & billing / Help / FAQs / Visit our website / Terms / Privacy / Open source notices, scrolling to the rows below the fold, and closes back to the chat."],
+      "negativePaths": ["No WhatsApp or Signal references, no duplicate overlays."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "menu.use_cases_page",
+      "title": "Use cases page",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/menu.use_cases_page.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Burger menu", "Use cases"],
+      "happyPath": ["Use cases destination opens and scrolls through expected content."],
+      "negativePaths": ["Back/close returns to the previous app shell without navigation dead ends."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "menu.faq_page",
+      "title": "FAQs page",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/menu.faq_page.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Burger menu", "FAQs"],
+      "happyPath": ["FAQs destination opens and FAQ rows/answers are readable."],
+      "negativePaths": ["Offline or missing content does not crash the menu destination."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "menu.terms_page",
+      "title": "Terms page",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/menu.terms_page.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Burger menu", "Terms"],
+      "happyPath": ["Terms destination opens from the burger menu and returns cleanly."],
+      "negativePaths": ["Viewing terms after acknowledgement does not reset onboarding acknowledgement."],
+      "backendObservables": ["onboarding"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "menu.capacity_page",
+      "title": "Monthly capacity page",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/menu.capacity_page.yaml",
+      "requiredState": "subscribed_session",
+      "pages": ["Burger menu", "Monthly capacity", "Setup guide"],
+      "happyPath": ["The Monthly allowance card on Plan & billing shows the share used, the refresh date, top-up credit and Talk minutes (the Monthly capacity page it replaced went with the agent engine)."],
+      "negativePaths": ["Missing quota or exhausted usage shows honest limited/out-of-energy copy."],
+      "backendObservables": ["usage", "billing"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "session.restore_and_signout",
+      "title": "Session restore and sign out",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/session.restore_and_signout.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Login", "Home", "Profile"],
+      "happyPath": ["Relaunch restores a valid session into the chat home."],
+      "negativePaths": ["Sign out clears secure storage and relaunch does not restore the authenticated shell."],
+      "backendObservables": ["auth"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "resilience.offline_api_errors",
+      "title": "Offline and API errors",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/resilience.offline_api_errors.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Home", "Connections"],
+      "happyPath": ["With airplane mode on, Connections keeps the last known cards, says it could not reach the coworker and offers Try again; with the network back, Try again recovers without a restart."],
+      "negativePaths": ["Offline Supabase/API states show bounded retry copy and no fake success."],
+      "backendObservables": ["auth"],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    },
+    {
+      "id": "visual.page_sweep",
+      "title": "Visual page sweep",
+      "driver": "maestro-native-android",
+      "maestroFile": "apps/mobile/android/integration/maestro/production/visual.page_sweep.yaml",
+      "requiredState": "authenticated",
+      "pages": ["Home", "Burger menu", "Connections", "Use cases", "Setup guide", "Monthly capacity", "Profile"],
+      "happyPath": ["One pass through the chat, menu, Connections, Skills, How-to guides, Plan & billing and Profile for screenshots, back to the chat each time."],
+      "negativePaths": ["No secret/provider internals, layout overlap, redbox, or raw backend payloads appear; no Telegram/WhatsApp/Signal copy."],
+      "backendObservables": [],
+      "evidence": ["screenshot", "ui-hierarchy", "logcat"]
+    }
+  ],
+  "blockedFlowsNotes": "Entries in `blockedFlows` are user-visible regression placeholders for journeys that the v1.2.2 product code/test harness does not yet cover end-to-end. Each row appears in reports as `skipped` with the blockedReason so the gap is never silent. Remove an entry only when its happyPath/negativePaths are implemented as a real flow YAML and moved into the `flows` array.",
+  "blockedFlows": [
+    {
+      "id": "auth.email_full_happy_path",
+      "title": "Email auth full happy path (fresh user)",
+      "category": "auth",
+      "defectRef": "defect-2 (Email auth first-class full journey)",
+      "happyPath": [
+        "A fresh user signs in via email magic link, completes onboarding, chooses a plan, lands on chat, sends a message, sees the reply, and later relaunches with session restore — with backend proof at each boundary."
+      ],
+      "blockedReason": "Current suite proves slices (email route, magic-link callback, onboarding, plan checkout, home chat) but not yet as one deterministic end-to-end emulator journey anchored to a single fresh email identity. This stays visible as blocked until the single-run composition flow is implemented.",
+      "missingPrerequisites": [
+        "single-run email identity fixture",
+        "composed end-to-end email maestro flow",
+        "current-run token propagation across chat/file/usage checks"
+      ]
+    },
+    {
+      "id": "billing.stripe_payment_method_card",
+      "title": "Stripe Checkout — Card / Visa",
+      "category": "billing",
+      "defectRef": "defect-1 (Stripe payment-method coverage)",
+      "happyPath": [
+        "From a clean authenticated unsubscribed state, the user picks a plan, Stripe Checkout opens, Card/Visa option is visible, a Stripe test card completes the flow, the app returns to the chat surface, and Supabase subscription state activates from the verified webhook (not optimistic client UI)."
+      ],
+      "blockedReason": "Requires Stripe test-mode card automation, browser-driven payment-method selection inside the Stripe-hosted Checkout, and a webhook-replay step. No production-UI Maestro YAML can drive the cross-origin Stripe surface from the emulator yet.",
+      "missingPrerequisites": [
+        "STRIPE_TEST_CARD_AUTOMATION",
+        "stripe-hosted-checkout webview hook",
+        "webhook replay scripted into the flow"
+      ]
+    },
+    {
+      "id": "billing.upgrade_to_pro_office_plan",
+      "title": "Upgrade Studio (£9.99) → Pro Office (£24.99)",
+      "category": "billing",
+      "defectRef": "defect-13 (Plan upgrade flows)",
+      "happyPath": ["Active Studio user opens the manage-plan path, upgrades to Pro Office via Stripe billing portal or Checkout, returns to the chat surface, and Supabase tier + usage_quotas.monthly_token_quota reflect the new plan."],
+      "blockedReason": "Same Stripe-portal automation gap as billing.stripe_payment_method_card. Also requires deterministic seeding of an active Studio subscription and post-upgrade webhook replay.",
+      "missingPrerequisites": ["stripe-portal-automation", "studio-subscription-seed", "quota-assertion-helper"]
+    },
+    {
+      "id": "billing.upgrade_to_enterprise_suite_plan",
+      "title": "Upgrade Studio/Pro → Enterprise Suite (£59.99)",
+      "category": "billing",
+      "defectRef": "defect-13 (Plan upgrade flows)",
+      "happyPath": ["From an active lower tier, the user upgrades to Enterprise Suite via Stripe and the backend reflects the new tier + 1.5M token quota."],
+      "blockedReason": "Same blocker as billing.upgrade_to_pro_office_plan — Stripe-portal automation + deterministic seeding of the source subscription tier.",
+      "missingPrerequisites": ["stripe-portal-automation", "lower-tier-subscription-seed", "quota-assertion-helper"]
+    },
+    {
+      "id": "billing.checkout_success_thank_you",
+      "title": "Stripe success → app thank-you confirmation",
+      "category": "billing",
+      "defectRef": "defect-7 (Stripe return + confirmation copy)",
+      "happyPath": ["After Stripe success, the user lands back in the app and sees a clear non-technical confirmation banner gated on webhook-backed entitlement before any 'active' copy."],
+      "blockedReason": "PARTIAL: the in-app thank-you banner now exists and the readiness test pins the gating. The remaining blocker is driving the actual Stripe Checkout to completion and the deep-link return from an emulator-driven Maestro flow.",
+      "missingPrerequisites": ["stripe-checkout-emulator-automation", "webhook-replay-in-flow"]
+    },
+    {
+      "id": "chat.attachment_bytes_to_runner",
+      "title": "Chat attachment bytes reach the runner",
+      "category": "chat",
+      "defectRef": "K9 (Bytes-to-runner attachment handoff)",
+      "happyPath": ["User attaches a file via the paperclip; metadata reaches the backend; the attached bytes are uploaded to the user's runner inbox so the agent can use them in their reply."],
+      "blockedReason": "DEFERRED — v1.2.x persists attachment metadata on the message row but does not yet upload bytes. Next pass: signed-URL upload to /data/inbox/ on the user's Fly runner.",
+      "missingPrerequisites": ["signed-url-upload-helper", "runner-inbox-mount-contract"]
+    }
+  ]
+}

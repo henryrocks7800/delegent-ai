@@ -1,0 +1,52 @@
+appId: com.sidekick.v2
+name: MATRIX-01 — Small Phone (sw320dp) Keeps Send Button Reachable
+tags:
+  - matrix
+  - layout
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: MATRIX-01 — Small Phone (sw320dp) Keeps Send Button Reachable
+# Target AVD: Delegent_Small_API30 (or any sw320dp emulator)
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §11.1
+#
+# Precondition: a signed-in subscriber (the pack's --sign-in account).
+#
+# What this proves:
+#   On the smallest supported screen (320dp wide), the chat composer's tools
+#   (Attach, Voice) and the send button are fully visible and tappable, with
+#   a draft typed. 2026-09-28: the composer is part of the chat WebView, so
+#   its controls are the chat document's element ids; the same geometry is
+#   checked at 320 to 430px in WebKit and Chrome by
+#   scripts/ops/chat-render-check.mjs. The draft is erased at the end.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 1 — landed on chat, tools visible.
+- assertVisible:
+    id: "micBtn"
+- assertVisible:
+    id: "attachBtn"
+
+# Step 2 — type a draft.
+- tapOn:
+    id: "input"
+- inputText: "MATRIX-01 sw320dp probe"
+- hideKeyboard
+
+# Step 3 — the send button must be visible (not just present) beside the tools.
+- assertVisible:
+    id: "sendBtn"
+- takeScreenshot: "matrix_01_send_visible_on_small"
+- assertVisible:
+    id: "attachBtn"
+- takeScreenshot: "matrix_01_attach_visible_on_small"
+
+# Leave no draft behind.
+- tapOn:
+    id: "input"
+- eraseText: 30
+- hideKeyboard

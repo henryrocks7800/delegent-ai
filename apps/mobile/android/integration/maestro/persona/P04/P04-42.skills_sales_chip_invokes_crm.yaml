@@ -1,0 +1,38 @@
+appId: com.sidekick.v2
+name: 'P04-42 — Skills menu: Sales chip invokes the CRM pipeline (credential-first)'
+tags:
+  - persona:P04
+  - skills
+  - skills-live
+# blocked-reason: retired: tests Hermes skills and commands, gone with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.skillsRow"
+- tapOn:
+    id: "skills.category.sales"
+- takeScreenshot: "skills-sales-01-category"
+- tapOn:
+    id: "skills.category.sales.try"
+- extendedWaitUntil:
+    visible:
+      text: ".*be my sales assistant.*"
+    timeout: 15000
+- takeScreenshot: "skills-sales-02-phrase-sent"
+# Routing regression pinned live: on 2026-08-03 this exact phrase scored
+# highest on core-permissions-and-credentials, not the CRM skill. The reply
+# must talk pipeline, not passwords.
+- extendedWaitUntil:
+    visible:
+      text: ".*(CRM|pipeline|HubSpot|Pipedrive|leads|deals).*"
+    timeout: 120000
+- assertNotVisible:
+    text: ".*(skill.{0,24}not (found|available)|doesn.t exist|not in the current environment).*"
+- takeScreenshot: "skills-sales-03-reply"

@@ -1,0 +1,37 @@
+appId: com.sidekick.v2
+name: 'P04-45 — Skills menu: Web chip invokes the website builder (credential-first)'
+tags:
+  - persona:P04
+  - skills
+  - skills-live
+# blocked-reason: retired: tests Hermes skills and commands, gone with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.skillsRow"
+- tapOn:
+    id: "skills.category.web"
+- takeScreenshot: "skills-web-01-category"
+- tapOn:
+    id: "skills.category.web.try"
+- extendedWaitUntil:
+    visible:
+      text: ".*build me a website.*"
+    timeout: 15000
+- takeScreenshot: "skills-web-02-phrase-sent"
+# Credential-first contract: Firebase hosting setup before a deploy exists.
+# Vocabulary avoids "website", which the echoed phrase already contains.
+- extendedWaitUntil:
+    visible:
+      text: ".*(Firebase|hosting|domain|project|preview).*"
+    timeout: 120000
+- assertNotVisible:
+    text: ".*(skill.{0,24}not (found|available)|doesn.t exist|not in the current environment).*"
+- takeScreenshot: "skills-web-03-reply"

@@ -1,0 +1,42 @@
+appId: com.sidekick.v2
+name: Production - setup plan picker (one step)
+---
+# The plan screen is one step: the plan, its price, one button. A subscriber
+# is never sent back to it on launch.
+#
+# 2026-09-28: one plan (Delegent AI) since 2026-09-15, so the checks are the
+# plan card and the price line rather than the old Studio tile. The pack's
+# test account is a subscriber, so it normally takes the second branch.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "Online|Your connected AI coworker"
+    timeout: 60000
+- takeScreenshot: "production_setup_plan_picker_one_step_01"
+
+# No plan: the one-step plan screen.
+- runFlow:
+    when:
+      visible:
+        id: "setup.stepIndicator"
+    commands:
+      - assertVisible:
+          id: "plan.agentCard"
+      - assertVisible:
+          id: "paywall.priceLine"
+      - assertVisible:
+          id: "billing.checkoutButton"
+      - assertNotVisible:
+          text: "Step 1 of 2|Step 2 of 2|Choose your messenger|Studio|Pro Office|Enterprise"
+
+# Subscriber: the chat, no plan screen on top.
+- runFlow:
+    when:
+      visible:
+        id: "home.chatPanel"
+    commands:
+      - assertNotVisible:
+          id: "setup.stepIndicator"
+
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

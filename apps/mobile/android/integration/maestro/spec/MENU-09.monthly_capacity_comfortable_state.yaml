@@ -1,0 +1,75 @@
+appId: com.sidekick.v2
+name: MENU-09 — Monthly Capacity Comfortable State
+tags:
+  - menu
+  - blocked
+# blocked-reason: retired: the Monthly capacity page went with the agent engine; its numbers are the Monthly allowance card on Plan & billing, checked by production/menu.capacity_page.yaml
+---
+# ============================================================================
+# Spec ID: MENU-09 — Monthly Capacity Comfortable State
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user (seed --profile ready-runner)
+# with the default usage_quotas row (monthly_token_quota=200000,
+# no token usage events recorded) — this puts the user squarely in
+# the "comfortable" capacity band. menu.capacityRow → onChangeView(
+# 'capacity') renders the CapacityDrawer with the friendly copy and
+# the Manage plan & payment CTA for the active-subscription user.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Open drawer, scroll to and tap Monthly capacity
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- scrollUntilVisible:
+    element:
+      id: "menu.capacityRow"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "menu.capacityRow"
+
+# Monthly capacity subpage renders. The CapacityDrawer surfaces
+# the comfortable copy ("Plenty of room for admin, research, files,
+# and follow-ups this month."), the "Comfortable" status pill, the
+# Studio plan badge, and the "Manage plan & payment" CTA (active
+# subscriber).
+- extendedWaitUntil:
+    visible:
+      text: "Monthly capacity"
+    timeout: 8000
+- assertVisible:
+    text: "Monthly capacity"
+- assertVisible:
+    text: ".*Plenty of room for admin.*"
+- assertVisible:
+    text: "Comfortable"
+- assertVisible:
+    text: "Studio"
+- takeScreenshot: "menu_09_01_capacity_comfortable"
+
+# The Manage plan CTA renders for the active subscriber.
+- assertVisible:
+    text: ".*Manage plan.*"
+
+# Capacity-warning copy must NOT appear (we're in the comfortable
+# band, not the near-limit or hard-limited band).
+- assertNotVisible:
+    text: "approaching this month"
+- assertNotVisible:
+    text: "used everything"
+- assertNotVisible:
+    text: "Running low"
+- takeScreenshot: "menu_09_02_no_warnings"
+
+- assertNotVisible:
+    text: "service_role"

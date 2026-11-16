@@ -1,0 +1,44 @@
+appId: com.sidekick.v2
+# One flow per Skills & use cases category: tap the category's headline chip,
+# prove the phrase lands in chat, prove the RIGHT skill answers in the right
+# way, and above all prove the agent never says the skill does not exist,
+# which it did three times in the owner's own chat on 2026-07-24.
+#
+# The reply-vocabulary waits deliberately avoid every word in the tapped
+# phrase, so an echo of the user's own message can never satisfy them.
+name: 'P04-40 — Skills menu: Money chip invokes the bookkeeper (credential-first)'
+tags:
+  - persona:P04
+  - skills
+  - skills-live
+# blocked-reason: retired: tests Hermes skills and commands, gone with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.skillsRow"
+- tapOn:
+    id: "skills.category.money"
+- takeScreenshot: "skills-money-01-category"
+- tapOn:
+    id: "skills.category.money.try"
+- extendedWaitUntil:
+    visible:
+      text: ".*be my bookkeeper.*"
+    timeout: 15000
+- takeScreenshot: "skills-money-02-phrase-sent"
+# Credential-first contract: the bookkeeper must open with the accounting-tool
+# handoff (which provider, connect it), not improvise ledgers from nothing.
+- extendedWaitUntil:
+    visible:
+      text: ".*(FreeAgent|QuickBooks|accounting|which.*(tool|provider|platform)).*"
+    timeout: 120000
+- assertNotVisible:
+    text: ".*(skill.{0,24}not (found|available)|doesn.t exist|not in the current environment).*"
+- takeScreenshot: "skills-money-03-reply"

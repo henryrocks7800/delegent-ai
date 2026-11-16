@@ -1,0 +1,78 @@
+appId: com.sidekick.v2
+name: PLAN-03 — Current Plan Does Not Reopen Checkout
+tags:
+  - plan
+  - blocked
+# blocked-reason: retired: superseded by production/billing.current_plan_no_checkout.yaml
+---
+# ============================================================================
+# Spec ID: PLAN-03 — Current Plan Does Not Reopen Checkout
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber on Studio (seed --profile
+# ready-runner). Opens the setup wizard from the menu — for the
+# CURRENT tier (Studio is selected by default), the CTA must say
+# "Go to chat" (it said "Meet <coworker>" until 2026-09-23) rather than
+# "Open secure checkout" because the user is already subscribed to that
+# tier (App.tsx: `selectedPlanIsCurrent ? 'Go to chat' : ...`).
+# Tapping it must not re-fire Stripe checkout.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Open the menu and tap Plan & billing → opens the setup wizard.
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.setupGuideRow"
+    timeout: 8000
+- tapOn:
+    id: "menu.setupGuideRow"
+
+# DN1.4-02 — the wizard now renders inside the drawer's Modal
+# rather than as a top-level Shell early-return. The Modal sits
+# below the status bar without an extra safe-area inset, so the
+# wizard's small "Choose your plan" caption (setup.stepIndicator)
+# can sit behind the status bar even though the wizard body and
+# the tier-selector are fully usable. Anchor on the wizard's
+# headline + the first tier card instead.
+- extendedWaitUntil:
+    visible:
+      text: "Pick a plan, meet your coworker"
+    timeout: 8000
+- assertVisible:
+    text: "Pick a plan, meet your coworker"
+- assertVisible:
+    id: "setup.plan.studio"
+- takeScreenshot: "plan_03_01_setup_wizard_opened"
+
+# Studio (the current tier) is selected by default. The CTA reads
+# "Go to chat", NOT "Open secure checkout" — the latter would mean the
+# picker is inviting the user to re-subscribe to their existing plan.
+- assertVisible:
+    id: "setup.plan.studio"
+- assertVisible:
+    text: ".*Go to chat.*"
+- assertNotVisible:
+    text: ".*Open secure checkout.*"
+- takeScreenshot: "plan_03_02_current_plan_cta_is_meet_not_checkout"
+
+# Pro Office is a different tier — switching to it surfaces the
+# "Change to Pro Office" CTA (not "Open secure checkout") because
+# the user has an existing subscription and the wizard treats this
+# as a plan change, not a fresh checkout.
+- tapOn:
+    id: "setup.plan.pro-office"
+- assertVisible:
+    text: ".*Change to Pro Office.*"
+- assertNotVisible:
+    text: ".*Open secure checkout.*"
+- takeScreenshot: "plan_03_03_change_plan_for_different_tier"
+
+- assertNotVisible:
+    text: "service_role"

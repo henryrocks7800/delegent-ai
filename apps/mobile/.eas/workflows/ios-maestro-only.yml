@@ -1,0 +1,54 @@
+# Run Maestro flows on a cloud iOS simulator against an EXISTING build.
+#
+# Why this exists alongside ios-simulator-smoke.yml: that file rebuilds the app
+# every run (about six minutes and a slice of the build credit). While
+# iterating on the FLOWS rather than the app, the binary does not change, so
+# rebuilding is pure waste. Point this at a build_id that already succeeded and
+# each iteration costs only the simulator time.
+#
+# Inputs also carry the sign-in material for signed-in packs. The OTP is minted
+# on the operator's box, where the Supabase service-role key already lives, and
+# only the short-lived code travels to Expo's cloud. Deliberate: the
+# service-role key bypasses RLS entirely and must never sit in a third party's
+# CI environment just to make a test convenient.
+#
+# Run it (from apps/mobile):
+#   eas workflow:run .eas/workflows/ios-maestro-only.yml \
+#     -F build_id=<a successful ios-simulator build id> \
+#     -F flow_path=<path or directory> \
+#     -F test_email=<address> -F otp=<8 digits>
+name: ios-maestro-only
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        type: string
+        required: true
+        description: An existing successful ios-simulator build id
+      flow_path:
+        type: string
+        required: true
+        description: Flow file or directory to run
+      access_token:
+        type: string
+        required: false
+        default: ''
+        description: Short-lived Supabase access token for signed-in packs
+      refresh_token:
+        type: string
+        required: false
+        default: ''
+        description: Matching refresh token
+
+jobs:
+  maestro:
+    name: Maestro on iOS simulator
+    type: maestro
+    params:
+      build_id: ${{ inputs.build_id }}
+      flow_path:
+        - ${{ inputs.flow_path }}
+    env:
+      MAESTRO_ACCESS_TOKEN: ${{ inputs.access_token }}
+      MAESTRO_REFRESH_TOKEN: ${{ inputs.refresh_token }}

@@ -1,0 +1,65 @@
+appId: com.sidekick.v2
+name: EDGE-BG-01 — App background during onboarding then resume
+# Phase 9 Edge Batch 3, item 1.
+#
+# Why this matters
+# ----------------
+# Real users get a phone call, swipe to another app, or briefly switch
+# to their messenger while setting up. When they come back, partial
+# onboarding input must NOT be lost and the wizard must not get stuck
+# on a transient state.
+#
+# Precondition
+# ------------
+# seed-test-user --profile subscribed --email <test_email>
+# (Subscribed but not onboarded — landing screen is the onboarding
+# wizard with the agent-name input.)
+#
+# What this proves
+# ----------------
+# (a) Onboarding input field is reachable.
+# (b) After backgrounding the app and resuming, the input value is
+#     preserved.
+# (c) No raw error state is shown after resume.
+#
+# Fixtures: requires subscribed-but-not-onboarded seed profile.
+
+tags:
+  - edge
+  - onboarding
+  - lifecycle
+  - live-only
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 60000
+
+- tapOn:
+    id: "onboarding.agentNameInput"
+- inputText: "Bridget"
+- hideKeyboard
+- takeScreenshot: "edge_bg_01_typed_before_background"
+
+# Push the app to background then bring it back.
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 3000
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 30000
+- takeScreenshot: "edge_bg_01_resumed"
+
+# Input must still hold the typed value.
+- assertVisible:
+    text: "Bridget"
+- assertVisible:
+    id: "onboarding.finishButton"
+- assertNotVisible:
+    text: "Something went wrong|We hit a snag|crashed|service role|runner URL"

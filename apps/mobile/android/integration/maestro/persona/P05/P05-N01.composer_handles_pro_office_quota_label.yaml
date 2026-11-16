@@ -1,0 +1,23 @@
+appId: com.sidekick.v2
+name: P05-N01 — Pro-office composer doesn't leak provider vocab (unhappy path)
+tags:
+  - persona:P05
+  - unhappy-path
+  - leak-guard
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+# Backend vocabulary must never leak into the pro-office chat surface.
+- assertNotVisible:
+    text: ".*OpenRouter.*"
+- assertNotVisible:
+    text: ".*Hermes agent.*"
+- assertNotVisible:
+    text: ".*fly_machine.*"
+- assertNotVisible:
+    text: ".*service_role.*"

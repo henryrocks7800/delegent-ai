@@ -1,0 +1,57 @@
+appId: com.sidekick.v2
+name: SHOT-02 - chat drafts an overdue invoice email
+tags:
+  - appstore
+  - live-only
+# blocked-reason: App Store screenshot tool, not a test; run on purpose when refreshing store images
+---
+# App Store screenshot 2 of 4, mirroring the Play listing's
+# 05-chat-invoice-email.png: the only frame that shows a whole job done start
+# to finish, which is why it sits second.
+#
+# The prompt is deliberately the SAME one the Play frame used, so the two
+# stores tell the same story and the claim stays inside what
+# docs/play-store/LISTING.md was audited to allow: drafting an email for the
+# user to approve, never sending one.
+#
+# This sends a REAL message to the live agent on Alex's account, which he
+# authorised. It is self-identifying business copy, needs no tools, and cannot
+# start real work in his workspace.
+- runFlow: ../sweep-shared/signin.yaml
+
+- tapOn:
+    id: 'tab.dashboard'
+- extendedWaitUntil:
+    visible:
+      id: 'home.chatPanel'
+    timeout: 30000
+
+# The composer is an HTML textarea inside the WebView, unreachable by native
+# testID. Drive it by the placeholder WKWebView publishes to the
+# accessibility tree, the same way SWEEP-02 does.
+- extendedWaitUntil:
+    visible:
+      text: '.*Message.*'
+    timeout: 30000
+# THIS FLOW DOES NOT TYPE, DELIBERATELY. Maestro cannot enter text into the
+# chat WebView on the EAS iOS simulator: on 2026-08-14 three runs reported
+# inputText and the send tap as COMPLETED and sent nothing, freezing on the
+# same history each time. The Android emulator and a real iPhone both type
+# fine, so it is a harness limitation.
+#
+# Chat history is SHARED per account, so SEED-00 sends the message from the
+# Android emulator first and this flow only has to photograph the result.
+# Run SEED-00 before this, or the invoice will not be there.
+#
+# The invoice NUMBER is what makes the wait real. This account's history
+# already holds an older invoice draft, so waiting on generic words like
+# "Kind regards" matched instantly and shot the wrong part of the chat.
+- extendedWaitUntil:
+    visible:
+      text: '.*2041.*'
+    timeout: 120000
+- extendedWaitUntil:
+    notVisible:
+      text: '.*Thinking.*|.*Working.*'
+    timeout: 60000
+- takeScreenshot: 'shot_02_chat_invoice_email'

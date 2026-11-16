@@ -1,0 +1,103 @@
+appId: com.sidekick.v2
+name: RES-08 — Offline Then Online Recovers Without Restart
+tags:
+  - res
+  - live-only
+# blocked-reason: needs the network off when the app starts; run it on its own with --network-off --include-blocked
+---
+# ============================================================================
+# Spec ID: RES-08 — Offline Then Online Recovers Without Restart
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner).
+# Like RES-02, this spec needs network state to change DURING the
+# flow. Maestro can't toggle airplane mode, so the orchestrator does
+# the adb calls around the takeScreenshot markers below.
+#
+# Pre-step (orchestrator):
+#   adb shell svc wifi disable
+#   adb shell svc data disable
+#
+# Mid-step (orchestrator, after observing "res_08_01_offline_state"
+# in the maestro.log):
+#   adb shell svc wifi enable
+#   adb shell svc data enable
+#   # Wait ~5s for connectivity to stabilise.
+#
+# What this spec verifies:
+#   1. Cold launch under offline network → product fetch fails →
+#      "Couldn't refresh" notice appears AND the chat shell still
+#      mounts (the user isn't stuck on a blank screen).
+#   2. After network is restored AND a Retry tap, the notice clears
+#      WITHOUT the user having to force-stop / cold-restart the
+#      app. Recovery happens inside the same Activity instance.
+#   3. The recovered app still shows the user's authenticated
+#      shell — no spurious sign-out, no shell collapse, no false
+#      "Setup needed" state.
+# ============================================================================
+# BLOCKED — same design conflict as RES-02 (Batch 7 closure note
+# 2026-05-17). The spec assumes "chat home renders BENEATH the
+# notice" on an offline cold launch (see Step 1 comment below).
+# Reading App.tsx around line 2767, the shell does NOT render until
+# productState is authoritative; offline cold-launch sits on the
+# loading screen forever. Three fix paths documented in RES-02 —
+# the same options apply here. Leaving the original assertions
+# intact for honest-red status; no fabricated pass.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      text: ".*Couldn.t refresh.*"
+    timeout: 30000
+- assertVisible:
+    text: ".*Couldn.t refresh.*"
+
+# Step 1 — offline state. The chat home renders BENEATH the notice
+# (App.tsx mounts the shell before applying the notice overlay).
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+- takeScreenshot: "res_08_01_offline_state"
+
+# Step 2 — orchestrator restores network. After ~5s of stabilisation
+# we tap Retry inside the same Activity instance — NO launchApp
+# between this and the previous state.
+- tapOn:
+    text: "Retry"
+
+# Step 3 — recovered without restart. The notice clears, the chat
+# home is still mounted (same instance), and the user remains
+# signed in.
+- extendedWaitUntil:
+    notVisible:
+      text: ".*Couldn.t refresh.*"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*Couldn.t refresh.*"
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- takeScreenshot: "res_08_02_recovered_no_restart"
+
+# Step 4 — no spurious sign-out / setup-needed flip.
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "login.emailButton"
+- assertNotVisible:
+    text: "Setup needed"
+
+# Step 5 — no provider internals leaked.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*HTTP 5.*"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*ECONNREFUSED.*"

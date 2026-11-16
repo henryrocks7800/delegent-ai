@@ -1,0 +1,40 @@
+appId: com.sidekick.v2
+name: Production - billing deep-link returns
+---
+# Checkout's success and cancel links must be handled gracefully, and must
+# never change what someone has on a fake session id: the app re-reads the
+# account's real state and only thanks a subscriber the record shows is one.
+#
+# 2026-09-28: the thank-you now reads "You're on Delegent AI" (the Studio
+# plan it used to name was retired on 2026-09-15).
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+
+# Success link with a fake session id.
+- openLink: "sidekick://checkout/success?session_id=production-ui"
+- extendedWaitUntil:
+    visible:
+      id: "checkout.thankYou.title"
+    timeout: 30000
+- takeScreenshot: "production_billing_deep_link_returns_01_after_success_link"
+- assertVisible:
+    text: "Your subscription is confirmed\\."
+- assertVisible:
+    text: "You're on Delegent AI\\..*"
+- tapOn:
+    id: "checkout.thankYou.dismiss"
+- assertNotVisible:
+    id: "checkout.thankYou.title"
+- assertNotVisible:
+    text: "service_role|raw provider|runner URL"
+
+# Cancel link: the app stays on the chat, no error, no leak.
+- openLink: "sidekick://checkout/cancel?session_id=production-ui"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- takeScreenshot: "production_billing_deep_link_returns_02_after_cancel_link"
+- assertNotVisible:
+    text: "RedBox|Unhandled promise|service_role|raw provider|runner URL"

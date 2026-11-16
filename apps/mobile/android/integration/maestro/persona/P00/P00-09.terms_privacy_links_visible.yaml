@@ -1,0 +1,29 @@
+appId: com.sidekick.v2
+name: P00-09 — Terms + Privacy links visible in landing footer
+tags:
+  - persona:P00
+  - landing
+  - legal
+---
+# The sign-in screen's footer offers both legal links.
+#
+# 2026-09-28: the footer sits below the fold on a tall phone, so the flow
+# scrolls to it. The screen never goes idle (its chip row loops), so each
+# swipe waits out Maestro's settle timeout (about 30s); the scroll gets 60s.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 60000
+- scrollUntilVisible:
+    element:
+      id: "login.privacyLink"
+    direction: DOWN
+    timeout: 60000
+- assertVisible:
+    id: "login.termsLink"
+- assertVisible:
+    text: "Terms of Service"
+- assertVisible:
+    text: "Privacy Policy"

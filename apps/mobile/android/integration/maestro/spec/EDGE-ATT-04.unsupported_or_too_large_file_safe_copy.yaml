@@ -1,0 +1,66 @@
+appId: com.sidekick.v2
+name: EDGE-ATT-04 — Unsupported / too-large file shows safe copy
+# Phase 9 Edge Batch 4, item 4.
+#
+# Why this matters
+# ----------------
+# When the user picks a file the runner can't accept (wrong type, too
+# big), the UI must say so calmly and offer a fix — never spit a raw
+# error, never silently swallow the choice.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. Orchestrator has placed a too-large
+# file and an unsupported binary in the picker's reachable paths. If
+# orchestrator can't provide those, this flow degrades to verifying
+# that the picker open + cancel cycle is safe (covered by EDGE-ATT-03).
+#
+# What this proves
+# ----------------
+# (a) The attach button is reachable.
+# (b) After returning from the picker, EITHER an attachment chip with
+#     a friendly error label appears OR no chip appears. Either path
+#     is acceptable as long as no raw error is on screen.
+# (c) Composer remains usable.
+#
+# Fixtures: ready-runner seed + orchestrator drops oversized + unsupported
+# files. Without orchestrator support, the flow still proves the
+# negative space (no raw error).
+
+tags:
+  - edge
+  - chat
+  - attachments
+  - live-only
+# blocked-reason: needs a fixture file in the document picker on the device
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- tapOn:
+    id: "home.chatPanel.attachButton"
+- waitForAnimationToEnd:
+    timeout: 5000
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.input"
+    timeout: 10000
+- takeScreenshot: "edge_att_04_post_picker"
+
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertVisible:
+    id: "home.chatPanel.attachButton"
+
+# Negative space — no raw error or backend vocab.
+- assertNotVisible:
+    text: "EACCES|ENOENT|EISDIR|MIME type|unsupported_media|413"
+- assertNotVisible:
+    text: "Supabase|Hermes|Fly|OpenRouter|service_role|service role"

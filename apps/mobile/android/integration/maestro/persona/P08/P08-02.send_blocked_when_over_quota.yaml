@@ -1,0 +1,45 @@
+appId: com.sidekick.v2
+name: P08-02 — Send is blocked when usage is over quota
+tags:
+  - persona:P08
+  - quota
+  - regression:D7
+# blocked-reason: needs a seeded account state (over the monthly allowance); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+# Regression test for D7 — Alex could still tap send + get a fallback
+# reply while the quota banner was visible. Quota gate must reject the
+# request server-side AND the UI must reflect the rejection without a
+# canned "waiting on workspace" reply.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Quota banner must be visible since the persona-runner pre-set
+# total_tokens_this_period to monthly_token_quota.
+- extendedWaitUntil:
+    visible:
+      text: ".*used this month's.*capacity.*|.*included assistant time.*"
+    timeout: 6000
+
+# Try to send a message anyway.
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "ignore the banner"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# The agent must NOT reply with the "still waiting on my workspace"
+# canned fallback. We also assert that no real assistant content appears
+# (the worker should return 402 quota_exhausted and mobile should keep
+# the banner but not produce a new assistant bubble).
+- assertNotVisible:
+    text: ".*still waiting on my workspace.*"
+
+# The quota banner is still there after attempting to send.
+- extendedWaitUntil:
+    visible:
+      text: ".*used this month's.*capacity.*|.*included assistant time.*"
+    timeout: 4000

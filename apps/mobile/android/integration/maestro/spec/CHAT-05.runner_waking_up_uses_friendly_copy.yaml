@@ -1,0 +1,77 @@
+appId: com.sidekick.v2
+name: CHAT-05 — Runner Waking Up Uses Friendly Copy
+tags:
+  - chat
+  - blocked
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+# ============================================================================
+# Spec ID: CHAT-05 — Runner Waking Up Uses Friendly Copy
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user whose hermes_instances row is
+# status='not_requested' (seed --profile subscribed). The header
+# renders "Preparing" via productState.gate. When the user sends a
+# task, the Worker chat dispatch falls back to OpenRouter directly
+# (apps/worker/src/index.ts dispatchChatRunOpenRouterFallback v1.2.8
+# path) — the reply is real LLM text via the fallback, plus a
+# tool-call status card explaining the workspace isn't ready.
+#
+# Crucially: no machine ID, Fly/Hermes URL, runner secret, or
+# provider payload may surface on the visible chat.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Header indicates the runner is preparing
+- assertVisible:
+    text: "Preparing"
+- takeScreenshot: "chat_05_01_preparing_header"
+
+# Send a short prompt that will exercise the runner-not-ready fallback
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "CHAT05-PROBE waking-up friendly copy check"
+- hideKeyboard
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Wait for some assistant reply to land (real text via the OpenRouter
+# fallback). Budget extra time because cold paths can be slow.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistant"
+    timeout: 120000
+- assertVisible:
+    id: "home.chatPanel.message.assistant"
+
+# No raw machine/runner/provider internals leak.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"
+- assertNotVisible:
+    text: "Fly"
+- assertNotVisible:
+    text: "Hermes"
+- assertNotVisible:
+    text: "OpenRouter"
+- assertNotVisible:
+    text: "stack trace"
+- assertNotVisible:
+    text: "Traceback"
+- assertNotVisible:
+    text: ".*runner URL.*"
+- assertNotVisible:
+    text: ".*runner secret.*"
+- assertNotVisible:
+    text: ".*hermes --resume.*"
+- assertNotVisible:
+    text: ".*API call failed.*"
+- assertNotVisible:
+    text: ".*HTTP 502.*"
+- takeScreenshot: "chat_05_02_safe_friendly_reply"

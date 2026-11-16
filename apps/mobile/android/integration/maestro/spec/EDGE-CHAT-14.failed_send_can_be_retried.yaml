@@ -1,0 +1,88 @@
+appId: com.sidekick.v2
+name: EDGE-CHAT-14 — Failed Send Can Be Retried
+tags:
+  - edge
+  - chat
+  - resilience
+  - live-only
+# blocked-reason: needs a server failure injected on purpose; the live service has no switch for it
+---
+# ============================================================================
+# Spec ID: EDGE-CHAT-14 — Failed Send Can Be Retried
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §5.4
+# Goal-doc anchor: Phase 10 Edge Batch 1, retry path
+#
+# Precondition: seed-test-user --profile ready-runner --email <test_email>.
+# Run with --network-off so the FIRST send fails (no Worker reachable).
+#
+# What this proves:
+#   When a send fails (network-off triggers the chat_unavailable error
+#   path), the user can re-enable network and SEND THE SAME DRAFT AGAIN
+#   without restarting the app. CHAT-04 covers the failure rollback;
+#   this flow covers what comes AFTER the rollback — the retry.
+#
+# Why the test exists:
+#   The renderer Phase 4 work surfaced that AssistantErrorCard renders
+#   a settled failure bubble. The retry affordance (re-typing + sending)
+#   was implicit; this test pins it.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.input"
+    timeout: 15000
+
+# Step 1 — type a unique marker and send while network is off.
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "EDGE-CHAT-14 retry probe"
+- hideKeyboard
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Step 2 — error banner appears, optimistic bubble rolled back.
+# (Per CHAT-04 the rollback removes both the user and the placeholder.)
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.error"
+    timeout: 10000
+- assertVisible:
+    id: "home.chatPanel.error"
+- assertNotVisible:
+    id: "home.chatPanel.message.user"
+- takeScreenshot: "edge_chat_14_first_failed"
+
+# Step 3 — the operator must re-enable the network here BEFORE step 4.
+# The master runner's --network-off flag disables network at the start
+# and re-enables on EXIT/INT/TERM, which is too late for an intra-flow
+# retry. Recommended invocation pattern is to skip --network-off entirely
+# for this flow, and instead toggle via the manual sequence:
+#
+#   adb shell svc data disable && adb shell svc wifi disable
+#   bash scripts/run-mobile-test-pack.sh flow-id EDGE-CHAT-14
+#   # ... pause here when the YAML waits for the error banner ...
+#   adb shell svc data enable && adb shell svc wifi enable
+#
+# A future improvement is a Maestro `runScript` that calls adb directly.
+# For now this flow is operator-orchestrated.
+
+# Step 4 — re-type the same marker (the draft was cleared on send).
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "EDGE-CHAT-14 retry probe attempt 2"
+- hideKeyboard
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Step 5 — second send goes through. We assert ONLY that:
+#   (a) the user bubble carries the attempt-2 text, AND
+#   (b) either thinking-dots OR an assistant reply is visible within 8s
+# We do NOT assert the LLM reply content (that's MAIN-EVENT territory).
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.user"
+    timeout: 8000
+- assertVisible:
+    text: ".*EDGE-CHAT-14 retry probe attempt 2.*"
+- takeScreenshot: "edge_chat_14_second_succeeded"

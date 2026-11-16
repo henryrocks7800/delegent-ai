@@ -1,0 +1,33 @@
+appId: com.sidekick.v2
+name: P00-03 — Marketing copy contains no backend stack vocabulary
+tags:
+  - persona:P00
+  - copy
+  - leak-guard
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*"
+    timeout: 30000
+# The landing screen should describe the product only in consumer terms;
+# no provider, runtime, or internal architecture vocabulary should be visible.
+- assertNotVisible:
+    text: ".*Cloudflare.*"
+- assertNotVisible:
+    text: ".*Fly\\.io.*"
+- assertNotVisible:
+    text: ".*OpenRouter.*"
+- assertNotVisible:
+    text: ".*Supabase.*"
+- assertNotVisible:
+    text: ".*Railway.*"
+- assertNotVisible:
+    text: ".*service_role.*"
+- assertNotVisible:
+    text: ".*HMAC.*"
+- assertNotVisible:
+    text: ".*BEARER.*"
+- assertNotVisible:
+    text: ".*Hermes.*"

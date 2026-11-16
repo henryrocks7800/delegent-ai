@@ -1,0 +1,54 @@
+appId: com.sidekick.v2
+name: ONB-05 — Sign Out During Onboarding Returns to Login
+tags:
+  - onb
+  - live-only
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+# ============================================================================
+# Spec ID: ONB-05 — Sign Out During Onboarding Returns to Login
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires an authenticated-but-unonboarded user already
+# signed in on the device. Seed with
+#   node scripts/seed-test-user.mjs --profile onboarding --email <…>
+# then fire the printed deep link. clearState: false preserves that state.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.signOutButton"
+    timeout: 15000
+- takeScreenshot: "onb_05_01_onboarding_visible"
+- assertVisible:
+    id: "onboarding.agentNameInput"
+- assertVisible:
+    id: "onboarding.signOutButton"
+
+# Step 1 — tap the onboarding sign-out
+- tapOn:
+    id: "onboarding.signOutButton"
+
+# Step 2 — must return to login. Onboarding surface must NOT remain.
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "onb_05_02_back_on_login"
+
+# No leak of provider internals
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "runner URL"
+- assertNotVisible:
+    text: "Supabase"

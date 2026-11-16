@@ -1,0 +1,55 @@
+appId: com.sidekick.v2
+name: MATRIX-03 — Legacy API 28 Handles Missing POST_NOTIFICATIONS Permission
+tags:
+  - matrix
+  - layout
+  - resilience
+  - live-only
+---
+# ============================================================================
+# Spec ID: MATRIX-03 — Legacy API 28 Handles Missing POST_NOTIFICATIONS
+# Target AVD: Delegent_Old_API28 (or any API <33 emulator)
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §11.6
+#
+# Precondition: a signed-in subscriber (the pack's --sign-in account).
+#
+# What this proves:
+#   POST_NOTIFICATIONS arrived in API 33. On API 28-32 it doesn't exist;
+#   any code path that requests it must either not request it on legacy
+#   APIs OR catch the SecurityException gracefully. The flow cold-launches
+#   and works the composer, the actions that on a modern API would prompt for
+#   notifications. On API 28 no prompt should appear and the app must not
+#   crash. 2026-09-28: WebView element ids, and the draft is erased rather
+#   than sent, so a run costs the account nothing.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 1 — landed on the chat without a runtime crash.
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "input"
+
+# Step 2 — no notification-permission prompt.
+- assertNotVisible:
+    text: ".*Allow .*to send you notifications.*"
+- assertNotVisible:
+    text: ".*POST_NOTIFICATIONS.*"
+- takeScreenshot: "matrix_03_no_notification_prompt"
+
+# Step 3 — work the composer; still no prompt, still no crash.
+- tapOn:
+    id: "input"
+- inputText: "MATRIX-03 legacy-api probe"
+- hideKeyboard
+- assertNotVisible:
+    text: ".*Allow .*to send you notifications.*"
+- tapOn:
+    id: "input"
+- eraseText: 30
+- hideKeyboard
+- assertVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "matrix_03_no_crash"

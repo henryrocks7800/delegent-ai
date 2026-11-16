@@ -1,0 +1,115 @@
+appId: com.sidekick.v2
+name: FILES-03 — Files Refresh Error Can Recover
+tags:
+  - files
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: FILES-03 — Files Refresh Error Can Recover
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). The seeded runner has a STUB base_url
+# (http://10.0.2.2:9999/runner-stub) that the Worker proxy cannot
+# reach — every runner-files fetch from the Files tab fails with
+# RunnerFilesError. The user-facing contract that this spec pins:
+#
+#   1. The Files screen surfaces "Files didn't refresh" + safe error
+#      copy when the underlying fetch errors out.
+#   2. The error card does NOT expose the raw API URL, the stub
+#      base_url, the runner host, service_role, or any JSON body
+#      from the failure (DN1.4-01 sanitizer territory).
+#   3. The Refresh button stays usable across repeated taps — a
+#      sustained error must not break the retry affordance.
+#
+# What this spec deliberately does NOT assert:
+#   The "error → ready" recovery path requires swapping the runner's
+#   base_url mid-test (stub → reachable) which we cannot do from
+#   inside Maestro on the current fixture. The closest live test of
+#   the success branch is the post-MAIN-EVENT-02 path (deferred —
+#   see docs/mobile-lab/maestro-evidence/BATCH-5-REPORT.md). FILES-04
+#   covers the parallel "unreachable storage looks friendly" state.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel"
+
+# Step 1 — Files tab. The tab.artifacts testID switches activeTab to
+# 'artifacts' (the historical name retained after the v1.2.2 Files
+# redesign — see App.tsx:97).
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.refreshButton"
+    timeout: 8000
+- assertVisible:
+    id: "files.refreshButton"
+
+# Step 2 — error state. With stub URL, the initial fetch on mount
+# returns RunnerFilesError before this assertion runs. The Files
+# header rendering surfaces the error via a "Files didn't refresh"
+# Surface (App.tsx:1212-1220). The fetch may be in-flight when the
+# tab first renders, so give it up to 20s to settle into the error
+# state (the runner-files network attempt typically fails within
+# 3-5s but the Worker proxy can hold longer under retry).
+- extendedWaitUntil:
+    visible:
+      text: "Files didn't refresh"
+    timeout: 20000
+- assertVisible:
+    text: "Files didn't refresh"
+- takeScreenshot: "files_03_01_initial_error_state"
+
+# Step 3 — tap the Refresh button. Should re-fire the runner-files
+# fetch. With stub URL still in place, the fetch fails again. The
+# error state must persist (no crash, no double-error stacking, no
+# stale "Refreshing…" label).
+- tapOn:
+    id: "files.refreshButton"
+
+# Step 4 — the button label transitions through "Refreshing…" while
+# the fetch is in-flight. We don't hard-assert the transient label
+# (it may be sub-frame on a fast failure). We instead assert the
+# settled state: error notice still visible, button back to
+# "Refresh".
+- extendedWaitUntil:
+    visible:
+      text: "Files didn't refresh"
+    timeout: 20000
+- assertVisible:
+    text: "Files didn't refresh"
+- assertVisible:
+    id: "files.refreshButton"
+- takeScreenshot: "files_03_02_error_persists_after_retry"
+
+# Step 5 — leak guards. The error surface must not expose any
+# provider internals or raw payload from the failed fetch.
+- assertNotVisible:
+    text: ".*10\\.0\\.2\\.2.*"
+- assertNotVisible:
+    text: ".*runner-stub.*"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*Hermes Agent.*"
+- assertNotVisible:
+    text: ".*hermes_instances.*"
+- assertNotVisible:
+    text: ".*OpenRouter.*"
+- assertNotVisible:
+    text: ".*HTTP 502.*"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*Cloudflare Worker.*"
+- assertNotVisible:
+    text: ".*Worker URL.*"
+- assertNotVisible:
+    text: ".*base_url.*"

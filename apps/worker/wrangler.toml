@@ -1,0 +1,232 @@
+# Sidekick Cloudflare Worker — production manifest
+# -----------------------------------------------------------------------------
+# This file is the source of truth for the Worker's deployed surface. All
+# routes, environment, and secret bindings are declared here so the deployed
+# attack surface is reviewable from the repo. Secret VALUES are never
+# committed; only the names are listed under [secrets].
+#
+# To deploy:    npx wrangler deploy
+# To set a secret:    npx wrangler secret put OPENROUTER_API_KEY
+
+name = "sidekick-worker"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+# nodejs_compat is intentionally NOT enabled. The Worker uses only Web APIs
+# (fetch, crypto.subtle, TextEncoder, Response.json). Adding nodejs_compat
+# would import a much larger sandbox surface — keep it lean.
+
+# -----------------------------------------------------------------------------
+# Public (non-secret) variables. Per-environment overrides live in [env.<name>].
+# -----------------------------------------------------------------------------
+[vars]
+SIDEKICK_ENVIRONMENT = "dev"
+SIDEKICK_WORKER_PROXY_ENABLED = "false"
+SIDEKICK_USAGE_ENFORCEMENT_ENABLED = "false"
+SIDEKICK_TELEGRAM_WEBHOOK_ENABLED = "false"
+SIDEKICK_TELEGRAM_WEBHOOK_DRY_RUN_ENABLED = "false"
+SIDEKICK_NURTURE_EMAIL_ENABLED = "false"
+SIDEKICK_CHAT_ROUTE_B_ENABLED = "false"
+
+# -----------------------------------------------------------------------------
+# Scheduled triggers (cron). The scheduled() handler reaps chat runs stuck in
+# queued/dispatched so the chat surface never hangs forever. Env blocks do NOT
+# inherit top-level triggers, so the production cron is redeclared below.
+# -----------------------------------------------------------------------------
+[triggers]
+crons = ["*/5 * * * *"]
+
+# -----------------------------------------------------------------------------
+# Secrets the Worker requires. Set each one with `wrangler secret put NAME`.
+# This block exists for documentation only — wrangler does not read it.
+# -----------------------------------------------------------------------------
+# [secrets]
+#   OPENROUTER_API_KEY              # Bearer token for OpenRouter chat completions.
+#   STRIPE_SECRET_KEY               # Stripe secret key for Checkout/Billing Portal.
+#   STRIPE_PORTAL_CONFIGURATION_ID  # Verified generic portal configuration, required before combined-release cutover.
+#   STRIPE_PORTAL_UPGRADE_PRO_CONFIGURATION_ID  # Verified Pro Office confirmation configuration.
+#   STRIPE_PORTAL_UPGRADE_ENTERPRISE_CONFIGURATION_ID  # Verified Enterprise Suite confirmation configuration.
+#   STRIPE_WEBHOOK_SECRET           # Stripe webhook endpoint signing secret.
+#   SUPABASE_URL                    # https://<project>.supabase.co
+#   SUPABASE_ANON_KEY               # Supabase anon/public key used to verify app bearer tokens.
+#   SUPABASE_SERVICE_ROLE_KEY       # Service-role JWT — full DB access.
+#   SIDEKICK_RUNNER_SHARED_SECRET   # HMAC key used to verify v1 runner tokens.
+#   SIDEKICK_FILE_LINK_SIGNING_SECRET # Optional separate HMAC key for short-lived file download URLs.
+#   SIDEKICK_CHECKOUT_REDIRECT_ORIGINS # Comma-separated HTTPS origins allowed for checkout return URLs.
+#   SIDEKICK_TELEGRAM_WEBHOOK_SECRET_TOKEN  # Telegram setWebhook secret token.
+#   SIDEKICK_TELEGRAM_BOT_USERNAME  # Optional public bot username for connect-code deep links.
+#   SIDEKICK_TELEGRAM_CONNECT_CODE_TTL_MINUTES  # Optional code expiry window; defaults to 10.
+#   SIDEKICK_TELEGRAM_DRY_RUN_USER_ID  # Optional — only needed when dry-run is on.
+#   SIDEKICK_RUNNER_AUTH_LEGACY     # Optional — `"true"` accepts legacy tokens
+#                                   # during runner upgrades. Remove ASAP.
+#   SENTRY_DSN                      # Optional — Sentry ingest DSN for the
+#                                   # delegent-backend project (write-only key).
+#                                   # When set, the Worker reports fetch/cron
+#                                   # errors to Sentry. See docs/SENTRY.md.
+#   SIDEKICK_META_CAPI_ACCESS_TOKEN # Meta Conversions API token for the pixel
+#                                   # dataset (Events Manager > Settings). Read in
+#                                   # src/metaCapi.ts. Dark until
+#                                   # SIDEKICK_META_CAPI_ENABLED is "true" (a var).
+#   SIDEKICK_META_CAPI_TEST_EVENT_CODE # Optional, only while proving the wiring
+#                                   # in the "Test events" tab. Remove after.
+#
+#   Apple in-app purchase. THIS LIST IS NOT DOCUMENTATION: it is the input to
+#   scripts/push-secrets-to-cloudflare-worker.sh, which builds its push set by
+#   grepping this block plus src/index.ts. The Apple env is read in
+#   src/apple-iap.ts, so without these five lines a normal run skips every one
+#   of them and still prints "summary: N ok, 0 failed". The values then sit in
+#   Doppler looking perfectly correct while the Worker never receives them and
+#   /api/apple/* answers 503 — which is ALSO the intended dark default, and so
+#   indistinguishable from "not switched on yet". Add every new secret here as
+#   you add it. See docs/app-store/IAP_ARCHITECTURE.md.
+#   APPLE_IAP_KEY_P8                # .p8 private key (PEM) for the App Store
+#                                   # Server API. Absent = /api/apple/* 503s.
+#   APPLE_IAP_KEY_ID                # Key ID for the above.
+#   APPLE_IAP_ISSUER_ID             # App Store Connect issuer ID.
+#   SIDEKICK_APPLE_IAP_ALLOWLIST    # Comma-separated user ids allowed to buy
+#                                   # via StoreKit. EMPTY MEANS NOBODY, never
+#                                   # everybody; the code fails closed on this.
+#   SIDEKICK_APPLE_IAP_ENVIRONMENT  # "Sandbox" | "Production" | "auto". Which
+#                                   # Apple host to verify transactions against.
+#   COMPOSIO_API_KEY                # Brokered third-party connections. ⚠️ This
+#                                   # single key unlocks EVERY connected account
+#                                   # of EVERY customer, so it lives here and
+#                                   # NEVER on a runner. Absent = the connections
+#                                   # endpoints report not_configured and chat
+#                                   # keeps working. See apps/worker/src/composio.ts
+#   GITHUB_DISPATCH_TOKEN           # REQUIRED for ~60s provisioning. A GitHub
+#                                   # token (actions:write; a fine-grained PAT
+#                                   # scoped to actions:write on this repo is
+#                                   # strongly preferred over a classic
+#                                   # repo+workflow PAT) used to fire an instant
+#                                   # workflow_dispatch of series4-cron's
+#                                   # provision-once on a paid Stripe activation.
+#                                   # WITHOUT IT, every paying user falls back to
+#                                   # the GitHub */5 cron — which GitHub delays by
+#                                   # HOURS — i.e. the "workspace stuck coming
+#                                   # online after payment" defect. Set via
+#                                   # `wrangler secret put GITHUB_DISPATCH_TOKEN
+#                                   # --env production`.
+#   GITHUB_DISPATCH_REPO            # Optional — owner/repo target for the
+#                                   # dispatch (defaults to delegent-ai-ltd/delegent-ai).
+#   SIDEKICK_AGENT_SHARED_SECRET    # Signs Worker <-> agent engine requests
+#                                   # (runner auth v1 format) and the engine's
+#                                   # file links. The SAME value is a secret on
+#                                   # the delegent-agent Worker (apps/agent).
+#                                   # Absent = no account can use the engine.
+#   SIDEKICK_OPS_HEALTH_TOKEN       # Bearer that unlocks the unredacted
+#                                   # /health?deep=1 body. Any high-entropy
+#                                   # string; it reads that one status body and
+#                                   # nothing else. Unset authorizes nobody, so
+#                                   # the body stays redacted. Deliberately NOT
+#                                   # the service-role key: reading a diagnostic
+#                                   # must not require the key to the whole DB.
+
+# -----------------------------------------------------------------------------
+# Production environment
+# -----------------------------------------------------------------------------
+[env.production]
+# Routes are intentionally NOT defaulted here. Configure them in the dashboard
+# OR add a `[[env.production.routes]]` block once the canonical hostname is
+# decided. Example:
+# [[env.production.routes]]
+# pattern = "worker.sidekick.dev/*"
+# zone_name = "sidekick.dev"
+
+[env.production.vars]
+SIDEKICK_ENVIRONMENT = "production"
+SIDEKICK_WORKER_PROXY_ENABLED = "true"
+SIDEKICK_USAGE_ENFORCEMENT_ENABLED = "true"
+# 2026-08-04 — the /api/admin dashboard allowlist (Alex's two accounts + Dan).
+# User ids are identifiers, not secrets; the gate also requires a valid
+# Supabase access token for one of exactly these ids. Empty list = 403 for all.
+# 1db4ec26 (the former marketing partner) removed 2026-09-05 when the share
+# agreement was terminated. He keeps his own paying subscription; what he no
+# longer has is sight of every other customer's account, usage and billing.
+SIDEKICK_ADMIN_USER_IDS = "272b9ffd-3097-4d59-a1b4-c0fc2dddffc2,0a548eee-c8ed-4221-a382-41fa0687ae5c"
+# 2026-07-14 — Telegram pilot enablement (Alex's go-ahead; see
+# docs/features/CONNECT_TELEGRAM_ROLLOUT.md). The webhook is live again:
+# users link via the agent-guided connect card (pilot-gated in the app) and
+# the existing connect-code redemption flow. Rollback = flip back to "false"
+# and deploy; existing bindings simply stop receiving.
+SIDEKICK_TELEGRAM_WEBHOOK_ENABLED = "true"
+SIDEKICK_TELEGRAM_WEBHOOK_DRY_RUN_ENABLED = "false"
+# 2026-09-09: one-off paywall-bounce nurture email, a day after sign-up (migration 0059).
+SIDEKICK_NURTURE_EMAIL_ENABLED = "true"
+# 2026-07-16 — Delegent-branded bot (Telegram GA). The legacy
+# CoworkerAI180554Bot is retired; its webhook is deregistered.
+SIDEKICK_TELEGRAM_BOT_USERNAME = "DelegentAIBot"
+SIDEKICK_TELEGRAM_CONNECT_CODE_TTL_MINUTES = "10"
+# The last two are the parity web app: its custom domain, and the Firebase
+# domain it is reachable on until DNS is cut over. Without them here, checkout
+# from a browser can only return to /checkout/success, which immediately
+# redirects to the sidekick:// deep link and dead-ends on desktop.
+SIDEKICK_CHECKOUT_REDIRECT_ORIGINS = "https://sidekick-worker-production.alex-coworker-ai.workers.dev,https://api.delegantai.co.uk,https://app.delegentai.co.uk,https://delegent-app.web.app"
+# Route B cutover switch (docs/CHAT_ROUTE_B_DESIGN.md): "true" dispatches chat
+# through the runner's delegent gateway platform (durable on-box sessions, no
+# 20-row history rebuild) with graceful fallback to /v1/runs per-runner.
+# Flipped 2026-06-11 (Alex-approved cutover) after the fleet (one runner) was
+# migrated to route-b-20260611 with the volume remounted at /data/hermes.
+SIDEKICK_CHAT_ROUTE_B_ENABLED = "true"
+# Connections (backend-brokered OAuth). The callback origin is configuration
+# rather than something derived from the request, because it has to match the
+# redirect URI registered with each provider byte for byte. The return URL is
+# where the browser lands afterwards; it is resolved server-side from the
+# stored surface, so the callback cannot become an open redirect.
+# The two secrets (SIDEKICK_CONNECTIONS_ENC_KEY, SIDEKICK_DROPBOX_APP_KEY) are
+# wrangler secrets, not vars. Until both are set the feature reports itself
+# unavailable rather than storing anything in the clear.
+SIDEKICK_CONNECTIONS_CALLBACK_ORIGIN = "https://api.delegantai.co.uk"
+SIDEKICK_CONNECTIONS_RETURN_WEB_URL = "https://delegent-app.web.app/connections"
+
+# Cron for the stale chat-run sweeper (see top-level [triggers] note).
+# 2026-09-08 Meta Conversions API (apps/worker/src/metaCapi.ts). The pixel id
+# is public (it ships in page source). The access token is a secret
+# (SIDEKICK_META_CAPI_ACCESS_TOKEN, wrangler secret). Switched ON 2026-09-08 on
+# Alex's word, after the privacy policy paragraph went live and a wiring probe
+# through metaCapi.ts was accepted by the dataset (events_received 1).
+SIDEKICK_META_CAPI_ENABLED = "true"
+SIDEKICK_META_PIXEL_ID = "1081310147586858"
+# 2026-09-15 agent engine (apps/agent, src/agent-engine.ts). The accounts whose
+# chat, attachments and Talk allowance run on the agent engine instead of a
+# runner. Test accounts only (Alex's say-so) until the release: tester,
+# and tester+assistant (380f8a84, made 2026-09-15 with no plan, to test
+# onboarding and the free month as a brand-new user). Every other account keeps
+# its runner untouched. Rollback for an account = remove its id and deploy. User
+# ids are identifiers, not secrets.
+# 2026-09-15 the assistant release (Alex: "roll it out"). "*" puts every account
+# on the agent engine (src/agent-engine.ts usesAgentEngine); a "-<id>" would hold
+# one back. The first two ids are the test accounts, always on it. One variable,
+# because this Worker is at Cloudflare's limit of 64 variables: a deploy with
+# separate flags was refused (code 10055).
+# 2026-09-18 (Alex): the five paying customers' "-<id>" holds and the App Store
+# rule are gone. Everyone is on the engine, the runners are destroyed and the
+# Fly account is closed, so there is no rollback to a runner any more: removing
+# "*" now would leave every account without a coworker.
+SIDEKICK_AGENT_ENGINE_USER_IDS = "272b9ffd-3097-4d59-a1b4-c0fc2dddffc2,4a4ca4c1-bfe3-46fa-ad4a-bf9db4b844af,*"
+
+# The agent engine Worker (apps/agent, name delegent-agent). It has no route of
+# its own; this binding is the only way in. Deploy it BEFORE a Worker that binds
+# to it.
+[[env.production.services]]
+binding = "AGENT"
+service = "delegent-agent"
+
+[env.production.triggers]
+crons = ["*/5 * * * *"]
+
+# -----------------------------------------------------------------------------
+# Staging environment
+# -----------------------------------------------------------------------------
+[env.staging.vars]
+SIDEKICK_ENVIRONMENT = "staging"
+SIDEKICK_WORKER_PROXY_ENABLED = "true"
+SIDEKICK_USAGE_ENFORCEMENT_ENABLED = "true"
+SIDEKICK_TELEGRAM_WEBHOOK_ENABLED = "false"
+SIDEKICK_TELEGRAM_WEBHOOK_DRY_RUN_ENABLED = "true"
+SIDEKICK_CHAT_ROUTE_B_ENABLED = "false"
+
+# -----------------------------------------------------------------------------
+# Observability
+# -----------------------------------------------------------------------------
+[observability]
+enabled = true

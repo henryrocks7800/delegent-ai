@@ -1,0 +1,170 @@
+appId: com.sidekick.v2
+name: MAIN-EVENT-01 — Real Runner Chat-Reply Journey
+tags:
+  - main-event
+  - blocked
+# blocked-reason: retired: superseded by production/home.chat_send_text_message.yaml; the runner it drove is retired
+---
+# ============================================================================
+# Spec ID: MAIN-EVENT-01 — Real Runner Chat-Reply Journey
+#
+# This is the cross-cutting end-to-end flow that the per-spec
+# CHAT/FILES tests can't reach on their own with the stub seeded
+# users. It targets Alex's real per-user Fly Machines runner
+# (`delegent-runner-48daaab8518c`, provider='fly_machines',
+# status='ready') bound to user_id c8ea5651-c46e-4322-a34c-1bd242261052
+# (email: qa@example.com).
+#
+# Pre-step (driven by the runner script, not this YAML):
+#   node scripts/sign-in-via-admin-link.mjs qa@example.com
+#     (NO seed mutation — this account's real Stripe / runner state
+#      is untouched. The admin-link path mints a magic link, fires
+#      the URL via adb am start -p com.sidekick.v2, and the app's
+#      exchangeCodeForSession persists the session.)
+#
+# Flow contract:
+#   1. Cold launch lands on Chat home (real subscription + real
+#      ready runner).
+#   2. Type a short marker task and send.
+#   3. Optimistic state (user bubble + thinking dots + composer
+#      cleared) renders within seconds.
+#   4. Assistant bubble appears with non-empty text — the REAL
+#      runner produced a real reply. (We do not assert the reply's
+#      semantic content; the LLM output is non-deterministic. We
+#      assert (a) the thinking-dots placeholder went away,
+#      (b) an assistant message bubble is rendered, and (c) no
+#      provider internals leaked.)
+#
+# Why this is a "main event" verification, not a per-spec one:
+#   - The reply step in CHAT-03 is gated on a real runner;
+#   - The file-creation outcome in FILES-* is gated on the runner
+#     having actually written something;
+#   - Together they form the journey Alex highlighted.
+#
+# What this spec does NOT test:
+#   - The file artefact appearing in Files (CHAT prompt would need
+#     to be deterministic enough that the LLM definitely writes a
+#     named file — that's a second, harder fixture). Logged as a
+#     follow-up in BATCH-5-REPORT.md.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+- takeScreenshot: "main_event_01_chat_home"
+
+# Step 1 — send a marker task whose unique echo token forces the
+# verification to inspect the LATEST assistant reply. Asking the
+# model to echo a specific unique string back is the cleanest way
+# to differentiate "the assistant actually replied with what we
+# asked" from "the runner emitted an error string into the bubble".
+#
+# Echo token is "DELEGENT-MAINEVT-ACK-NOW" — unique enough that no
+# historical bubble or product copy would coincidentally contain it.
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "MAINEVT-PROBE reply with EXACTLY the literal token DELEGENT-MAINEVT-ACK-NOW and nothing else"
+- hideKeyboard
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Step 2 — optimistic state: user bubble + composer cleared. The
+# thinking-dots placeholder may render for <100ms when the model
+# replies quickly (Kimi K2.6 echo-only prompts often return sub-
+# second), which is shorter than Maestro's poll cycle. The dots ARE
+# preserved in the product (HomeChatPanel.tsx renders ThinkingDots
+# while `isPlaceholder || status==='queued' || status==='dispatched'`);
+# we just don't hard-assert visibility here because the timing isn't
+# reliably observable. Instead we hard-assert (a) the optimistic
+# user bubble + text + bubble container appeared and (b) the
+# composer cleared (sendButton replaced by micButton + placeholder
+# returns) — both are stable signals that the optimistic flip
+# happened before any reply landed.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.user"
+    timeout: 8000
+- assertVisible:
+    id: "home.chatPanel.message.user"
+- assertVisible:
+    id: "home.chatPanel.message.userBubble"
+- assertVisible:
+    id: "home.chatPanel.message.userText"
+- assertVisible:
+    text: ".*MAINEVT-PROBE reply with EXACTLY.*"
+- assertNotVisible:
+    id: "home.chatPanel.sendButton"
+- assertVisible:
+    id: "home.chatPanel.micButton"
+- takeScreenshot: "main_event_02_optimistic"
+
+# Step 3 — REAL RUNNER REPLY. Wait up to 120s for the unique echo
+# token to render. Real LLM responses on Fly typically arrive in
+# 5-30s; budget more for cold-start AND for the runner-side 3-retry
+# path the OpenAI adapter uses when the upstream Worker → OpenRouter
+# hop has a transient failure.
+#
+# IMPORTANT: this assertion is the SUFFICIENT test that the reply
+# arrived AND that it came from the model (not from an error
+# fallback). If the chain is broken at any layer (Worker→OpenRouter
+# 502, model down, runner crash), the assistant bubble would render
+# error text instead and DELEGENT-MAINEVT-ACK-NOW would not appear.
+- extendedWaitUntil:
+    visible:
+      text: ".*DELEGENT-MAINEVT-ACK-NOW.*"
+    timeout: 120000
+- assertVisible:
+    text: ".*DELEGENT-MAINEVT-ACK-NOW.*"
+
+# DN1.4-03 — the reply must render inside the assistant bubble/card
+# (distinct background, border, padding via the bubbleIncoming style)
+# AND the token must live inside the bubble's text node, not as loose
+# text on the panel. The assistantBubble + assistantText testIDs were
+# added in this batch.
+- assertVisible:
+    id: "home.chatPanel.message.assistant"
+- assertVisible:
+    id: "home.chatPanel.message.assistantBubble"
+- assertVisible:
+    id: "home.chatPanel.message.assistantText"
+
+# Once the reply has landed the thinking-dots placeholder must NOT
+# be visible (a settled assistant reply replaces the placeholder).
+# This is the stable post-reply assertion — independent of how
+# briefly the placeholder flashed during the optimistic phase.
+- assertNotVisible:
+    id: "home.chatPanel.thinkingDots"
+- takeScreenshot: "main_event_03_assistant_reply"
+
+# DN1.4-01 + DN1.4-03 — no raw provider/runtime text leaks anywhere
+# on the chat surface, and the bubble carries the real model echo
+# token (already proved above) rather than an error string.
+- assertNotVisible:
+    text: ".*API call failed.*"
+- assertNotVisible:
+    text: ".*HTTP 502.*"
+- assertNotVisible:
+    text: ".*model request failed.*"
+- assertNotVisible:
+    text: ".*hermes --resume.*"
+- assertNotVisible:
+    text: ".*Resume this session with.*"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Hermes"
+- assertNotVisible:
+    text: "OpenRouter"
+- assertNotVisible:
+    text: "Fly"
+

@@ -1,0 +1,35 @@
+// Live Talk (beta): the voice Worker. See voice/worker.ts.
+// Separate from delegent-agent on purpose, so it can be switched off
+// (LIVE_TALK_ENABLED "false": the app falls back to the orb, no app update)
+// or deleted without touching the engine or the production Worker.
+//
+//   npx wrangler deploy -c wrangler.voice.jsonc --var SUPABASE_ANON_KEY:<public anon key>
+//   npx wrangler delete -c wrangler.voice.jsonc          (removes it; the app falls back)
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "delegent-voice",
+  "main": "voice/worker.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // On the API domain, beside api.delegantai.co.uk, so the app never embeds a
+  // workers.dev address (packages/shared/src/liveTalk.ts). workers.dev stays on
+  // for the box probes.
+  "routes": [{ "pattern": "voice.delegantai.co.uk", "custom_domain": true }],
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "ai": { "binding": "AI" },
+  "durable_objects": {
+    "bindings": [{ "class_name": "VoiceCall", "name": "VoiceCall" }]
+  },
+  "migrations": [{ "new_sqlite_classes": ["VoiceCall"], "tag": "v1" }],
+  "vars": {
+    "API_BASE": "https://api.delegantai.co.uk",
+    "SUPABASE_URL": "https://your-project-ref.supabase.co",
+    // "*" = everyone with a subscription (the production Worker's Talk mint
+    // checks it). A comma-separated list of user ids narrows it.
+    "ALLOWED_USER_IDS": "*",
+    "LIVE_TALK_ENABLED": "true",
+    "TTS_SPEAKER": "helios"
+  }
+}

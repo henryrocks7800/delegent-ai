@@ -1,0 +1,59 @@
+appId: com.sidekick.v2
+name: EDGE-S-01 — Storage full shows calm copy in chat and Files
+# Phase 9 Edge Batch 2, item 4.
+#
+# Why this matters
+# ----------------
+# A user whose runner volume is at capacity should see a friendly
+# message both on the Files surface and (when relevant) in chat. The
+# copy must NOT leak provisioning details (volume IDs, paths). The
+# chat composer should still allow questions that don't require new
+# storage.
+#
+# Precondition
+# ------------
+# A storage-full marker on the user record. NOTE: seed-test-user.mjs
+# does not yet expose a --storage flag; this flow is run when
+# productView.runner.storage.atCapacity is true. Track follow-up:
+# add --storage full|near-full to seed-test-user.mjs.
+#
+# What this proves
+# ----------------
+# (a) Files surface shows a clear "storage full" copy variant.
+# (b) Chat composer is still visible (user can still ask things).
+# (c) No volume/path/raw-provider details leak.
+#
+# Fixtures: requires storage-full marker. Skip if not seeded.
+
+tags:
+  - edge
+  - storage
+  - files
+  - blocked
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+# Chat remains usable.
+- assertVisible:
+    id: "home.chatPanel.input"
+
+- tapOn:
+    id: "tab.artifacts"
+- takeScreenshot: "edge_s_01_files_storage_full"
+- assertVisible:
+    id: "files.refreshButton"
+
+# Either the empty/normal banner OR a storage-full banner is fine; what
+# matters is no path/volume IDs leak.
+- assertNotVisible:
+    text: "fly_volume|vol_|/data|/var/lib|/opt/delegent"
+- assertNotVisible:
+    text: "Supabase|Hermes|Fly|OpenRouter|service_role"
+- assertNotVisible:
+    text: "raw provider|runner URL"

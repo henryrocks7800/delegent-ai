@@ -1,0 +1,49 @@
+appId: com.sidekick.v2
+name: P20-04 — Upgrade CTA opens in-app plan picker, not Stripe portal
+tags:
+  - persona:P20
+  - billing
+  - regression:D3
+  - regression:D6
+# blocked-reason: retired: superseded by production/billing.upgrade_plan_portal.yaml
+---
+# Regression test for D3/D6 — Alex tapped "Upgrade plan" expecting an
+# in-app plan picker and got dropped into the Stripe customer portal
+# where the only useful action was Cancel. The button on the burger
+# > monthly-capacity surface must open the in-app SetupWizardScreen
+# (the plan picker) instead.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Open burger menu via the discovered testID.
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.capacityRow"
+    timeout: 4000
+
+- tapOn:
+    id: "menu.capacityRow"
+- extendedWaitUntil:
+    visible:
+      text: ".*Manage plan.*|.*Choose a plan.*"
+    timeout: 4000
+
+- tapOn:
+    text: "Manage plan"
+
+# After tap, we must see the in-app plan picker (three tier cards) and
+# NOT be punted to Chrome (Stripe portal opens externally).
+- extendedWaitUntil:
+    visible:
+      text: ".*Studio.*|.*Pro-office.*|.*Pro office.*|.*Enterprise Suite.*"
+    timeout: 6000
+
+# Sanity: app is still in foreground (didn't kick out to browser).
+- assertVisible:
+    text: ".*Choose your plan.*|.*Studio.*"

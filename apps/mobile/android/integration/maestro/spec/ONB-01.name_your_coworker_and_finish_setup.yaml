@@ -1,0 +1,88 @@
+appId: com.sidekick.v2
+name: ONB-01 — Name Your Coworker and Finish Setup
+tags:
+  - onb
+  - live-only
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+# ============================================================================
+# Spec ID: ONB-01
+# Friendly name: Name Your Coworker and Finish Setup
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires an authenticated-but-unonboarded user already
+# signed in on the device. The harness signs in via
+# `node scripts/sign-in-via-admin-link.mjs` with a fresh test email so the
+# user lands directly on the onboarding screen at launch. clearState: false
+# preserves that signed-in state.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Missing as a hard release-gate journey.
+# **Precondition:** Authenticated, unonboarded user.
+#
+# **Flow and assertions:**
+# 1. Onboarding screen visible — "Name your coworker", agent name input,
+#    Terms acknowledgement copy, Finish setup button, Sign out button.
+# 2. Type a valid name, accept terms, tap Finish setup.
+# 3. Next screen is plan picker ("Pick a plan, meet your coworker") for a
+#    user without a subscription, or Home chat for an already-subscribed
+#    one. Onboarding screen must disappear.
+#
+# **Backend/provider assertions:** profile row gains the agent_name and
+# accepted_terms flag; no leaked provider internals visible.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 15000
+- takeScreenshot: "onb_01_01_onboarding_visible"
+
+# Step 1 — assert the onboarding surface is fully rendered
+- assertVisible:
+    id: "onboarding.agentNameInput"
+- assertVisible:
+    id: "onboarding.termsCheckbox"
+- assertVisible:
+    id: "onboarding.finishButton"
+- assertVisible:
+    id: "onboarding.signOutButton"
+- assertVisible:
+    text: "Name your coworker"
+- assertVisible:
+    text: "I understand. I accept the Delegent AI Terms."
+
+# Finish must be disabled until name + terms (we don't have a hard
+# `assertDisabled` in Maestro, but the next steps would otherwise fail).
+# Step 2 — type a name, accept terms, tap Finish setup.
+- tapOn:
+    id: "onboarding.agentNameInput"
+- inputText: "Atlas"
+- hideKeyboard
+- takeScreenshot: "onb_01_02_name_typed"
+- tapOn:
+    id: "onboarding.termsCheckbox"
+- takeScreenshot: "onb_01_03_terms_accepted"
+- tapOn:
+    id: "onboarding.finishButton"
+
+# Step 3 — onboarding screen MUST disappear. We accept either the plan
+# picker (unsubscribed) or the chat home (subscribed) as the next screen.
+- extendedWaitUntil:
+    notVisible:
+      id: "onboarding.agentNameInput"
+    timeout: 20000
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "onboarding.finishButton"
+- takeScreenshot: "onb_01_04_post_finish"
+
+# No leak of provider internals
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"
+- assertNotVisible:
+    text: "runner URL"

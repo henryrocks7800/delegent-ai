@@ -1,0 +1,26 @@
+appId: com.sidekick.v2
+name: Production - complete Stripe sandbox checkout
+---
+- extendedWaitUntil:
+    visible: "checkout.stripe.com|Payment method|Card information|Pay and subscribe|Subscribe"
+    timeout: 30000
+- tapOn:
+    id: "cardNumber"
+- inputText: "4242424242424242"
+- tapOn:
+    id: "cardExpiry"
+- inputText: "1234"
+- tapOn:
+    id: "cardCvc"
+- inputText: "123"
+- tapOn:
+    id: "billingName"
+- inputText: "Delegent QA"
+- hideKeyboard
+- scroll
+- scroll
+- tapOn:
+    text: "Pay and subscribe|Pay £9.99|Pay £24.99|Pay £59.99|Pay £2.99|Pay £7.49|Pay £17.98|Pay £17.99|Pay £3.00|Pay £7.50|Pay £18.00|Pay £30.00|Pay £75.00|Pay £150.00|Subscribe"
+- extendedWaitUntil:
+    visible: "all done here|Thank you|Choose your messenger|Choose a plan|Home|Connections|Secure checkout"
+    timeout: 45000

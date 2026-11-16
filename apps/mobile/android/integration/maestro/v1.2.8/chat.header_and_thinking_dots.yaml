@@ -1,0 +1,42 @@
+appId: com.sidekick.v2
+name: v1.2.8 DN3/DN4/DN5 — robot avatar + italic header + thinking dots
+---
+# DN3 + DN4: one persistent header with the coworker's avatar and name.
+# DN5: while a reply is being written the chat shows it is working.
+#
+# 2026-09-28: WebView chat. The typing dots have no Android id or text, so
+# "working" is the chat's stop button, which is shown exactly while a reply
+# is being written; the reply itself is then waited for. The header copy is
+# pinned in source by v1.2.7-v1.2.8-defect-regression.test.mjs.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- assertVisible:
+    id: "header.profileButton"
+- assertVisible:
+    text: "Online"
+- takeScreenshot: "v128_dn3_dn4_header_and_avatar"
+
+# DN5 — a reply long enough to catch it being written. Maestro's tap on Send
+# waits for the screen to settle, and a 120-word answer had finished by the
+# time it returned (2026-09-28), so ask for about 300.
+- tapOn:
+    id: "input"
+# The word is named first, so the request itself does not end with it.
+- inputText: "End your answer with the word CHERRY. Write about 300 words on the history of the River Thames."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      id: "stopBtn"
+    timeout: 20000
+- takeScreenshot: "v128_dn5_working"
+- extendedWaitUntil:
+    visible:
+      text: "(?is).*cherry\\W*"
+    timeout: 120000
+- extendedWaitUntil:
+    notVisible:
+      id: "stopBtn"
+    timeout: 30000

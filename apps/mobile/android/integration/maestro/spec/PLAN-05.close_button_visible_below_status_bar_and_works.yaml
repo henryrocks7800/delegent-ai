@@ -1,0 +1,55 @@
+appId: com.sidekick.v2
+name: PLAN-05 — Plan-picker close button is below the status bar and works
+tags:
+  - plan-picker
+  - safe-area
+  - live-only
+---
+# ============================================================================
+# Spec ID: PLAN-05
+# Friendly name: Plan-picker close button is reachable + functional
+# Defect this regression-guards: #9 + #10. The X close button on the
+# pick-a-plan screen used to sit directly under the system status bar
+# on tall-bezel devices (Pixel 10), where it overlapped the battery
+# icon and was both visually hidden and touch-blocked by the OS. With
+# the safe-area inset applied, the X is always reachable; tapping it
+# closes the plan picker and returns the user to the chat surface.
+#
+# Doesn't require a live runner. Exercises the on-device sheet only.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Open the menu and route to the plan picker.
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.setupGuideRow"
+    timeout: 10000
+- tapOn:
+    id: "menu.setupGuideRow"
+
+# The plan-picker screen lands.
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 10000
+
+# The close button is now testID-addressable AND not hidden behind
+# the status bar.
+- assertVisible:
+    id: "setup.closeButton"
+
+# Tapping the close button returns to chat (no trap).
+- tapOn:
+    id: "setup.closeButton"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 10000

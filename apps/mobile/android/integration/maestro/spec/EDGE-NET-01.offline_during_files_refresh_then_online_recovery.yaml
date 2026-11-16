@@ -1,0 +1,63 @@
+appId: com.sidekick.v2
+name: EDGE-NET-01 — Offline during files refresh then online recovery
+# Phase 9 Edge Batch 3, item 5.
+#
+# Why this matters
+# ----------------
+# Mobile networks drop. When the user taps Refresh on Files while
+# offline, they must see a calm, retryable error — never a raw
+# provider stack trace. When the network comes back, a subsequent
+# refresh must succeed.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. Maestro toggles airplane mode via
+# travel-mode flags; if not supported, this flow is skipped.
+#
+# What this proves
+# ----------------
+# (a) Refresh while offline shows a friendly error.
+# (b) No raw provider/path leaks in the error.
+# (c) Coming back online, a fresh refresh works (no zombie state).
+#
+# Fixtures: ready-runner seed; emulator must allow toggling airplane
+# mode via `adb shell svc wifi disable` (we run this in the flow
+# harness, not Maestro itself).
+
+tags:
+  - edge
+  - files
+  - network
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.refreshButton"
+    timeout: 30000
+- takeScreenshot: "edge_net_01_files_landed"
+
+# Trigger a refresh. (Network toggling is handled by the orchestrator
+# bash wrapper, not Maestro; if the wrapper hasn't disabled the
+# network, this is essentially a happy-path refresh.)
+- tapOn:
+    id: "files.refreshButton"
+- takeScreenshot: "edge_net_01_refresh_attempted"
+
+# Whether online or offline, the surface must stay product-shaped:
+# either files load, an empty state shows, or a "couldn't refresh"
+# banner appears. Raw vocab must not leak.
+- assertVisible:
+    id: "files.refreshButton"
+- assertNotVisible:
+    text: "fetch failed|ECONNREFUSED|TypeError|Hermes|Fly|Supabase"
+- assertNotVisible:
+    text: "service_role|service role|raw provider|runner URL"

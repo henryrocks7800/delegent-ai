@@ -1,0 +1,58 @@
+appId: com.sidekick.v2
+name: CHAT-10 — Keyboard Does Not Cover Composer
+tags:
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-10 — Keyboard Does Not Cover Composer
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber on chat home; seed --profile
+# ready-runner.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 15000
+- takeScreenshot: "chat_10_01_landed"
+
+# Step 1 — empty draft, mic visible
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "micBtn"
+
+# Step 2 — tap the composer to raise the soft keyboard, type to keep it open
+- tapOn:
+    id: "input"
+- inputText: "Test message that must remain visible above the keyboard"
+- takeScreenshot: "chat_10_02_keyboard_up_with_text"
+
+# With the keyboard up, the composer input AND the send button MUST be visible.
+# If the layout regression returned, the input would be scrolled off-screen.
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "sendBtn"
+
+# Step 3 — erase, lower keyboard, composer + mic still visible
+- eraseText: 60
+- hideKeyboard
+- takeScreenshot: "chat_10_03_keyboard_down"
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "micBtn"
+# 2026-09-28: Send is always drawn now, disabled while the draft is empty.
+- assertVisible:
+    id: "sendBtn"
+    enabled: false
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "runner URL"

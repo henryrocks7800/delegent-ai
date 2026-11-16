@@ -1,0 +1,23 @@
+appId: com.sidekick.v2
+name: P16-03 — Unknown deep link doesn't crash the app
+tags:
+  - persona:P16
+  - deep-link
+  - unhappy-path
+---
+# Setup is P16 (no sub) — cold launch lands on plan picker. Whatever
+# screen we land on, an unknown deep-link must not crash the app.
+- launchApp:
+    clearState: false
+- runFlow: ../../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*|.*Choose your plan.*|.*Pick a plan.*|.*Message.*"
+    timeout: 30000
+- openLink:
+    link: "sidekick://garbage/route/that/does/not/exist"
+# App must remain alive — same surface still visible.
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*|.*Choose your plan.*|.*Pick a plan.*|.*Message.*"
+    timeout: 8000

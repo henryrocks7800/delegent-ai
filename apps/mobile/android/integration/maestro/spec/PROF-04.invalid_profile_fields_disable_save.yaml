@@ -1,0 +1,101 @@
+appId: com.sidekick.v2
+name: PROF-04 — Invalid Profile Fields Disable Save
+tags:
+  - prof
+  - live-only
+---
+# ============================================================================
+# Spec ID: PROF-04 — Invalid Profile Fields Disable Save
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). The Save profile button must remain disabled while a
+# required field is blank.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.signOutButton"
+    timeout: 15000
+- tapOn:
+    text: "Edit profile"
+
+# Step 1 — clear Display name and type a known-too-short value. The
+# product validation requires displayName.trim().length >= 2; "x" is one
+# character so canSave must remain false.
+#
+# Neither `eraseText: N` nor a `repeat pressKey: Backspace` reliably
+# sync with React's controlled component on this build — keystrokes
+# outpace `onChangeText` and the field ends up with leftover characters
+# (observed: "xster" residue from the seeded "Test Customer 4").
+# Replacing the value via long-press → Select all → type bypasses the
+# stream-of-deletes problem: the selection-then-replace path fires a
+# single onChangeText with the typed value, which RN handles cleanly.
+- scrollUntilVisible:
+    element:
+      id: "profile.displayNameInput"
+    direction: DOWN
+    timeout: 10000
+- longPressOn:
+    id: "profile.displayNameInput"
+- extendedWaitUntil:
+    visible:
+      text: "Select all"
+    timeout: 5000
+- tapOn:
+    text: "Select all"
+- inputText: "x"
+- hideKeyboard
+- takeScreenshot: "prof_04_01_display_name_too_short"
+
+# Step 2 — verify the state-sync worked: the field shows "x" only, the
+# seeded "Test Customer 4" value is no longer visible inside the
+# input. If this fails, the test infrastructure (Maestro keystrokes vs
+# RN controlled component) is the issue, not the product.
+- assertVisible:
+    text: "x"
+- assertNotVisible:
+    text: "Test Customer 4"
+
+# Step 3 — tap Save. The product check
+# `displayName.trim().length >= 2` evaluates 1 >= 2 → false → canSave
+# is false → the Button's disabled={!canSave} blocks the press AND
+# saveProfile() guards with `if (!canSave) return`. Either layer must
+# keep us in edit mode and prevent the "Saved" badge from appearing.
+- scrollUntilVisible:
+    element:
+      id: "profile.saveButton"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "profile.saveButton"
+- assertVisible:
+    id: "profile.displayNameInput"
+- assertVisible:
+    id: "profile.saveButton"
+- assertNotVisible:
+    text: "Saved"
+- takeScreenshot: "prof_04_02_save_was_noop"
+
+# Step 4 — type a valid extension so trim().length >= 2 and confirm
+# the form still accepts good input (the disabled gate releases).
+- tapOn:
+    id: "profile.displayNameInput"
+- inputText: "yz"
+- hideKeyboard
+- takeScreenshot: "prof_04_03_valid_input"
+- assertVisible:
+    id: "profile.displayNameInput"
+- assertVisible:
+    text: "xyz"
+
+- assertNotVisible:
+    text: "service_role"

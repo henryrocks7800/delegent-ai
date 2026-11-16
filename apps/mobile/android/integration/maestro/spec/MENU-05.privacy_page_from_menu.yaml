@@ -1,0 +1,91 @@
+appId: com.sidekick.v2
+name: MENU-05 — Privacy Page From Menu
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-05 — Privacy Page From Menu
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). menu.privacyRow → onChangeView('privacy'), which
+# renders the DrawerHeader (title="Privacy") + <PrivacyContent />
+# inside the drawer. Back navigation returns the drawer to the menu
+# list (verified end-to-end by MENU-14 across four subpages; this
+# spec exercises the Privacy subpage specifically).
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 1 — open drawer, scroll to and tap Privacy
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- scrollUntilVisible:
+    element:
+      id: "menu.privacyRow"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "menu.privacyRow"
+
+# Step 2 — Privacy subpage renders with title + intro + section content
+- extendedWaitUntil:
+    visible:
+      text: "Delegent AI Privacy Policy"
+    timeout: 8000
+- assertVisible:
+    text: "Delegent AI Privacy Policy"
+# The intro paragraph is one long text node (~512 chars). Maestro's
+# text selector uses Java regex `matches()` (full-string), so a bare
+# substring won't bind — wrap with .*…* to match within the paragraph.
+- assertVisible:
+    text: ".*UK General Data Protection Regulation.*"
+- takeScreenshot: "menu_05_01_privacy_subpage"
+
+# Step 3 — scroll to confirm content extends past the intro. The
+# Privacy doc has 16 numbered sections — section 2's title is a
+# reliable downstream marker reachable within a single scroll burst
+# (deeper sections like "11. Your rights" need a much longer scroll
+# campaign that Maestro's per-burst timing won't hit in 10s).
+- scrollUntilVisible:
+    element:
+      text: ".*Information you provide.*"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    text: ".*Information you provide.*"
+- takeScreenshot: "menu_05_02_privacy_scrolled"
+
+# Step 4 — Return to the menu list via hardware Back, which the
+# DN1.3-03e drawer-subpage Back handler maps to onChangeView('menu')
+# (verified end-to-end by MENU-14). The in-drawer Back arrow has
+# accessibilityLabel="Back" but no resource-id — Maestro's `id:`
+# matcher targets resource-id only, so hardware Back is the
+# deterministic path here.
+- pressKey: Back
+# The menu reopens at its top when a page closes (2026-09-28: it always
+# has; the taller rows just put this one below the fold), so wait on the
+# top row.
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- assertVisible:
+    id: "menu.homeRow"
+# Title is its own short text node so the literal match works here.
+- assertNotVisible:
+    text: "Delegent AI Privacy Policy"
+- takeScreenshot: "menu_05_03_back_on_menu"
+
+- assertNotVisible:
+    text: "service_role"

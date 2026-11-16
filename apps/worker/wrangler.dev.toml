@@ -1,0 +1,16 @@
+# TEMPORARY local-dev config (not for deploy). Points the entry at the
+# thin dev-entry wrapper so workerd doesn't choke on index.ts's exported
+# test constants. Used only to verify the fixed worker end-to-end locally.
+name = "sidekick-worker-dev"
+main = "src/dev-entry.ts"
+compatibility_date = "2025-04-01"
+
+[vars]
+SIDEKICK_WORKER_PROXY_ENABLED = "false"
+SIDEKICK_USAGE_ENFORCEMENT_ENABLED = "false"
+SIDEKICK_TELEGRAM_WEBHOOK_ENABLED = "false"
+SIDEKICK_TELEGRAM_WEBHOOK_DRY_RUN_ENABLED = "false"
+SIDEKICK_CHECKOUT_REDIRECT_ORIGINS = "https://sidekick-worker-production.alex-coworker-ai.workers.dev"
+
+[observability]
+enabled = false

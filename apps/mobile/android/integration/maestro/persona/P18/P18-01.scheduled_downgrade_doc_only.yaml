@@ -1,0 +1,29 @@
+appId: com.sidekick.v2
+name: P18-01 — Scheduled downgrade — sub still active, no premature lock (live-stripe gated)
+tags:
+  - persona:P18
+  - downgrade
+  - stripe-scheduled
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+# P18 represents a customer with an active pro-office plan and a
+# subscription_schedule pointing at studio. Until the schedule rolls
+# over at period-end, the user is still on pro-office.
+#
+# We can't safely write a real Stripe subscription_schedule from a
+# Maestro flow (those are live mutations on the Stripe account), so the
+# persona setup just provisions the pro-office state. This flow then
+# verifies the customer still has chat access and we do NOT show a
+# premature downgrade-completed lock.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    text: ".*Choose your plan.*"
+- assertNotVisible:
+    text: ".*subscription cancelled.*"

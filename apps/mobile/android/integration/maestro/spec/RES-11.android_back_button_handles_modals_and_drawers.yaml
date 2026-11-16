@@ -1,0 +1,73 @@
+appId: com.sidekick.v2
+name: RES-11 — Android Back Button Handles Modals and Drawers
+tags:
+  - res
+  - live-only
+---
+# ============================================================================
+# Spec ID: RES-11 — Android Back Button Handles Modals and Drawers
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile ready-runner).
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- assertVisible:
+    id: "main-menu-button"
+
+# Step 1 — open the burger drawer
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "drawer.backdropDismiss"
+    timeout: 8000
+- assertVisible:
+    id: "menu.homeRow"
+- takeScreenshot: "res_11_01_drawer_open"
+
+# Step 2 — press the system Back key. Drawer must close; chat must return.
+- pressKey: Back
+- extendedWaitUntil:
+    notVisible:
+      id: "drawer.backdropDismiss"
+    timeout: 6000
+- assertNotVisible:
+    id: "drawer.backdropDismiss"
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "input"
+- takeScreenshot: "res_11_02_drawer_closed_by_back"
+
+# Step 3 — open Profile (the Profile screen is reached via header button +
+# replaces the chat content). Press Back. Should return to chat, not exit app.
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.agentAllowance"
+    timeout: 10000
+- takeScreenshot: "res_11_03_profile_open"
+- pressKey: Back
+
+# After Back, app must NOT close. We assert that some app-internal surface
+# remains. The product behavior is to return to chat (via tab back to
+# 'dashboard') so we assert the chat panel surfaces again.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 8000
+- assertVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "profile.agentAllowance"
+- takeScreenshot: "res_11_04_back_to_chat"
+
+- assertNotVisible:
+    text: "service_role"

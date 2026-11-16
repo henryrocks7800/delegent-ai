@@ -1,0 +1,22 @@
+appId: com.sidekick.v2
+name: P02-N01 — Hardware back from plan picker doesn't crash
+tags:
+  - persona:P02
+  - unhappy-path
+# blocked-reason: needs a signed-in account with no subscription; the test account the pack signs in is a subscriber
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Studio.*|.*Choose your plan.*"
+    timeout: 30000
+- back
+# After back, app should still be alive (foreground or background, but
+# launching again should yield the same surface).
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Studio.*|.*Choose your plan.*|.*Delegent.*"
+    timeout: 10000

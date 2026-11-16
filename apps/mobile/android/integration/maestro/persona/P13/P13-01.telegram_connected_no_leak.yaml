@@ -1,0 +1,24 @@
+appId: com.sidekick.v2
+name: P13-01 — Telegram-connected user — chat works, no raw chat-id leak
+tags:
+  - persona:P13
+  - telegram
+# blocked-reason: needs a seeded account state (Telegram linked); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+# Mobile UI currently does NOT expose a Telegram connection card, so the
+# contract is: a backend gateway_connections row must NEVER cause UI
+# regressions or leaked vocabulary on the chat surface.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    text: ".*source_conversation_id.*"
+- assertNotVisible:
+    text: ".*persona-test-chat.*"
+- assertNotVisible:
+    text: ".*gateway_id.*"

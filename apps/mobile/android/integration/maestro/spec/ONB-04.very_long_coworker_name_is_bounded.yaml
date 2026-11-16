@@ -1,0 +1,60 @@
+appId: com.sidekick.v2
+name: ONB-04 — Very Long Coworker Name Is Bounded
+tags:
+  - onb
+  - live-only
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+# ============================================================================
+# Spec ID: ONB-04 — Very Long Coworker Name Is Bounded
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Authenticated, unonboarded user (seed --profile
+# onboarding). The TextInput's maxLength caps the visible string; this flow
+# verifies the cap holds end-to-end (no overflow in the header after
+# onboarding).
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 15000
+- takeScreenshot: "onb_04_01_onboarding"
+
+# Step 1 — paste a 100-char "name". The input has maxLength=40; the visible
+# value must be truncated to 40 chars before submit.
+- tapOn:
+    id: "onboarding.agentNameInput"
+- inputText: "AaaaaaaaaaBbbbbbbbbbCcccccccccDdddddddddEeeeeeeeeeFfffffffffGgggggggggHhhhhhhhhhIiiiiiiiiiJjjjjjjjjj"
+- hideKeyboard
+- takeScreenshot: "onb_04_02_long_name_typed"
+
+# Step 2 — tick terms + tap Finish to advance.
+- tapOn:
+    id: "onboarding.termsCheckbox"
+- tapOn:
+    id: "onboarding.finishButton"
+
+# Step 3 — onboarding screen must disappear. We accept either plan picker
+# or chat home as the next screen. Then we assert the long-name overflow
+# never leaks: the literal 100-char string should NOT be anywhere on screen.
+- extendedWaitUntil:
+    notVisible:
+      id: "onboarding.agentNameInput"
+    timeout: 20000
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- takeScreenshot: "onb_04_03_post_finish"
+
+# Specifically the tail of the 100-char string should not be present. If
+# it is, the cap is not being applied.
+- assertNotVisible:
+    text: "IiiiiiiiiiJjjjjjjjjj"
+- assertNotVisible:
+    text: "GgggggggggHhhhhhhhhh"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"

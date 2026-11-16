@@ -1,0 +1,83 @@
+appId: com.sidekick.v2
+name: PLAN-02 — Selected Plan Is the One Sent to Checkout
+tags:
+  - plan
+  - blocked
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+# ============================================================================
+# Spec ID: PLAN-02 — Selected Plan Is the One Sent to Checkout
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only (partial). Authenticated unsubscribed-onboarded
+# user (seed --profile unsubscribed) lands on the plan picker. The
+# UI half of this spec — "the selected tier is the one the checkout
+# CTA references" — is verifiable without actually firing Stripe:
+# tap a non-default tier, the "Open secure checkout" CTA must still
+# render, and the visible price/storage on the selected card must
+# match the tier (Pro Office: 75 / 40 GB; Enterprise: 150 / 100 GB).
+#
+# The actual Stripe handoff (verifying the checkout request body
+# contains the right tier id) is BILL-01-blocked and out of scope
+# for this single-state spec.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 15000
+- assertVisible:
+    id: "setup.stepIndicator"
+
+# Step 1 — Studio is the default selected tier. Verify the CTA is "Open secure checkout".
+- assertVisible:
+    text: "Studio"
+- assertVisible:
+    text: ".*Open secure checkout.*"
+- assertVisible:
+    text: ".*30.*"
+- assertVisible:
+    text: ".*10 GB.*"
+- takeScreenshot: "plan_02_01_studio_default"
+
+# Step 2 — select Pro Office. The price + storage update on the visible card,
+# and the CTA stays "Open secure checkout" (still unsubscribed).
+- tapOn:
+    id: "setup.plan.pro-office"
+- assertVisible:
+    text: "Pro Office"
+- assertVisible:
+    text: ".*75.*"
+- assertVisible:
+    text: ".*40 GB.*"
+- assertVisible:
+    text: ".*Open secure checkout.*"
+- takeScreenshot: "plan_02_02_pro_office_selected"
+
+# Step 3 — select Enterprise Suite. Same contract.
+- tapOn:
+    id: "setup.plan.enterprise-suite"
+- assertVisible:
+    text: "Enterprise Suite"
+- assertVisible:
+    text: ".*150.*"
+- assertVisible:
+    text: ".*100 GB.*"
+- assertVisible:
+    text: ".*Open secure checkout.*"
+- takeScreenshot: "plan_02_03_enterprise_selected"
+
+# Step 4 — re-select Studio to prove the selector is bidirectional.
+- tapOn:
+    id: "setup.plan.studio"
+- assertVisible:
+    text: "Studio"
+- assertVisible:
+    text: ".*30.*"
+- assertVisible:
+    text: ".*10 GB.*"
+- takeScreenshot: "plan_02_04_studio_re_selected"
+
+- assertNotVisible:
+    text: "service_role"

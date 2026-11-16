@@ -1,0 +1,22 @@
+appId: com.sidekick.v2
+name: P13-N01 — Even with backend Telegram link, no Telegram-only UI is surfaced
+tags:
+  - persona:P13
+  - telegram
+  - unhappy-path
+# blocked-reason: needs a seeded account state (Telegram linked); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+# The mobile experience is unified — Telegram users still chat in-app.
+# No "connect Telegram" CTA, no "view in Telegram", no chat-id widget.
+- assertNotVisible:
+    text: ".*View in Telegram.*"
+- assertNotVisible:
+    text: ".*Connect Telegram.*"
+- assertNotVisible:
+    text: ".*chat_id.*"

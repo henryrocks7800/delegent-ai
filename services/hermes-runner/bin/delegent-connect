@@ -1,0 +1,304 @@
+#!/usr/bin/env python3
+"""delegent-connect - use a service the user signed you into.
+
+The sibling of `delegent-keys`. The difference is custody, and it matters:
+
+  delegent-keys    the user typed a credential in, and it is encrypted on this
+                   machine's own volume.
+  delegent-connect the user signed in at the provider (Dropbox and the rest of
+                   the OAuth connections) and the sign-in is held OFF this
+                   machine. This box can only ever borrow an access token that
+                   expires in minutes, so nothing here can give away lasting
+                   access to their account.
+
+Subcommands
+-----------
+  list
+      Print the connected services. Never a secret.
+
+  run --service <s> [--var VAR] -- <cmd...>
+      Fetch a fresh access token, put it in $DELEGENT_ACCESS_TOKEN (or --var),
+      and run the command with it. The token is never printed and never touches
+      disk. Example:
+
+        delegent-connect run --service dropbox -- \\
+          curl -s -X POST https://api.dropboxapi.com/2/files/list_folder \\
+            -H "Authorization: Bearer $DELEGENT_ACCESS_TOKEN" \\
+            -H "Content-Type: application/json" \\
+            -d '{"path": ""}'
+
+  exec --tool <TOOL> [--args '<json>']
+      Run one action on a service brokered by Composio (`backend` is
+      "composio" in `list`). These have no borrowable token: Composio holds the
+      grant and runs the action for us, so `run` will not work on them. The
+      result is printed as JSON. Example:
+
+        delegent-connect exec --tool GMAIL_FETCH_EMAILS \
+          --args '{"max_results": 5}'
+
+Exit codes: 0 ok, 1 failure, 2 the service is not connected (ask the user to
+connect it on the Connections screen; do NOT try to set it up by hand).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+
+NOT_CONNECTED = 2
+DEFAULT_VAR = 'DELEGENT_ACCESS_TOKEN'
+
+
+def _die(msg: str, code: int = 1) -> None:
+    print(f'delegent-connect: {msg}', file=sys.stderr)
+    sys.exit(code)
+
+
+def _local_base() -> str:
+    """The on-box runner, which is the only thing here that can reach the
+    broker. OPENAI_BASE_URL is already pointed at it for the model adapter."""
+    base = (os.environ.get('OPENAI_BASE_URL') or os.environ.get('HERMES_MODEL_BASE_URL') or '').strip()
+    if base:
+        return base.rstrip('/')
+    port = (os.environ.get('PORT') or '8642').strip()
+    return f'http://127.0.0.1:{port}/v1'
+
+
+def _local_key() -> str:
+    key = (os.environ.get('OPENAI_API_KEY') or os.environ.get('HERMES_API_KEY') or '').strip()
+    if not key:
+        _die('this command only runs inside your workspace')
+    return key
+
+
+def _call(path: str, payload: dict | None) -> tuple[int, dict]:
+    request = urllib.request.Request(
+        f'{_local_base()}{path}',
+        data=json.dumps(payload).encode('utf-8') if payload is not None else None,
+        headers={'content-type': 'application/json', 'authorization': f'Bearer {_local_key()}'},
+        method='POST' if payload is not None else 'GET',
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            body = json.loads(response.read() or b'{}')
+            return response.status, body if isinstance(body, dict) else {}
+    except urllib.error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read() or b'{}')
+            return exc.code, body if isinstance(body, dict) else {}
+        except ValueError:
+            return exc.code, {}
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        _die(f'could not reach your workspace connection service: {type(exc).__name__}')
+        return 0, {}  # unreachable
+
+
+def cmd_list(_args) -> int:
+    status, body = _call('/delegent/connections', None)
+    if status != 200:
+        _die(f'could not list connections ({body.get("error") or status})')
+    connections = _read_connections(body)
+    out = {'connections': connections}
+    # Pass the flag through rather than swallowing it. An empty list because the
+    # broker was unreachable is not the same answer as nothing being connected,
+    # and telling a user who connected Gmail an hour ago that they never did is
+    # the failed read reported as an answer.
+    unavailable = False
+    for flag in ('composioUnavailable', 'nativeUnavailable'):
+        if body.get(flag):
+            out[flag] = True
+            unavailable = True
+    print(json.dumps(out, indent=2))
+    if unavailable:
+        _die('some connection statuses could not be checked. Use the listed services, '
+             'retry the failed read once when needed, and continue independent work '
+             'if it still fails. Do not ask the user to reconnect because of this read failure.')
+    return 0
+
+
+def _read_connections(body: dict) -> list[dict]:
+    connections = body.get('connections')
+    if not isinstance(connections, list) or any(
+        not isinstance(c, dict) or not isinstance(c.get('provider'), str) or not c['provider']
+        or c.get('status') not in ('connected', 'needs_reauth')
+        or c.get('backend') not in ('native', 'composio') for c in connections
+    ):
+        _die('connection statuses could not be read. Retry once when needed; do not ask the user to reconnect.')
+    return connections
+
+
+def _composio_services(service: str) -> dict:
+    """Which connected services are brokered by Composio, not by us.
+
+    Maps the service name to Composio's toolkit slug, because the slug (upper
+    cased) is the prefix of every action and it is NOT always the service name:
+    google_calendar's actions are GOOGLECALENDAR_*. Read fresh rather than
+    assumed. A service can change backend between releases, and a stale guess
+    here would send the agent to the wrong command with total confidence.
+    """
+    status, body = _call('/delegent/connections', None)
+    if status != 200:
+        _die('connection statuses could not be checked. Retry once when needed; do not ask the user to reconnect.')
+    connections = _read_connections(body)
+    if not any(c['provider'] == service for c in connections) and (
+        body.get('composioUnavailable') or body.get('nativeUnavailable')
+    ):
+        _die(f'{service} status could not be checked. Retry once when needed; do not ask the user to reconnect.')
+    return {
+        c['provider']: (c.get('toolkit') or c['provider'])
+        for c in connections
+        if isinstance(c, dict) and c.get('backend') == 'composio' and c.get('provider')
+    }
+
+
+def cmd_run(args) -> int:
+    if not args.command:
+        _die('nothing to run; put the command after `--`')
+    # A Composio service has no token to borrow, so `run` cannot work on it. The
+    # agent reaching for the familiar command is not a mistake worth punishing
+    # with a misleading error: on 2026-09-01 that produced "Gmail is not
+    # available", which reads as a broken connection to a user whose connection
+    # was perfectly healthy. Name the right command instead.
+    brokered = _composio_services(args.service)
+    if args.service in brokered:
+        prefix = str(brokered[args.service]).upper()
+        _die(f'{args.service} is brokered by Composio, so there is no token to borrow and '
+             f'`run` cannot work on it. Use `exec` instead, with an action that starts '
+             f'{prefix}_ , for example:\n'
+             f"  delegent-connect exec --tool {prefix}_<ACTION> --args '{{...}}'\n"
+             f'The connected-services skill lists the exact actions {args.service} supports. '
+             f'This is NOT a disconnected service: do not tell the user to reconnect it.')
+
+    status, body = _call('/delegent/connections/token', {'provider': args.service})
+    if status != 200 and body.get('error') == 'not_connected':
+        _die(f'{args.service} is not connected. Ask the user to connect it on the '
+             'Connections screen in the app; do not try to set it up by hand.',
+             NOT_CONNECTED)
+    if status != 200:
+        detail = body.get('error') or body.get('detail') or status
+        if detail == 'refresh_recovery_required':
+            _die(f'the {args.service} sign-in refresh could not be confirmed. '
+                 'Ask the user to sign in again on the Connections screen to restore access. '
+                 'Do not claim the provider revoked it or try to refresh the old token again.', NOT_CONNECTED)
+        if detail in ('refresh_persistence_failed', 'refresh_store_unavailable'):
+            _die(f'could not confirm the stored {args.service} sign-in. Retry once later to '
+                 'read its state; do not claim the sign-in has lapsed.')
+        if detail == 'needs_reauth':
+            _die(f'the {args.service} sign-in needs attention. Ask the user to reconnect it '
+                 'on the Connections screen.', NOT_CONNECTED)
+        _die(f'could not get a {args.service} token ({detail})')
+
+    token = body.get('accessToken')
+    if not isinstance(token, str) or not token:
+        _die(f'could not get a {args.service} token')
+
+    env = os.environ.copy()
+    env[args.var or DEFAULT_VAR] = token
+    try:
+        return subprocess.run(args.command, env=env).returncode
+    except FileNotFoundError:
+        _die(f'command not found: {args.command[0]}')
+    except OSError as exc:
+        # The token is in the child env, never in the message, so this is safe
+        # to surface as-is.
+        _die(f'could not run command: {exc}')
+    return 1
+
+
+def cmd_exec(args) -> int:
+    try:
+        arguments = json.loads(args.args) if args.args else {}
+    except ValueError:
+        _die("--args must be valid JSON, e.g. --args '{\"max_results\": 5}'")
+        return 1
+    if not isinstance(arguments, dict):
+        _die('--args must be a JSON object')
+        return 1
+
+    status, body = _call(
+        '/delegent/connections/composio/execute',
+        {'tool': args.tool, 'arguments': arguments},
+    )
+    if status != 200 and body.get('error') == 'not_connected':
+        service = body.get('provider') or 'that service'
+        _die(f'{service} is not connected. Ask the user to connect it on the '
+             'Connections screen in the app; do not try to set it up by hand.',
+             NOT_CONNECTED)
+    if status == 403 and body.get('error') == 'read_only':
+        service = body.get('provider') or 'that service'
+        _die(f'{args.tool} is a write action and the {service} connection is read-only by '
+             'design: only list, retrieve and search actions can run. Tell the user '
+             'plainly that it cannot do this, and do not suggest reconnecting.')
+    if status == 429:
+        if body.get('error') == 'quota_exceeded':
+            _die('this workspace has run too many connected-service actions this month. '
+                 'Tell the user plainly and stop retrying.')
+        seconds = body.get('retryAfterSeconds')
+        timing = (f'wait at least {seconds} seconds'
+                  if type(seconds) is int and 0 <= seconds <= 9007199254740991
+                  else 'wait briefly before trying again')
+        _die(f'the connection service is temporarily rate limited; {timing}. '
+             'For a read action, retry at most once. For an action that changes anything, '
+             'check whether it completed before retrying to avoid duplicates. '
+             'If it still fails, continue independent work and report the delay. '
+             'This does not establish that the monthly allowance is exhausted.')
+    if status == 503 and body.get('error') == 'not_configured':
+        _die('connected services are not switched on for this workspace.')
+    if status == 503:
+        _die('the connection service is temporarily unavailable. Retry a read once when needed; '
+             'check whether a write completed before retrying. Do not ask the user to reconnect.')
+    if status != 200:
+        _die(f'could not run {args.tool} ({body.get("error") or status})')
+    if 'result' not in body or body['result'] is None:
+        _die(f'could not read the {args.tool} result. Check whether the action completed '
+             'before retrying; do not report it as successful.')
+    result = body['result']
+    print(json.dumps(result, indent=2, default=str))
+    # Composio answers HTTP 200 with successful:false when the PROVIDER refused
+    # the action (bad argument, missing message id, permission the grant lacks).
+    # Exiting 0 there let the agent read a refusal as a success. Exit 1, name
+    # it, and say what it is not: this is not a connection problem.
+    if isinstance(result, dict) and result.get('successful') is False:
+        detail = str(result.get('error') or 'the provider refused the action')[:300]
+        _die(f'{args.tool} did not succeed: {detail}. This is the provider answer, '
+             'not a broken connection: report it to the user as it is and do not tell '
+             'them to reconnect.')
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(
+        prog='delegent-connect',
+        description='Use a service the user signed you into on the Connections screen.')
+    sub = ap.add_subparsers(dest='cmd', required=True)
+
+    lp = sub.add_parser('list', help='list connected services (never secrets)')
+    lp.set_defaults(fn=cmd_list)
+
+    r = sub.add_parser('run', help='run a command with a fresh access token')
+    r.add_argument('--service', required=True, help='the connected service, e.g. dropbox')
+    r.add_argument('--var', help=f'env var to hold the token (default {DEFAULT_VAR})')
+    r.add_argument('command', nargs=argparse.REMAINDER, help='the command to run, after a literal --')
+    r.set_defaults(fn=cmd_run)
+
+    e = sub.add_parser('exec', help='run one action on a service Composio brokers')
+    e.add_argument('--tool', required=True, help='the action, e.g. GMAIL_FETCH_EMAILS')
+    e.add_argument('--args', help='JSON object of arguments (default {})')
+    e.set_defaults(fn=cmd_exec)
+
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if getattr(args, 'command', None) and args.command and args.command[0] == '--':
+        args.command = args.command[1:]
+    return args.fn(args) or 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

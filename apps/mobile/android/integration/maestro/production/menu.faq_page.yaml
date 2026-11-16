@@ -1,0 +1,39 @@
+appId: com.sidekick.v2
+name: Production - FAQs page
+---
+# FAQs opens from the menu, a question opens to its answer, and back returns
+# to the menu.
+#
+# 2026-09-28 (redesign): the taller menu rows put FAQs below the fold, so the
+# flow scrolls to it; the page now opens on numbered question cards.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- scrollUntilVisible:
+    element:
+      id: "menu.faqsRow"
+    direction: DOWN
+- tapOn:
+    id: "menu.faqsRow"
+- extendedWaitUntil:
+    visible:
+      text: "What is Delegent AI\\?"
+    timeout: 15000
+- takeScreenshot: "production_menu_faq_page_01"
+- assertVisible:
+    text: "FAQs"
+- tapOn:
+    text: "What is Delegent AI\\?"
+- assertVisible:
+    text: "Your connected AI coworker.*"
+- scroll
+- takeScreenshot: "production_menu_faq_page_02"
+# Back returns to the menu, which opens at its top again (it always has:
+# the list is rebuilt when a page closes).
+- back
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 10000

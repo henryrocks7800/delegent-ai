@@ -1,0 +1,66 @@
+appId: com.sidekick.v2
+name: RES-01 — Product Loading Does Not Flash Login or Plan
+tags:
+  - res
+  - live-only
+---
+# ============================================================================
+# Spec ID: RES-01 — Product Loading Does Not Flash Login or Plan
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Returning active subscriber (seed --profile
+# ready-runner; session already in AsyncStorage). Cold launch.
+# While productState fetches (status='loading'), the shell must NOT
+# flash Login or the plan picker — it should land on Chat (the
+# correct gate for this user) or show a benign loading notice.
+#
+# This is the DN1.3-01 regression area. Before the fix in 64dbe18,
+# this user state would hang on "Checking on your coworker…"; after
+# the fix the user reaches the chat shell. We assert the post-fix
+# contract directly: cold launch on a ready-runner user lands on
+# chat home with no login/plan flash visible at any point.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Final state — Chat home rendered with the full authenticated shell.
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+# (2026-09-28: the Chat tab it also checked went with the tab bar.)
+- assertVisible:
+    id: "input"
+
+# No login or plan-picker affordances are reachable from chat home
+# — proof that the loading window didn't briefly route through
+# either of those gates before settling on chat.
+- assertNotVisible:
+    id: "login.emailButton"
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "setup.stepIndicator"
+- assertNotVisible:
+    text: "Pick a plan, meet your coworker"
+- assertNotVisible:
+    text: "Continue with Google"
+- assertNotVisible:
+    text: "Continue with email"
+- takeScreenshot: "res_01_01_landed_on_chat"
+
+# Negative: the DN1.3-01 hang notice copy must not be visible after
+# the fix. (If we ever saw "Checking on your coworker…" stuck on the
+# screen, the DN1.3-01 regression would have returned.)
+- assertNotVisible:
+    text: "Checking on your coworker"
+
+- assertNotVisible:
+    text: "service_role"

@@ -1,0 +1,75 @@
+appId: com.sidekick.v2
+name: PLAN-01 — All Plans Can Be Previewed
+tags:
+  - plan
+  - blocked
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+# ============================================================================
+# Spec ID: PLAN-01 — All Plans Can Be Previewed
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Authenticated unsubscribed-onboarded user
+# (seed --profile unsubscribed). The plan picker (setup wizard)
+# auto-renders for this gate. The three tier cards are addressable
+# via testIDs `setup.plan.studio`, `setup.plan.pro-office`,
+# `setup.plan.enterprise-suite` (App.tsx:894). Each tier name +
+# price + capacity copy comes from SIDEKICK_PLAN_TIERS (shared/index.ts).
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 15000
+- assertVisible:
+    text: "Pick a plan, meet your coworker"
+
+# Step 1 — all three tier cards are present in the segmented control
+- assertVisible:
+    id: "setup.plan.studio"
+- assertVisible:
+    id: "setup.plan.pro-office"
+- assertVisible:
+    id: "setup.plan.enterprise-suite"
+- takeScreenshot: "plan_01_01_three_tiers_visible"
+
+# Step 2 — Studio selected. Tier name + price + a feature line all
+# render. Studio is the default selection, but tap it explicitly to
+# prove the tap fires without crash.
+- tapOn:
+    id: "setup.plan.studio"
+- assertVisible:
+    text: "Studio"
+- assertVisible:
+    text: ".*30.*"
+- assertVisible:
+    text: ".*10 GB.*"
+- takeScreenshot: "plan_01_02_studio_selected"
+
+# Step 3 — Pro Office selected
+- tapOn:
+    id: "setup.plan.pro-office"
+- assertVisible:
+    text: "Pro Office"
+- assertVisible:
+    text: ".*75.*"
+- assertVisible:
+    text: ".*40 GB.*"
+- takeScreenshot: "plan_01_03_pro_office_selected"
+
+# Step 4 — Enterprise Suite selected
+- tapOn:
+    id: "setup.plan.enterprise-suite"
+- assertVisible:
+    text: "Enterprise Suite"
+- assertVisible:
+    text: ".*150.*"
+- assertVisible:
+    text: ".*100 GB.*"
+- takeScreenshot: "plan_01_04_enterprise_selected"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "stack trace"

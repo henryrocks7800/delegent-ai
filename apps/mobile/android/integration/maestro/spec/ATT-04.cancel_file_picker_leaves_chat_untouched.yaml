@@ -1,0 +1,54 @@
+appId: com.sidekick.v2
+name: ATT-04 — Cancel File Picker Leaves Chat Untouched
+tags:
+  - att
+  - live-only
+---
+# ============================================================================
+# Spec ID: ATT-04 — Cancel File Picker Leaves Chat Untouched
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# The person types a draft, opens the file picker from Attach, then backs out
+# of it. The draft is still in the box and no error appears: cancelling is not
+# an error.
+#
+# 2026-09-28: the composer is part of the chat WebView (element ids input and
+# attachBtn); the chip and error banner of the native composer are gone, so
+# the flow checks for error wording instead. The draft is erased at the end.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 1 — a draft that must survive the cancel.
+- tapOn:
+    id: "input"
+- inputText: "ATT04-DRAFT-PRESERVED-MARKER"
+- hideKeyboard
+- assertVisible:
+    text: ".*ATT04-DRAFT-PRESERVED-MARKER.*"
+- takeScreenshot: "att_04_01_draft_typed_before_picker"
+
+# Step 2 — open the system file picker, then back out of it. Its insides vary
+# by Android version, so nothing in it is asserted.
+- tapOn:
+    id: "attachBtn"
+- pressKey: Back
+
+# Step 3 — the chat is back with the draft intact and no error.
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 15000
+- assertVisible:
+    text: ".*ATT04-DRAFT-PRESERVED-MARKER.*"
+- assertNotVisible:
+    text: ".*Picker failed.*|.*could not attach.*|.*file://.*|service_role"
+- takeScreenshot: "att_04_02_chat_after_cancel"
+
+# Leave no draft behind.
+- tapOn:
+    id: "input"
+- eraseText: 40
+- hideKeyboard

@@ -1,0 +1,63 @@
+appId: com.sidekick.v2
+name: RES-04 — Cold Start From Checkout Success Link
+tags:
+  - res
+  - live-only
+---
+# ============================================================================
+# Spec ID: RES-04 — Cold Start From Checkout Success Link
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner)
+# — the user's existing subscription is the source of truth, so a
+# stray `sidekick://checkout/success` link arriving without a real
+# Stripe webhook should NOT fraudulently flip the user into a
+# different state. Cold launch via openLink, assert the user lands
+# on Chat (their actual gate) and does NOT see a stuck "Thank you" /
+# "Checkout complete" banner on relaunch.
+# ============================================================================
+
+# Pre-step (driven by the test orchestrator BEFORE this YAML runs):
+#   adb shell am start -W -a android.intent.action.VIEW \
+#     -d 'sidekick://checkout/success' -p com.sidekick.v2
+# The -p flag pins the intent to com.sidekick.v2. Maestro's `openLink`
+# doesn't include -p on this build, which on RES-05's first attempt
+# routed via a chooser path that lost the in-app session. The
+# orchestrator-driven adb am start mirrors the real Stripe-success
+# return (browser intent → app) without the chooser ambiguity.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- takeScreenshot: "res_04_01_landed_on_chat"
+
+# No fake "thank you" / "active plan claim" copy from the URL hint
+- assertNotVisible:
+    text: ".*Checkout complete.*"
+- assertNotVisible:
+    text: ".*Thank you for subscribing.*"
+
+# Step 2 — relaunch (cold). The link must have been consumed by the
+# first launch; we should NOT see the success banner re-fire on every
+# launch — that would be a deep-link loop bug. (2026-09-28: through the
+# ready step; a cold start outlasted a 15-second wait on the emulator.)
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- assertNotVisible:
+    text: ".*Checkout complete.*"
+- takeScreenshot: "res_04_02_no_banner_loop_after_relaunch"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*hermes --resume.*"

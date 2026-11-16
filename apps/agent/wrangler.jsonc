@@ -1,0 +1,47 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The coworker engine for accounts on the agent engine. Internal only: no route
+  // and no workers.dev address. The production Worker (sidekick-worker-production)
+  // reaches it through its AGENT service binding and signs every request.
+  // Deploy from apps/agent: npx wrangler deploy
+  "name": "delegent-agent",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  // CPU per invocation. The 30 s default was hit once by an Outlook filing page on
+  // 24 Sep 2026 (72,820-email inbox; the step retried and passed). Paid plan allows up to 300,000.
+  "limits": { "cpu_ms": 120000 },
+  "durable_objects": {
+    "bindings": [{ "class_name": "CoworkerAgent", "name": "CoworkerAgent" }]
+  },
+  "migrations": [{ "new_sqlite_classes": ["CoworkerAgent"], "tag": "v1" }],
+  // Bulk inbox sorting ("sort my inbox"): plan, one approval, then durable filing.
+  // Enabled per account by the same explicit allowlist as the inbox pilot.
+  // Money Finder (2026-09-25 pilot): report-only search for money owed and subscriptions.
+  "workflows": [
+    { "name": "delegent-inbox-sort", "binding": "INBOX_SORT", "class_name": "InboxSortWorkflow" },
+    { "name": "delegent-money-finder", "binding": "MONEY_FINDER", "class_name": "MoneyFinderWorkflow" }
+  ],
+  // Headless Chrome for making PDFs (Cloudflare Browser Rendering).
+  "browser": { "binding": "BROWSER" },
+  // Cloudflare Images: the model reads a copy of a big photo scaled to 2048 px
+  // (imageForModel in src/agent.ts); the stored original is what gets attached.
+  "images": { "binding": "IMAGES" },
+  "vars": {
+    // Where a file link the coworker shares is served (the production Worker).
+    "PUBLIC_API_BASE": "https://api.delegantai.co.uk",
+    // Inbox sorting. Disabled by default. Explicit account IDs, or exactly "*" for everyone
+    // (on for everyone since 2026-09-27 by Alex's decision; the value is passed at deploy).
+    "INBOX_SORT_USER_IDS": "",
+    // Money Finder. Disabled by default. Explicit account IDs, or exactly "*" for everyone
+    // (on for everyone since 2026-09-25 by Alex's decision; the value is passed at deploy).
+    "MONEY_FINDER_USER_IDS": ""
+  }
+  // Secrets, set with `npx wrangler secret put <NAME>`, values in Doppler delegent-ai/prd:
+  //   OPENROUTER_API_KEY            the model key (the one the production Worker uses)
+  //   COMPOSIO_API_KEY              brokered connections (the one the production Worker uses)
+  //   SIDEKICK_AGENT_SHARED_SECRET  signs Worker <-> engine requests and file links
+}

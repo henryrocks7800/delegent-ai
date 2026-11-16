@@ -1,0 +1,80 @@
+appId: com.sidekick.v2
+name: v1.2.8 DN9 — every burger sub-view exposes the back arrow
+---
+# Drives the burger menu's pages and taps each one's "Back" arrow, which must
+# return to the menu. Catches DN9-class regressions where a page stops
+# mounting DrawerHeader and traps the user.
+#
+# 2026-09-28: the agent-engine menu. Skills & use cases, How-to guides, FAQs,
+# Terms and Privacy; the Monthly capacity page and its DN2 loop check went
+# with the agent engine (production/menu.capacity_page.yaml reads the
+# allowance on Plan & billing). The menu reopens at its top after a page, so
+# rows below the fold are scrolled to each time.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 10000
+
+- tapOn:
+    id: "menu.skillsRow"
+- assertVisible: "Back"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+- tapOn:
+    id: "menu.howtoRow"
+- assertVisible: "Back"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+- scrollUntilVisible:
+    element:
+      id: "menu.faqsRow"
+    direction: DOWN
+- tapOn:
+    id: "menu.faqsRow"
+- assertVisible: "Back"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+- scrollUntilVisible:
+    element:
+      id: "menu.termsRow"
+    direction: DOWN
+- tapOn:
+    id: "menu.termsRow"
+- assertVisible: "Back"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+- scrollUntilVisible:
+    element:
+      id: "menu.privacyRow"
+    direction: DOWN
+- tapOn:
+    id: "menu.privacyRow"
+- assertVisible: "Back"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+- takeScreenshot: "v128_dn9_after_full_burger_loop"

@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg text-textPrimary font-sans antialiased;
+    /* Prevent the whole page from bouncing on iOS Safari; each pane scrolls. */
+    overscroll-behavior-y: none;
+  }
+
+  :root {
+    /* There is one theme and it is light. Saying so is not decoration: Chrome on
+       Android force-darkens pages that express no preference, which would repaint
+       a design built entirely on a warm off-white canvas. The marketing site, the
+       checkout pages and the welcome email all already declare it. */
+    color-scheme: light;
+
+    /* Respect the notch / home indicator on phones without pushing desktop layout. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  button {
+    @apply select-none;
+  }
+
+  /* Visible keyboard focus everywhere, but not on mouse clicks. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-border bg-surfaceHigh;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-body font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    /* 44px minimum touch target, per the mobile app's own control sizing. */
+    min-height: 44px;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-accentText hover:bg-[#000000];
+  }
+
+  .btn-secondary {
+    @apply btn border border-border bg-surfaceHigh text-textPrimary hover:bg-[#F2F0EA];
+  }
+
+  .btn-danger {
+    @apply btn border border-danger bg-surfaceHigh text-danger hover:bg-[#FBF2F2];
+  }
+
+  .field {
+    @apply w-full rounded-md border border-border bg-surfaceHigh px-3.5 py-3 text-body text-textPrimary placeholder:text-textTertiary focus:border-accent;
+    /* A read-only field has to look read-only. bg-surfaceHigh otherwise paints
+       over the browser's own disabled shading and it reads as editable. */
+    @apply disabled:cursor-not-allowed disabled:bg-bg disabled:text-textSecondary;
+    min-height: 44px;
+  }
+
+  .label {
+    @apply mb-1.5 block text-body-sm font-medium text-textSecondary;
+  }
+
+  /* Pill toggles: document tabs, routine cadences, routine suggestions. They
+     were each 37px tall, which is under the thumb-target floor the rest of the
+     app holds to. */
+  .chip {
+    @apply inline-flex items-center rounded-full border px-3.5 py-2 text-body-sm transition-colors;
+    min-height: 44px;
+  }
+
+  .chip-on {
+    @apply chip border-accent bg-accentMuted font-medium text-accent;
+  }
+
+  .chip-off {
+    @apply chip border-border text-textSecondary hover:bg-bg;
+  }
+}
+
+/* The chat surface is an iframe; give it its own containment so a long
+   transcript never grows the outer document. */
+.chat-frame {
+  @apply block h-full w-full rounded-lg border-0 bg-[#F5F3ED];
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

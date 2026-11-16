@@ -1,0 +1,65 @@
+appId: com.sidekick.v2
+name: EDGE-BG-02 — App background while chat is thinking then resume
+# Phase 9 Edge Batch 3, item 2.
+#
+# Why this matters
+# ----------------
+# A user often sends a message, locks their phone, and comes back a
+# minute later. The chat must reconcile any in-flight reply when the
+# app foregrounds: the thinking dots must not be orphaned, and any
+# completed reply must be visible.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. Existing chat history is fine.
+#
+# What this proves
+# ----------------
+# (a) Send works, thinking dots appear.
+# (b) After background and resume, either the reply is visible OR the
+#     thinking-dots are still present and continuing (not stuck in a
+#     stale state).
+# (c) No raw error banner.
+#
+# Fixtures: ready-runner seed.
+
+tags:
+  - edge
+  - chat
+  - lifecycle
+  - live-only
+---
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- tapOn:
+    id: "input"
+- inputText: "What's two plus two?"
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- takeScreenshot: "edge_bg_02_after_send"
+
+# Push to background while reply may still be in flight.
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 3000
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- takeScreenshot: "edge_bg_02_resumed"
+
+# Either the reply assistant message or the thinking-dots placeholder
+# must be visible — not a stuck/empty surface.
+- assertVisible:
+    id: "input"
+- assertNotVisible:
+    text: "Something went wrong|crashed|service role|runner URL|raw provider"

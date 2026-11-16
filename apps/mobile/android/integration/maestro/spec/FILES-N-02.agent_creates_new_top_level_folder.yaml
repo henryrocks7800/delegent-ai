@@ -1,0 +1,52 @@
+appId: com.sidekick.v2
+name: FILES-N-02 — Agent-created top-level folder appears in Files
+tags:
+  - files
+  - nested
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: FILES-N-02
+# Friendly name: Agent-created top-level folder appears in Files
+# Defect this regression-guards: a top-level folder that isn't in the
+# DEFAULT_FOLDERS set (Home, Documents, Pictures, Downloads, Notes)
+# must still appear in the Files tab once the agent creates files
+# inside it. This proves the grouping logic discovers runner-created
+# folders and doesn't silently drop them.
+#
+# Status: live-only. Token usage: one short instruction + 1-line file.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "create receipts/aug-coffee.txt with the word espresso"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 120000
+
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+- tapOn:
+    id: "files.refreshButton"
+
+# The new top-level "receipts" folder must materialise.
+- extendedWaitUntil:
+    visible:
+      id: "files.directory.receipts"
+    timeout: 20000
+- assertVisible:
+    text: ".*aug-coffee\\.txt.*"

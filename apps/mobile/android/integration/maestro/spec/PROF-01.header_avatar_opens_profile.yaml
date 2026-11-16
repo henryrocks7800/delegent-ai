@@ -1,0 +1,102 @@
+appId: com.sidekick.v2
+name: PROF-01 — Header Avatar Opens Profile
+tags:
+  - prof
+  - live-only
+---
+# ============================================================================
+# Spec ID: PROF-01
+# Friendly name: Header Avatar Opens Profile
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires a signed-in subscribed user on Home chat
+# (so the header avatar is present). The harness signs in via
+# sign-in-via-admin-link.mjs. clearState: false preserves state.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Missing dedicated assertion on the avatar entry point.
+# **Precondition:** Signed-in user with chat header rendered.
+#
+# **Flow and assertions:**
+# 1. Home chat — header.profileButton (avatar) is visible.
+# 2. Tap the avatar.
+# 3. Profile screen — Manage plan / Sign out / Display name / Coworker name
+#    / Save profile are rendered. No leaked provider internals.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- takeScreenshot: "prof_01_01_landed_chat"
+
+# 2026-09-28: the header's own id went with the native chat panel; the menu
+# button and the avatar are what the header holds now.
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.agentAllowance"
+    timeout: 15000
+- takeScreenshot: "prof_01_02_profile_open"
+
+# Step 3 — Profile screen pins. The header (avatar + name + email), capacity
+# card, Manage plan and Sign out all render in read-only mode. The display
+# name / coworker name inputs + Save profile button only appear after the
+# user taps "Edit profile" — so we tap it before asserting the edit fields.
+- assertVisible:
+    id: "profile.agentAllowance"
+- assertVisible:
+    id: "profile.managePlanButton"
+- assertVisible:
+    id: "profile.signOutButton"
+- assertVisible:
+    text: "Edit profile"
+- tapOn:
+    text: "Edit profile"
+# Edit mode renders the inputs further down the page, below the capacity card
+# and "Account details" header — scroll each one into view so we can pin it.
+- scrollUntilVisible:
+    element:
+      id: "profile.displayNameInput"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    id: "profile.displayNameInput"
+- scrollUntilVisible:
+    element:
+      id: "profile.agentNameInput"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    id: "profile.agentNameInput"
+- scrollUntilVisible:
+    element:
+      id: "profile.saveButton"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    id: "profile.saveButton"
+
+# Chat must NOT also be visible (we navigated away from it)
+- assertNotVisible:
+    id: "input"
+
+# No leaks of provider internals
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "anon key"
+- assertNotVisible:
+    text: "runner URL"
+- assertNotVisible:
+    text: "Supabase"
+- assertNotVisible:
+    text: "Railway"

@@ -1,0 +1,68 @@
+appId: com.sidekick.v2
+name: EDGE-V-05 — App background during voice recording
+# Phase 9 Edge Batch 5, item 5.
+#
+# Why this matters
+# ----------------
+# If the user starts recording then accepts a phone call (which
+# backgrounds the app), the recording must stop cleanly. When the
+# user returns, the composer should be usable; no zombie recording
+# state, no raw mic-busy error.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. RECORD_AUDIO granted.
+#
+# What this proves
+# ----------------
+# (a) Mic record starts.
+# (b) Pressing Home while recording does not crash the app.
+# (c) On resume, the composer (input + send) is reachable.
+# (d) No mic-busy / encoder vocab on the surface.
+#
+# Fixtures: ready-runner seed; mic permission granted.
+
+tags:
+  - edge
+  - voice
+  - lifecycle
+  - live-only
+# blocked-reason: needs a working microphone and real speech; the emulator has neither
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.micButton"
+    timeout: 15000
+- tapOn:
+    id: "home.chatPanel.micButton"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: "edge_v_05_recording_before_bg"
+
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 3000
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- takeScreenshot: "edge_v_05_resumed"
+
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+
+- assertNotVisible:
+    text: "MediaRecorder|EBUSY|AudioRecord|encoder|RECORD_AUDIO"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

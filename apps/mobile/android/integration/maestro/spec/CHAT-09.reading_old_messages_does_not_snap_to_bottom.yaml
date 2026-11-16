@@ -1,0 +1,73 @@
+appId: com.sidekick.v2
+name: CHAT-09 — Reading Old Messages Does Not Snap to Bottom
+tags:
+  - chat
+  - live-only
+# blocked-reason: needs a seeded account state (20 marked chat pairs of history); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+# ============================================================================
+# Spec ID: CHAT-09 — Reading Old Messages Does Not Snap to Bottom
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed ready-runner user with 20 seeded
+# chat-history pairs (seed --profile ready-runner --history 20).
+# We scroll up to an early pair and verify the list does NOT yank
+# us back to the bottom while reading. Then scroll back to the
+# bottom and confirm the newest pair is reachable.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# With 20 seeded pairs the initial view shows mid-list rows (~13-15)
+# rather than the newest pair at the very bottom. Scroll DOWN to
+# reach the most recent pair first — this is the starting condition
+# the spec actually wants ("user is at the bottom of a long chat").
+- scrollUntilVisible:
+    element:
+      text: ".*HISTORY-PAIR-20 test prior turn.*"
+    direction: DOWN
+    timeout: 15000
+- assertVisible:
+    text: ".*HISTORY-PAIR-20 test prior turn.*"
+- takeScreenshot: "chat_09_01_at_bottom"
+
+# Step 1 — scroll UP to an early pair. The list must hold this
+# scroll position; it must not yank back to the bottom.
+- scrollUntilVisible:
+    element:
+      text: ".*HISTORY-PAIR-3 test prior turn.*"
+    direction: UP
+    timeout: 15000
+- assertVisible:
+    text: ".*HISTORY-PAIR-3 test prior turn.*"
+- assertVisible:
+    text: ".*HISTORY-REPLY-3 from seed.*"
+- takeScreenshot: "chat_09_02_scrolled_up_to_pair_3"
+
+# Step 2 — assert the latest pair is NOT visible (it would only be
+# visible if the list yanked us back to the bottom).
+- assertNotVisible:
+    text: ".*HISTORY-PAIR-20 test prior turn.*"
+
+# Step 3 — scroll back down to the latest pair. The list must
+# permit a normal user scroll to the bottom.
+- scrollUntilVisible:
+    element:
+      text: ".*HISTORY-PAIR-20 test prior turn.*"
+    direction: DOWN
+    timeout: 15000
+- assertVisible:
+    text: ".*HISTORY-PAIR-20 test prior turn.*"
+- assertVisible:
+    text: ".*HISTORY-REPLY-20 from seed.*"
+- takeScreenshot: "chat_09_03_back_at_bottom"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*API call failed.*"

@@ -1,0 +1,33 @@
+appId: com.sidekick.v2
+name: MATRIX-02 — Large Phone (sw480dp) Keeps Chat Bubble Bounded
+tags:
+  - matrix
+  - layout
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: MATRIX-02 — Large Phone (sw480dp) Keeps Chat Bubble Bounded
+# Target AVD: Delegent_Large_API34 (or any sw480dp emulator)
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §11.3
+#
+# Precondition: a signed-in subscriber with some chat history.
+#
+# What this proves:
+#   On a large screen the chat renders with its composer, and a screenshot
+#   records the bubbles for review. The width cap itself (bubbles never span
+#   the screen) cannot be measured from Maestro: since 2026-09-28 it is
+#   asserted in WebKit and Chrome at iPad width by
+#   scripts/ops/chat-render-check.mjs ("iPad composer is capped to the reading
+#   column"). The chat is a WebView, so its bubbles have no Android ids.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "sendBtn"
+- takeScreenshot: "matrix_02_bubbles_rendered"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

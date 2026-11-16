@@ -1,0 +1,26 @@
+appId: com.sidekick.v2
+name: Full smoke - signed-out shell and main navigation affordances
+# blocked-reason: early template (May) for the retired Home / Connections / Files / Profile tab bar; production/visual.page_sweep.yaml walks every screen now
+---
+- launchApp:
+    clearState: false
+- takeScreenshot: "maestro-full-01-launch"
+- assertVisible:
+    text: "Continue with Google|Home|Connections|Files|Profile"
+    optional: true
+- tapOn:
+    text: "Connections"
+    optional: true
+- takeScreenshot: "maestro-full-02-connections"
+- tapOn:
+    text: "Files"
+    optional: true
+- takeScreenshot: "maestro-full-03-files"
+- tapOn:
+    text: "Profile"
+    optional: true
+- takeScreenshot: "maestro-full-04-profile"
+- tapOn:
+    text: "Home"
+    optional: true
+- takeScreenshot: "maestro-full-05-home"

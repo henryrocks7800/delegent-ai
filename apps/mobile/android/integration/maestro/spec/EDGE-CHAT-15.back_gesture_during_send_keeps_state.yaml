@@ -1,0 +1,58 @@
+appId: com.sidekick.v2
+name: EDGE-CHAT-15 — Back Gesture During In-Flight Send Keeps Chat State
+tags:
+  - edge
+  - chat
+  - resilience
+  - keyboard
+  - live-only
+---
+# ============================================================================
+# Spec ID: EDGE-CHAT-15 — Back Gesture During In-Flight Send Keeps Chat State
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §5.8
+#
+# Precondition: a signed-in subscriber (the pack's --sign-in account).
+#
+# What this proves:
+#   Android Back after sending but before the reply lands must not lose the
+#   bubble just sent, cancel the reply or sign the person out: coming back to
+#   the app shows the message and the reply arrives.
+#
+# 2026-09-28: WebView chat; bubbles are matched by their text, and the probe
+# asks for one known word so its reply can be recognised.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 1 — send a marker message.
+- tapOn:
+    id: "input"
+- inputText: "EDGE15 probe: reply with only the word PLUM."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      text: "EDGE15 probe: reply with only the word PLUM\\."
+    timeout: 15000
+- takeScreenshot: "edge_chat_15_sent"
+
+# Step 2 — Back mid-flight. From the chat, Back puts the app in the
+# background, as Android does at an app's first screen (2026-09-28: the
+# v1.2.7 "Back does nothing on the chat" behaviour this once asserted is not
+# the app's any more, on master either).
+- pressKey: Back
+
+# Step 3 — come back: the bubble is still there and the reply lands, because
+# the reply carried on without the app in front.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- assertVisible:
+    text: "EDGE15 probe: reply with only the word PLUM\\."
+- takeScreenshot: "edge_chat_15_after_back"
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*plum\\W*"
+    timeout: 120000

@@ -1,0 +1,16 @@
+appId: com.sidekick.v2
+name: P00-01 — Cold launch lands on Delegent AI landing
+tags:
+  - persona:P00
+  - landing
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*"
+    timeout: 30000
+- assertVisible:
+    text: ".*Continue with Google.*"
+- assertVisible:
+    text: ".*Email me a sign-in code.*"

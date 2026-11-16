@@ -1,0 +1,19 @@
+appId: com.sidekick.v2
+name: v1.2.7 D4 — single persistent avatar pinned to chat header
+---
+# The chat shows one avatar, in the header, and the header stays put.
+#
+# 2026-09-28: the native chat panel's header ids are gone; the header holds
+# the menu button, the brand with the "Online" line, and the profile avatar
+# (header.profileButton). Per-bubble avatars are checked by the chat render
+# check (scripts/ops/chat-render-check.mjs) and the visual-review heuristic.
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- assertVisible:
+    text: "Online"
+- takeScreenshot: "v127_d4_chat_header_avatar"

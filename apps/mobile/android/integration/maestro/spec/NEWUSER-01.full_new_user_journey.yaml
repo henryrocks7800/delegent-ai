@@ -1,0 +1,152 @@
+appId: com.sidekick.v2
+name: 'NEWUSER-01 — Full new-user journey: sign-in to fresh Stripe Checkout'
+tags:
+  - live-only
+  - newuser
+env:
+  TEST_EMAIL: ${MAESTRO_TEST_EMAIL}
+  TEST_AGENT_NAME: ${MAESTRO_TEST_AGENT_NAME}
+  TEST_TIER_TESTID: ${MAESTRO_TEST_TIER_TESTID}
+# blocked-reason: needs a brand-new account and a live Stripe payment
+---
+# ============================================================================
+# Spec ID: NEWUSER-01
+# Friendly name: Full new-user journey — sign-in to fresh Stripe Checkout
+#
+# This is the regression flow the user reported missing on 2026-05-21:
+# they signed in fresh, named their agent "Barry", tapped a plan, and
+# landed on Stripe's "You're all done here" screen. The flow drives
+# every step a real new user does and fails LOUDLY at the exact step
+# that breaks, so the 2-second-feedback bar the user set is met.
+#
+# Preconditions (driver must ensure):
+#   1. APK installed; com.sidekick.v2 force-stopped + pm clear.
+#   2. com.android.chrome force-stopped + pm clear.
+#   3. The test user's Supabase rows reset:
+#        npm run reset:live-test-user -- <email>
+#        npm run reset:onboarding-overlay -- <email>
+#   4. The test user's Stripe state hard-reset (sub cancelled + customer
+#      deleted) — see scripts/internal/hard-reset-stripe-state.mjs.
+#   5. The user has been signed in via magic-link deep-link:
+#        node scripts/sign-in-via-admin-link.mjs <email>
+#      (Avoids the OTP-from-real-mailbox dependency.)
+#
+# What this flow asserts in order:
+#   1. App is on the "Name your coworker" screen (post-magic-link).
+#   2. Typing the agent name and accepting Terms enables Finish setup.
+#   3. Finish setup transitions to the plan picker.
+#   4. Plan picker shows three tiers with the expected names + prices.
+#   5. Tapping a plan opens com.android.chrome on checkout.stripe.com.
+#   6. The Stripe Checkout URL is a FRESH session — the body text does
+#      NOT contain "You're all done here" / "checkout session has timed
+#      out". This is the load-bearing assertion that catches the
+#      Supabase↔Stripe divergence defect.
+#
+# Stops at the Stripe Checkout page (cannot drive Stripe-hosted UI from
+# Maestro inside the app context). A follow-on harness drives card
+# entry via the claude-in-chrome MCP if needed.
+# ============================================================================
+
+# Step 1 — onboarding screen visible
+- extendedWaitUntil:
+    visible:
+      id: onboarding.agentNameInput
+    timeout: 15000
+- takeScreenshot: newuser_01_01_onboarding_visible
+- assertVisible:
+    id: onboarding.agentNameInput
+- assertVisible:
+    id: onboarding.termsCheckbox
+- assertVisible:
+    id: onboarding.finishButton
+
+# Step 2 — type the agent name + accept Terms
+- tapOn:
+    id: onboarding.agentNameInput
+- inputText: ${TEST_AGENT_NAME}
+- hideKeyboard
+- takeScreenshot: newuser_01_02_name_typed
+- tapOn:
+    id: onboarding.termsCheckbox
+- takeScreenshot: newuser_01_03_terms_accepted
+
+# Step 3 — Finish setup must enable + advance us
+- tapOn:
+    id: onboarding.finishButton
+
+# Step 4 — plan picker visible
+- extendedWaitUntil:
+    visible:
+      text: ".*Pick.*plan.*|.*Choose.*plan.*|.*Your plan.*|.*Studio.*"
+    timeout: 15000
+- takeScreenshot: newuser_01_04_plan_picker_visible
+
+# Step 5 — assert all three tier tabs exist; the visible card shows the selected
+# tier's price. The plan picker is a tab switcher — only the active tab's £
+# appears on screen at once.
+- assertVisible:
+    id: setup.plan.studio
+- assertVisible:
+    id: setup.plan.pro-office
+- assertVisible:
+    id: setup.plan.enterprise-suite
+
+# Cycle through each tier and screenshot so we visually verify the correct £.
+- tapOn:
+    id: setup.plan.studio
+- assertVisible:
+    text: ".*£9.99.*"
+- takeScreenshot: newuser_01_05a_studio_card
+- tapOn:
+    id: setup.plan.pro-office
+- assertVisible:
+    text: ".*£24.99.*"
+- takeScreenshot: newuser_01_05b_pro_office_card
+- tapOn:
+    id: setup.plan.enterprise-suite
+- assertVisible:
+    text: ".*£59.99.*"
+- takeScreenshot: newuser_01_05c_enterprise_card
+
+# Step 6 — settle on the requested tier and open Stripe checkout.
+- tapOn:
+    id: ${TEST_TIER_TESTID}
+- assertVisible:
+    id: billing.checkoutButton
+- tapOn:
+    id: billing.checkoutButton
+- takeScreenshot: newuser_01_05_plan_tapped
+
+# Step 7 — Chrome opens to checkout.stripe.com — the package must flip
+- extendedWaitUntil:
+    visible:
+      text: ".*checkout\\.stripe\\.com.*"
+    timeout: 30000
+- takeScreenshot: newuser_01_06_stripe_landed
+
+# Step 8 — LOAD-BEARING: the Stripe page must NOT be a stale "all done" screen.
+# This is the assertion that catches the Supabase↔Stripe divergence defect
+# diagnosed 2026-05-21. A fresh session shows the card form; a stale one
+# shows the "You're all done here / checkout session has timed out" copy.
+- assertNotVisible:
+    text: ".*[Yy]ou'?re all done here.*"
+- assertNotVisible:
+    text: ".*checkout session has timed out.*"
+- assertNotVisible:
+    text: ".*completed your payment.*"
+
+# Step 9 — positive shape: the card-payment surface should be visible
+- assertVisible:
+    text: ".*(Pay|Subscribe|Email|Card|Card number|Card information).*"
+- takeScreenshot: newuser_01_07_stripe_card_form_visible
+
+# Step 10 — Stripe product label must read "Delegent AI", not the legacy
+# "Coworker AI". The Stripe Dashboard product name renders in the
+# Checkout header ("Subscribe to <product>") and in the receipt body.
+# This is defect #39 — caught here in the same 2-second assertion that
+# catches a stale session.
+- assertNotVisible:
+    text: ".*(Coworker AI|CoWorker AI|coworker.ai).*"
+- assertVisible:
+    text: ".*(Subscribe to Delegent AI|Delegent AI).*"
+- takeScreenshot: newuser_01_08_stripe_brand_delegent

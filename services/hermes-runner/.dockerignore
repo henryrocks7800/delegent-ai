@@ -1,0 +1,36 @@
+# Build context exclusions for Dockerfile.fly. Keep the build context tiny
+# so layer cache invalidation is predictable and no secrets/dist/binary
+# artifacts leak into image layers.
+**/.git
+**/.gitignore
+**/.dockerignore
+**/Dockerfile
+**/Dockerfile.*
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.venv
+**/.venv-*
+**/dist
+**/build
+**/.next
+**/.expo
+
+# Local secrets / env / evidence — never in image
+.env
+.env.*
+.coworker-ai
+**/.coworker-ai
+*-provisioner-dev.txt
+evidence
+share
+tmp
+.tmp_*
+
+# Editor / OS noise
+**/.DS_Store
+**/Thumbs.db
+**/.idea
+**/.vscode
+**/.claude

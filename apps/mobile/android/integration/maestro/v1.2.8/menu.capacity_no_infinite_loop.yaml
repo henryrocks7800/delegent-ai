@@ -1,0 +1,34 @@
+appId: com.sidekick.v2
+name: v1.2.8 DN2 — Monthly capacity page renders without infinite refresh
+# blocked-reason: retired: the Monthly capacity page went with the agent engine; its numbers are the Monthly allowance card on Plan & billing, checked by production/menu.capacity_page.yaml
+---
+# Alex's v1.2.7 regression: opening Monthly capacity triggered an
+# infinite render loop. The fix is a one-shot ref guard in
+# CapacityDrawer. We assert the page stays mounted, doesn't flicker
+# to a loading state every frame, and the "Manage plan" button (a
+# stable text inside that page) is visible 1s after entry.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "main-menu-button"
+    timeout: 10000
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible: "Monthly capacity"
+    timeout: 5000
+- tapOn: "Monthly capacity"
+
+# Take three screenshots ~1s apart. Each must show the capacity page
+# fully rendered (not the spinner) — if the loop were back, the screen
+# would oscillate between loading and ready.
+- waitForAnimationToEnd
+- assertVisible: "Back"
+- takeScreenshot: "v128_dn2_capacity_t1"
+
+- assertVisible: "Back"
+- takeScreenshot: "v128_dn2_capacity_t2"
+
+- assertVisible: "Back"
+- takeScreenshot: "v128_dn2_capacity_t3"

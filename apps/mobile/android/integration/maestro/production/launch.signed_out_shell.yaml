@@ -1,0 +1,38 @@
+appId: com.sidekick.v2
+name: Production - signed-out launch shell
+---
+# A signed-out launch lands on the sign-in screen with both ways in (Google
+# and an email code), and Terms open from it.
+#
+# 2026-09-28: the email box is always open now, so there is no "Continue with
+# email" button to press first, and on a tall phone Terms sit below the fold.
+# The screen's row of example chips scrolls for ever, so it is never idle;
+# waits here are by element, never by animation.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 60000
+- takeScreenshot: "production_launch_signed_out_shell_01"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+# The sign-in screen never goes idle (its chip row loops), so each swipe
+# waits out Maestro's settle timeout (about 30s) before the next check;
+# the default 20s scroll limit ran out before it looked again.
+- scrollUntilVisible:
+    element:
+      id: "login.termsLink"
+    direction: DOWN
+    timeout: 60000
+- tapOn:
+    id: "login.termsLink"
+- extendedWaitUntil:
+    visible:
+      text: "Delegent AI Terms of Service"
+    timeout: 15000
+- takeScreenshot: "production_launch_signed_out_shell_02_terms"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider|chat id"

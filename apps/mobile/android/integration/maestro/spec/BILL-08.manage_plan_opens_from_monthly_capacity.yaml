@@ -1,0 +1,118 @@
+appId: com.sidekick.v2
+name: BILL-08 — Manage Plan Opens From Monthly Capacity
+tags:
+  - bill
+  - blocked
+# blocked-reason: retired: the Monthly capacity page went with the agent engine; its numbers are the Monthly allowance card on Plan & billing, checked by production/menu.capacity_page.yaml
+---
+# ============================================================================
+# Spec ID: BILL-08 — Manage Plan Opens From Monthly Capacity
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner).
+# This is the parallel "Manage plan" entry-point to BILL-07. BILL-07
+# verifies Profile → Manage plan; BILL-08 verifies Menu → Monthly
+# capacity → Manage plan & payment.
+#
+# What this spec verifies:
+#   1. Menu opens; the Monthly capacity row (`menu.capacityRow`) is
+#      visible and tappable.
+#   2. Capacity drawer renders with the "Monthly capacity" surface +
+#      "Current plan" caption + the "Manage plan & payment" button
+#      (or "Choose a plan" for the no-sub branch — we're seeded
+#      subscribed so the active-sub branch fires).
+#   3. Tapping the button fires onOpenBillingPortal — same handler
+#      as BILL-07. Either:
+#        (a) "Opening billing…" / "Refreshing…" label appears, OR
+#        (b) Calm error caption visible below the button (matches
+#            the BILL-07 calm-copy set from mobileCheckout.ts:349-354).
+#   4. Capacity drawer / chat shell stays intact while the call is
+#      in flight — no spurious sign-out, no shell collapse, no
+#      provider internals leak through the rendered copy.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+
+# Step 1 — open the menu drawer and navigate to Monthly capacity.
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.capacityRow"
+    timeout: 8000
+- assertVisible:
+    id: "menu.capacityRow"
+- tapOn:
+    id: "menu.capacityRow"
+
+# Step 2 — capacity drawer content. The drawer title is "Monthly
+# capacity" (App.tsx:2165). The body shows a "Current plan" caption
+# and a Manage plan & payment / Refreshing… / Opening billing…
+# button label depending on billingPortalState.
+- extendedWaitUntil:
+    visible:
+      text: "Current plan"
+    timeout: 8000
+- assertVisible:
+    text: "Current plan"
+- extendedWaitUntil:
+    visible:
+      text: ".*(Manage plan & payment|Opening billing|Refreshing).*"
+    timeout: 8000
+- takeScreenshot: "bill_08_01_capacity_drawer_with_manage_plan"
+
+# Step 3 — tap the button. Matches whichever label is currently shown
+# (the regex covers the idle "Manage plan & payment" and the in-flight
+# labels in case the user re-enters during a billing call). The
+# active-subscription path routes the tap to onOpenBillingPortal in
+# App.tsx:1841-1848.
+- tapOn:
+    text: ".*(Manage plan & payment|Opening billing|Refreshing).*"
+
+# Step 4 — handler fired. Same terminal states as BILL-07: either the
+# in-flight label appears, or a calm error caption surfaces beneath
+# the button.
+- extendedWaitUntil:
+    visible:
+      text: ".*(Opening billing|Refreshing|needs to finish syncing|not ready|Choose a plan first|Sign in again|Couldn.t open the billing page).*"
+    timeout: 20000
+- assertVisible:
+    text: ".*(Opening billing|Refreshing|needs to finish syncing|not ready|Choose a plan first|Sign in again|Couldn.t open the billing page).*"
+- takeScreenshot: "bill_08_02_handler_fired_after_tap"
+
+# Step 5 — shell intact. Drawer's still mounted (menu drawer trigger
+# stays reachable), and we did not get bounced to the login screen.
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "login.emailButton"
+
+# Leak guards.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*Hermes Agent.*"
+- assertNotVisible:
+    text: ".*OpenRouter.*"
+- assertNotVisible:
+    text: ".*Cloudflare Worker.*"
+- assertNotVisible:
+    text: ".*Worker URL.*"
+- assertNotVisible:
+    text: ".*Fly Machines.*"
+- assertNotVisible:
+    text: ".*fly\\.io.*"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*HTTP 502.*"
+- assertNotVisible:
+    text: ".*supabase\\.co.*"

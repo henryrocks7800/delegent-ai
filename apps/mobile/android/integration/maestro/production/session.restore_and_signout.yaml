@@ -1,0 +1,25 @@
+appId: com.sidekick.v2
+name: Production - Session restore and sign out
+tags:
+  - signs-out
+---
+# A saved session comes back on launch, and Sign out on Profile ends it and
+# returns to the sign-in screen. The signs-out tag tells the pack to sign in
+# again before the next signed-in flow.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- takeScreenshot: "production_session_restore_and_signout_01_restore"
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.signOutButton"
+    timeout: 15000
+- tapOn:
+    id: "profile.signOutButton"
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 30000
+- takeScreenshot: "production_session_restore_and_signout_02_signout"

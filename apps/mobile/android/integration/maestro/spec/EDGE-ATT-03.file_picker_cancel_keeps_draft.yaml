@@ -1,0 +1,63 @@
+appId: com.sidekick.v2
+name: EDGE-ATT-03 — File picker cancel keeps draft
+# Phase 9 Edge Batch 4, item 3.
+#
+# Why this matters
+# ----------------
+# Users frequently open the picker, browse, and then back out without
+# choosing. The chat composer's draft text and send button state must
+# survive this round-trip unchanged.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. Composer is visible.
+#
+# What this proves
+# ----------------
+# (a) Draft text is preserved across opening + cancelling the picker.
+# (b) No attachment chip is left behind on cancel.
+# (c) Send button is still enabled if draft is non-empty.
+#
+# Fixtures: ready-runner seed.
+
+tags:
+  - edge
+  - chat
+  - attachments
+  - live-only
+# blocked-reason: needs a fixture file in the document picker on the device
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "EDGE-ATT-03 draft survives picker cancel"
+- hideKeyboard
+
+- tapOn:
+    id: "home.chatPanel.attachButton"
+- waitForAnimationToEnd:
+    timeout: 5000
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.input"
+    timeout: 10000
+- assertVisible:
+    text: "EDGE-ATT-03 draft survives picker cancel"
+- assertNotVisible:
+    id: "home.chatPanel.attachmentChip"
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+- takeScreenshot: "edge_att_03_draft_kept_no_chip"
+
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

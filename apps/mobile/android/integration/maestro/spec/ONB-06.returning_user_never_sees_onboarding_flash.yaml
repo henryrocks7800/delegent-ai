@@ -1,0 +1,57 @@
+appId: com.sidekick.v2
+name: ONB-06 — Returning User Never Sees Onboarding Flash
+tags:
+  - onb
+  - live-only
+---
+# ============================================================================
+# Spec ID: ONB-06 — Returning User Never Sees Onboarding Flash
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Already-onboarded subscribed user (seed --profile
+# ready-runner). Cold-launch via deep link sign-in. Asserts that during
+# the brief auth→snapshot beat, the LoginScreen and the "Name your
+# coworker" onboarding surface NEVER flash — only the chat home appears.
+# This is the v1.2.6 + v1.2.7 latch path; the test ensures regressions
+# of that latch surface here too.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- takeScreenshot: "onb_06_01_chat_home"
+
+# Step 1 — the chat home surface is fully rendered with no onboarding
+# flash. Note: assertions fire AFTER the chat panel is up, so this catches
+# a stable end state. The mid-transition flash would be caught by the
+# productState latch tests at the source level.
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "header.profileButton"
+
+# These onboarding surfaces must NOT be present for a returning user.
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "onboarding.finishButton"
+- assertNotVisible:
+    id: "onboarding.termsCheckbox"
+
+# Login must NOT be present either — the user is authenticated.
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "login.emailInput"
+
+# No leak of provider internals
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"
+- takeScreenshot: "onb_06_02_no_onboarding_flash_settled"

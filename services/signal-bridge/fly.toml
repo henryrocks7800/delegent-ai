@@ -1,0 +1,58 @@
+app = "delegent-signal-bridge"
+primary_region = "lhr"
+
+# We don't build an image here — bbernhard/signal-cli-rest-api is a stable
+# upstream image we pull from Docker Hub. Pinned tag updated when we
+# regression-test newer Signal releases.
+[build]
+image = "bbernhard/signal-cli-rest-api:0.92"
+
+[env]
+# json-rpc mode keeps a persistent connection to Signal so inbound messages
+# arrive in real time rather than only on poll.
+MODE = "json-rpc"
+# The bridge's own log level. info|debug|warn — we keep at "info" so we see
+# webhook delivery success/failure without leaking message bodies into logs.
+LOG_LEVEL = "info"
+
+# Signal's session + registration data lives here. Without a persistent
+# volume, every redeploy would force the number to re-register.
+[mounts]
+source = "signal_data"
+destination = "/home/.local/share/signal-cli"
+
+[[services]]
+internal_port = 8080
+protocol = "tcp"
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+
+  [services.concurrency]
+  type = "connections"
+  hard_limit = 25
+  soft_limit = 20
+
+  [[services.ports]]
+  port = 443
+  handlers = ["tls", "http"]
+  force_https = true
+
+  [[services.ports]]
+  port = 80
+  handlers = ["http"]
+
+  [[services.http_checks]]
+  interval = "30s"
+  grace_period = "20s"
+  method = "get"
+  path = "/v1/about"
+  protocol = "http"
+  timeout = "5s"
+
+# Bridge is a single-user system (one Signal number per Delegent ops team).
+# Set this to shared-cpu-1x / 512 MB — signal-cli is lightweight.
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 512

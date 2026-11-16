@@ -1,0 +1,58 @@
+appId: com.sidekick.v2
+name: CHAT-STREAM-01 — Tokens stream progressively into the bubble
+tags:
+  - chat
+  - streaming
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-STREAM-01
+# Friendly name: Tokens stream progressively into the bubble
+#
+# A reply is written into the chat while it is being produced, not dropped in
+# whole at the end: the stop button (shown only while a reply is being
+# written) appears, and the reply then finishes with the word it was asked to
+# end on.
+#
+# 2026-09-28: rewritten for the agent engine's WebView chat. The old check
+# matched loose words such as "fact", which the person's own question also
+# contained, so it passed the moment the question was sent.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "input"
+# The word is named first, so the question itself does not end with it. The
+# answer is long on purpose: Maestro's tap on Send waits for the screen to
+# settle, and a short answer has finished streaming by the time it returns.
+- inputText: "End your answer with the word APRICOT. Write about 300 words on the life of houseflies."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      text: "End your answer with the word APRICOT\\. Write about 300 words on the life of houseflies\\."
+    timeout: 15000
+
+# Being written: the stop button is up.
+- extendedWaitUntil:
+    visible:
+      id: "stopBtn"
+    timeout: 20000
+- takeScreenshot: "chat_stream_01_writing"
+
+# Finished: the closing word has arrived and the stop button has gone.
+- extendedWaitUntil:
+    visible:
+      text: "(?is).*apricot\\W*"
+    timeout: 120000
+- extendedWaitUntil:
+    notVisible:
+      id: "stopBtn"
+    timeout: 30000
+- takeScreenshot: "chat_stream_01_finished"
+
+# Backend leak guard.
+- assertNotVisible:
+    text: ".*OpenRouter.*|.*Hermes agent.*|.*Cloudflare.*|.*service_role.*"

@@ -1,0 +1,95 @@
+appId: com.sidekick.v2
+name: 'shared - sign in and clear first-run interruptions'
+env:
+  ACCESS_TOKEN: ${MAESTRO_ACCESS_TOKEN}
+  REFRESH_TOKEN: ${MAESTRO_REFRESH_TOKEN}
+---
+# Reusable preamble: every sweep flow starts by calling this.
+#
+# WHY EACH FLOW SIGNS IN FOR ITSELF. The first design signed in once in
+# SWEEP-00 and let the others inherit the session. The cloud runner does not
+# work that way: it neither preserves app state between flows nor runs them in
+# the order they are listed (the first run reported 01, 02, 03, then 00). So
+# every flow must be self-sufficient, and a shared subflow is how that stays
+# DRY instead of four copies drifting apart.
+#
+# This file lives OUTSIDE the sweep directory on purpose. Anything inside it is
+# picked up as a top-level flow by `flow_path: .../sweep`, and a preamble is not
+# a test.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: 'login.googleButton'
+    timeout: 60000
+
+- openLink: 'sidekick://auth/callback?access_token=${ACCESS_TOKEN}&refresh_token=${REFRESH_TOKEN}&type=magiclink'
+
+# iOS confirms any custom-scheme link that arrives from outside the app.
+- runFlow:
+    when:
+      visible:
+        text: 'Open'
+    commands:
+      - tapOn:
+          text: 'Open'
+
+# Give the sign-in time to land before looking for interruptions. The login
+# controls going away is the signal, and it also covers the case where the
+# consent modal is what is covering them.
+- extendedWaitUntil:
+    notVisible:
+      id: 'login.googleButton'
+    timeout: 90000
+
+# The ad-consent modal covers the entire shell, so it is cleared before
+# anything waits on a shell control. Declined: a test must never opt a real
+# account into advertising tracking.
+#
+# CONDITIONAL, not required. The choice is recorded against the ACCOUNT, not
+# the install, so it appears exactly once per user ever. Demanding it worked on
+# the first run and then failed every run afterwards, which is a rather good
+# demonstration of why a test should assert what it needs rather than what it
+# happened to see once.
+- runFlow:
+    when:
+      visible:
+        text: 'No thanks'
+    commands:
+      - tapOn:
+          text: 'No thanks'
+      - extendedWaitUntil:
+          notVisible:
+            text: 'No thanks'
+          timeout: 20000
+
+# "Later", never "Restart": a restart would drop the session mid-flow.
+- runFlow:
+    when:
+      visible:
+        text: 'Later'
+    commands:
+      - tapOn:
+          text: 'Later'
+
+- extendedWaitUntil:
+    visible:
+      id: 'main-menu-button'
+    timeout: 60000
+
+# A THIRD first-run interruption, this one inside the WebView: the "Quick tour
+# of your toolbar" card, which sits over the composer and blocks any attempt to
+# type. It is shown once per install (localStorage-gated), so a fresh install
+# always gets it. Its close button carries aria-label="Close", which is what
+# WKWebView publishes to the accessibility tree.
+- runFlow:
+    when:
+      visible:
+        text: '.*Quick tour of your toolbar.*'
+    commands:
+      - tapOn:
+          text: 'Close'
+      - extendedWaitUntil:
+          notVisible:
+            text: '.*Quick tour of your toolbar.*'
+          timeout: 20000

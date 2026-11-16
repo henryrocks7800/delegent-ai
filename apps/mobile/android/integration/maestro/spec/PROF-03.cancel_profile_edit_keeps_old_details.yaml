@@ -1,0 +1,105 @@
+appId: com.sidekick.v2
+name: PROF-03 — Cancel Profile Edit Keeps Old Details
+tags:
+  - prof
+  - live-only
+---
+# ============================================================================
+# Spec ID: PROF-03 — Cancel Profile Edit Keeps Old Details
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# 2026-09-28: no longer asserts a seeded coworker name ("Atlas"); the
+# proof is that the typed name is gone after Cancel. Profile READ mode shows
+# display name + email + plan badge — NOT agent name. To verify the
+# cancel-revert behavior, we enter edit mode (which renders the
+# agent_name input prefilled with the current value), change it, tap
+# Cancel, then re-enter edit mode and verify the original value is back.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.signOutButton"
+    timeout: 15000
+- takeScreenshot: "prof_03_01_profile"
+
+# Step 1 — enter edit mode for the first time; the name field is prefilled.
+- tapOn:
+    text: "Edit profile"
+- scrollUntilVisible:
+    element:
+      id: "profile.agentNameInput"
+    direction: DOWN
+    timeout: 10000
+- assertNotVisible:
+    text: "ShouldBeReverted"
+- takeScreenshot: "prof_03_02_edit_mode_prefilled"
+
+# Step 2 — change the agent name to something distinct
+- tapOn:
+    id: "profile.agentNameInput"
+- eraseText: 40
+- inputText: "ShouldBeReverted"
+- hideKeyboard
+- takeScreenshot: "prof_03_03_after_edit"
+
+# Step 3 — tap Cancel. The button text toggles to "Cancel" while editing
+- tapOn:
+    text: "Cancel"
+
+# Step 4 — back in read mode (Edit profile text returns). After the
+# DOWN-scroll to the inputs, "Edit profile" sits above the viewport,
+# so scroll UP until it is visible before asserting.
+- scrollUntilVisible:
+    element:
+      text: "Edit profile"
+    direction: UP
+    timeout: 10000
+- assertVisible:
+    text: "Edit profile"
+- takeScreenshot: "prof_03_04_back_in_read_mode"
+
+# Step 5 — re-enter edit mode and confirm the typed name is gone
+- tapOn:
+    text: "Edit profile"
+- scrollUntilVisible:
+    element:
+      id: "profile.agentNameInput"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    id: "profile.agentNameInput"
+- assertNotVisible:
+    text: "ShouldBeReverted"
+- takeScreenshot: "prof_03_05_reverted"
+
+# Step 6 — exit edit mode again so we don't leave state half-modified.
+# Same scroll dance: bring "Cancel" into view, tap, then scroll UP to
+# reach "Edit profile" once we're back in read mode.
+- scrollUntilVisible:
+    element:
+      text: "Cancel"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "Cancel"
+- scrollUntilVisible:
+    element:
+      text: "Edit profile"
+    direction: UP
+    timeout: 10000
+- assertVisible:
+    text: "Edit profile"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "couldn't save"

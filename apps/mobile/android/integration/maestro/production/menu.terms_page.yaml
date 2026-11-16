@@ -1,0 +1,39 @@
+appId: com.sidekick.v2
+name: Production - Terms page
+---
+# Terms opens from the menu and reading it again never sends a signed-in user
+# back through onboarding: closing the menu lands on the chat.
+#
+# 2026-09-28 (redesign): the taller menu rows put Terms below the fold, so the
+# flow scrolls to it.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- scrollUntilVisible:
+    element:
+      id: "menu.termsRow"
+    direction: DOWN
+- tapOn:
+    id: "menu.termsRow"
+- extendedWaitUntil:
+    visible:
+      text: "Delegent AI Terms of Service"
+    timeout: 15000
+- takeScreenshot: "production_menu_terms_page_01"
+# Back returns to the menu, which opens at its top again (it always has:
+# the list is rebuilt when a page closes).
+- back
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 15000
+- assertNotVisible:
+    text: "Name your coworker"
+- takeScreenshot: "production_menu_terms_page_02"

@@ -1,0 +1,21 @@
+appId: com.sidekick.v2
+name: Production - returning active subscriber bypass
+---
+# A returning person with an active subscription goes straight to the chat,
+# never back through onboarding or the plan screen.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- takeScreenshot: "production_auth_returning_active_subscriber_bypass_01_restore"
+- assertVisible:
+    id: "main-menu-button"
+# Onboarding's naming step, its app picker and the plan screen's buy button
+# must all be absent.
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "onboarding.appsContinue"
+- assertNotVisible:
+    text: "Start your free month"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider|chat id"

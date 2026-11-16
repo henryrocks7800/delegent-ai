@@ -1,0 +1,79 @@
+appId: com.sidekick.v2
+name: MENU-12 — Visit Our Website Opens External Link Safely
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-12 — Visit Our Website Opens External Link Safely
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). The "Visit our website" menu row uses Linking.openURL
+# to launch the system browser. We verify the tap fires (no crash) and
+# that the user can return to the app (Back via Shell BackHandler /
+# launcher).
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 1 — open the burger menu, scroll the website row into view
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- scrollUntilVisible:
+    element:
+      id: "menu.websiteRow"
+    direction: DOWN
+    timeout: 8000
+- assertVisible:
+    id: "menu.websiteRow"
+- takeScreenshot: "menu_12_01_menu_scrolled_to_website"
+
+# Step 2 — tap "Visit our website". The system browser will open with
+# the marketing site. We can't reach the browser UI from inside the app,
+# but Maestro can confirm:
+#   (a) the tap did not crash the app
+#   (b) returning Back lands us in the app shell (not on a blank shell)
+#   (c) the user can navigate back to chat home from the drawer-still-open
+#       state (standard Android resume behaviour leaves the drawer where
+#       it was when the user left for the external link)
+- tapOn:
+    id: "menu.websiteRow"
+- takeScreenshot: "menu_12_02_after_tap"
+
+# Step 3 — return to the app. The emulator's Chrome can ANR after the
+# Linking.openURL handoff, which would leave `pressKey: Back` stuck on a
+# system "Chrome isn't responding" dialog (a Chrome problem, not a
+# product problem). Use `launchApp clearState: false` to bring the app
+# back to the foreground deterministically — this proves the tap to
+# Linking.openURL did not crash the app AND the user can resume the app
+# cleanly.
+#
+# 2026-09-28: Chrome is also closed on purpose first. Left running, it hung
+# and its "isn't responding" dialog covered the app for every flow after this
+# one. The ready step gives the relaunched chat its full minute to load.
+- stopApp: "com.android.chrome"
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- assertVisible:
+    id: "main-menu-button"
+- takeScreenshot: "menu_12_03_back_to_chat"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"
+- assertNotVisible:
+    text: "stack trace"
+- assertNotVisible:
+    text: "Traceback"

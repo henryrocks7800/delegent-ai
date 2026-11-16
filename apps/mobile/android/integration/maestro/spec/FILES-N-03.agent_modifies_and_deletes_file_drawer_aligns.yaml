@@ -1,0 +1,97 @@
+appId: com.sidekick.v2
+name: FILES-N-03 — Agent modifies + deletes a file, Files drawer stays aligned
+tags:
+  - files
+  - lifecycle
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: FILES-N-03
+# Friendly name: Agent file lifecycle, Files drawer stays aligned
+# Defect this regression-guards: Files drawer must reflect server-side
+# truth on every refresh. If the agent creates a file, modifies it,
+# then deletes it, the Files tab should show the file appear, persist
+# after the modify, then disappear after the delete. This is the
+# central "agent + drawer in lock step" contract Alex called out.
+#
+# Status: live-only. Token usage: three short prompts + ~one-line files.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Step 1: agent creates the file.
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "create notes/scratch.md with the word seed"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 120000
+
+- tapOn:
+    id: "tab.artifacts"
+- tapOn:
+    id: "files.refreshButton"
+- extendedWaitUntil:
+    visible:
+      text: ".*scratch\\.md.*"
+    timeout: 20000
+
+# Step 2: agent modifies the file.
+- tapOn:
+    id: "tab.dashboard"
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "replace the content of notes/scratch.md with the word seed-v2"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 120000
+
+- tapOn:
+    id: "tab.artifacts"
+- tapOn:
+    id: "files.refreshButton"
+# Same file is still there (modify, not rename).
+- extendedWaitUntil:
+    visible:
+      text: ".*scratch\\.md.*"
+    timeout: 20000
+
+# Step 3: agent deletes the file.
+- tapOn:
+    id: "tab.dashboard"
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "delete notes/scratch.md"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 120000
+
+- tapOn:
+    id: "tab.artifacts"
+- tapOn:
+    id: "files.refreshButton"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+
+# The Notes section still renders (it's a default placeholder) but the
+# specific scratch.md row is gone.
+- assertVisible:
+    id: "files.directory.notes"
+- assertNotVisible:
+    text: ".*scratch\\.md.*"

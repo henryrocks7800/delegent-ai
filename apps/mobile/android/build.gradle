@@ -1,0 +1,62 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath('com.android.tools.build:gradle')
+    classpath('com.facebook.react:react-native-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    // Firebase Cloud Messaging (push notifications, 2026-08-02). This bare
+    // project does not run expo prebuild, so the expo-notifications config
+    // plugin never gets a chance to add this — it has to be committed here by
+    // hand, alongside app/google-services.json and the matching `apply plugin`
+    // in app/build.gradle. Without all three the app builds fine and simply
+    // never receives a notification, which is the worst kind of failure.
+    classpath('com.google.gms:google-services:4.4.2')
+  }
+}
+
+allprojects {
+  repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://www.jitpack.io' }
+  }
+}
+
+apply plugin: "expo-root-project"
+apply plugin: "com.facebook.react.rootproject"
+
+def delegentRepoRoot = rootDir.parentFile.parentFile.parentFile
+
+tasks.register("delegentAndroidFastTests", Exec) {
+  group = "verification"
+  description = "Runs the Android src/test JS business/readiness tests."
+  workingDir delegentRepoRoot
+  commandLine "bash", "-lc", "npm test --workspace @sidekick/mobile"
+}
+
+tasks.register("delegentAndroidProductionUi", Exec) {
+  group = "verification"
+  description = "Runs the full Android integration Maestro production UI manifest."
+  workingDir delegentRepoRoot
+  environment "RUN_ALL_PRODUCTION_UI_FLOWS", "1"
+  environment "ALLOW_FLOW_FAILURES", "1"
+  commandLine "bash", "-lc", "npm run android:test-production-ui"
+}
+
+tasks.register("delegentAndroidAllureReport", Exec) {
+  group = "verification"
+  description = "Runs/ingests the Android test pack and writes one Allure report."
+  workingDir delegentRepoRoot
+  commandLine "bash", "-lc", "npm run android:allure"
+}
+
+tasks.register("delegentAndroidTestPack") {
+  group = "verification"
+  description = "Alias for the unified Delegent Android Allure test pack."
+  dependsOn "delegentAndroidAllureReport"
+}

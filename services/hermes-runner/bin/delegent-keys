@@ -1,0 +1,297 @@
+#!/usr/bin/env python3
+"""delegent-keys — the ONE central encrypted key vault CLI.
+
+This is the single obvious tool the agent (and every operator skill) uses to
+STORE and USE any key or credential. Everything is encrypted at rest via the
+shared credential store (`_shared/credential_store.py`), which owns a durable,
+per-runner encryption key on the runner's own volume. A secret is only ever
+materialised transiently at the moment a command needs it, and is scrubbed from
+any error text so it can never leak back into chat.
+
+Subcommands
+-----------
+  put <service> [--value V | --file F | --stdin] [--scope S ...] [--meta k=v ...]
+      Store an encrypted credential. If the payload parses as JSON it is stored
+      as that dict; otherwise it is wrapped as {"value": <text>}. Prints a safe
+      confirmation (service + scopes only) — NEVER the secret.
+
+  list
+      Print the safe inventory (service / scopes / meta / stored_at). No secrets.
+
+  remove <service>
+      Delete a stored credential.
+
+  run --service <s> [--file] [--var VAR] -- <cmd...>
+      USE a stored credential to run a command WITHOUT the secret touching the
+      agent or living on disk in plaintext:
+        * --file  : decrypt the secret to a fresh 0600 temp file, set env VAR
+                    (default GOOGLE_APPLICATION_CREDENTIALS) to that path, run the
+                    command, then DELETE the temp file in a finally block.
+        * no --file: set env VAR to the secret's "value" (or the JSON blob when
+                    there is no bare "value" field) and run the command.
+      The secret never touches stdout/stderr of this tool.
+
+Dependency-light: stdlib + the shared credential store only. Fails loudly on bad
+input and exits non-zero on any failure.
+"""
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+
+# --------------------------------------------------------------------------- #
+# Locate + import the shared credential store.
+# Tries the seeded volume path, the env-configured skills dir, then the baked
+# image path, in that order.
+# --------------------------------------------------------------------------- #
+def _candidate_shared_dirs() -> list[Path]:
+    dirs: list[Path] = []
+    hermes_home = os.environ.get("HERMES_HOME")
+    if hermes_home:
+        dirs.append(Path(hermes_home) / "skills" / "_shared")
+    skills_dir = os.environ.get("DELEGENT_SKILLS_DIR")
+    if skills_dir:
+        dirs.append(Path(skills_dir) / "_shared")
+    dirs.append(Path("/opt/delegent/skills/_shared"))
+    # Also allow running straight from the repo checkout (dev/tests): the store
+    # lives next to this file at ../skills/delegent/_shared.
+    dirs.append(Path(__file__).resolve().parent.parent
+                / "skills" / "delegent" / "_shared")
+    return dirs
+
+
+def _load_credential_store():
+    last_err: Exception | None = None
+    for d in _candidate_shared_dirs():
+        target = d / "credential_store.py"
+        if not target.is_file():
+            continue
+        try:
+            spec = importlib.util.spec_from_file_location("credential_store", target)
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules["credential_store"] = mod
+            spec.loader.exec_module(mod)
+            return mod
+        except Exception as exc:  # keep trying the next candidate
+            last_err = exc
+    tried = ", ".join(str(d) for d in _candidate_shared_dirs())
+    raise SystemExit(
+        f"delegent-keys: could not locate credential_store.py (tried: {tried})"
+        + (f"; last error: {last_err}" if last_err else ""))
+
+
+credential_store = _load_credential_store()
+
+
+def _die(msg: str, code: int = 1) -> None:
+    print(f"delegent-keys: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# --------------------------------------------------------------------------- #
+# Payload + argument parsing helpers.
+# --------------------------------------------------------------------------- #
+def _read_payload(a) -> str:
+    sources = [bool(a.value is not None), bool(a.file), bool(a.stdin)]
+    if sum(sources) != 1:
+        _die("choose exactly one of --value, --file, or --stdin")
+    if a.value is not None:
+        return a.value
+    if a.stdin:
+        return sys.stdin.read()
+    p = Path(a.file)
+    if not p.is_file():
+        _die(f"--file {a.file} does not exist")
+    return p.read_text(encoding="utf-8")
+
+
+def _to_secret_dict(raw: str) -> dict:
+    """If the payload parses as a JSON object, store the dict; otherwise wrap the
+    raw text as {"value": <text>}. A bare JSON scalar/list is treated as text so
+    `value` is always a usable env string."""
+    text = raw.strip()
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
+    except (json.JSONDecodeError, ValueError):
+        pass
+    return {"value": raw}
+
+
+def _parse_meta(pairs: list[str]) -> dict:
+    meta: dict[str, str] = {}
+    for item in pairs or []:
+        if "=" not in item:
+            _die(f"--meta expects k=v, got {item!r}")
+        k, v = item.split("=", 1)
+        if not k:
+            _die(f"--meta key is empty in {item!r}")
+        meta[k] = v
+    return meta
+
+
+def _scrub(text: str, secrets: list[str]) -> str:
+    """Remove any secret material from text before it is shown to a human."""
+    out = text or ""
+    for s in secrets:
+        for piece in (s or "").splitlines():
+            piece = piece.strip()
+            if len(piece) >= 6 and piece in out:
+                out = out.replace(piece, "***REDACTED***")
+        if s and len(s) >= 6 and s in out:
+            out = out.replace(s, "***REDACTED***")
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Subcommands
+# --------------------------------------------------------------------------- #
+def cmd_put(a) -> int:
+    raw = _read_payload(a)
+    if not raw.strip():
+        _die("refusing to store an empty secret")
+    secret = _to_secret_dict(raw)
+    try:
+        credential_store.put(a.service, secret,
+                             scopes=a.scope or [], meta=_parse_meta(a.meta))
+    except Exception as exc:  # never let a secret ride out in the traceback
+        _die(f"could not store {a.service}: {type(exc).__name__}")
+    print(json.dumps({
+        "stored": True,
+        "service": a.service,
+        "scopes": a.scope or [],
+        "encrypted": True,
+        "note": "secret stored encrypted at rest; never printed",
+    }, indent=2))
+    return 0
+
+
+def cmd_list(a) -> int:
+    print(json.dumps(credential_store.listing(), indent=2))
+    return 0
+
+
+def cmd_remove(a) -> int:
+    removed = credential_store.remove(a.service)
+    print(json.dumps({"removed": bool(removed), "service": a.service}))
+    return 0 if removed else 1
+
+
+def _load_secret_or_die(service: str) -> dict:
+    if not credential_store.is_connected(service):
+        _die(f"{service} is not connected; store it with `delegent-keys put {service}` first")
+    try:
+        return credential_store.secret(service)
+    except Exception as exc:
+        _die(f"could not read {service}: {type(exc).__name__}")
+    return {}  # unreachable
+
+
+def _secret_value(secret: dict) -> str:
+    """The plaintext env value for a non-file run: the bare "value" field if the
+    secret was wrapped, otherwise the whole JSON blob."""
+    if isinstance(secret, dict) and set(secret.keys()) == {"value"}:
+        return str(secret["value"])
+    if isinstance(secret, dict) and "value" in secret and isinstance(secret["value"], str):
+        return secret["value"]
+    return json.dumps(secret)
+
+
+def cmd_run(a) -> int:
+    if not a.command:
+        _die("nothing to run; put the command after `--`")
+    secret = _load_secret_or_die(a.service)
+    var = a.var or "GOOGLE_APPLICATION_CREDENTIALS"
+    env = os.environ.copy()
+
+    # Collect every secret string so we can scrub it from any surfaced output.
+    secret_blobs: list[str] = [json.dumps(secret)]
+    for v in (secret.values() if isinstance(secret, dict) else []):
+        if isinstance(v, str):
+            secret_blobs.append(v)
+
+    tmp_path: str | None = None
+    try:
+        if a.file:
+            fd, tmp_path = tempfile.mkstemp(prefix="delegent-key-", suffix=".json")
+            os.fchmod(fd, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                # A file-mode secret is materialised as JSON (e.g. a GCP SA key).
+                if isinstance(secret, dict) and set(secret.keys()) == {"value"}:
+                    fh.write(str(secret["value"]))
+                else:
+                    json.dump(secret, fh)
+            env[var] = tmp_path
+        else:
+            env[var] = _secret_value(secret)
+            secret_blobs.append(env[var])
+
+        try:
+            proc = subprocess.run(a.command, env=env)
+        except FileNotFoundError:
+            _die(f"command not found: {a.command[0]}")
+        except OSError as exc:
+            _die(_scrub(f"could not run command: {exc}", secret_blobs))
+        return proc.returncode
+    finally:
+        # The decrypted key must NEVER outlive the command, success or failure.
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(
+        prog="delegent-keys",
+        description="Central encrypted key vault: store and use any credential.")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("put", help="store an encrypted credential")
+    p.add_argument("service")
+    src = p.add_argument_group("payload (choose one)")
+    src.add_argument("--value", help="the secret as a literal string")
+    src.add_argument("--file", help="read the secret from a file")
+    src.add_argument("--stdin", action="store_true", help="read the secret from stdin")
+    p.add_argument("--scope", action="append", default=[], help="a granted scope (repeatable)")
+    p.add_argument("--meta", action="append", default=[], help="non-secret k=v metadata (repeatable)")
+    p.set_defaults(fn=cmd_put)
+
+    lp = sub.add_parser("list", help="list connected services (never secrets)")
+    lp.set_defaults(fn=cmd_list)
+
+    rp = sub.add_parser("remove", help="delete a stored credential")
+    rp.add_argument("service")
+    rp.set_defaults(fn=cmd_remove)
+
+    r = sub.add_parser("run", help="run a command using a stored credential")
+    r.add_argument("--service", required=True, help="the stored service to use")
+    r.add_argument("--file", action="store_true",
+                   help="materialise the secret to a 0600 temp file and point --var at it")
+    r.add_argument("--var", help="env var to set (default GOOGLE_APPLICATION_CREDENTIALS)")
+    r.add_argument("command", nargs=argparse.REMAINDER,
+                   help="the command to run, after a literal --")
+    r.set_defaults(fn=cmd_run)
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = build_parser()
+    args = ap.parse_args(argv)
+    # argparse.REMAINDER keeps the leading `--`; strip it so command[0] is the exe.
+    if getattr(args, "command", None) and args.command and args.command[0] == "--":
+        args.command = args.command[1:]
+    return args.fn(args) or 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,57 @@
+appId: com.sidekick.v2
+name: CHAT-S-03 — Attached text file is actually read by the agent
+tags:
+  - chat
+  - attachments
+  - live-only
+# blocked-reason: needs a fixture file in the document picker on the device
+---
+# ============================================================================
+# Spec ID: CHAT-S-03
+# Friendly name: Attached text file is actually read by the agent
+# Defect this regression-guards: #2 / #7 — the paperclip used to attach a
+# file purely as metadata; the runner never saw the bytes, so asking
+# "can you read the file I just sent?" got no useful reply. We now
+# inline small text files into the chat instruction. This flow proves
+# that wiring end-to-end: the agent quotes a known token from the
+# attached file back to the user.
+#
+# Status: live-only. Needs a provisioned runner.
+# Token usage: a one-line text file + a 5-word prompt. Cheap.
+# Pre-condition (harness): a known-content file is staged in the
+# emulator's document-picker scope, e.g. /sdcard/Download/canary.txt
+# whose body reads exactly "DELEGENT_CANARY_TOKEN_2026".
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Open the paperclip, the document picker takes over. Maestro can't
+# drive the system picker reliably, so we expect the harness to inject
+# the file pick via a shim or use `runScript` to feed the URI back.
+# When the chip lands, we know the inline-content read fired.
+- tapOn:
+    id: "home.chatPanel.attachButton"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.attachmentChip"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "what does this file say"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 90000
+
+# The reply must contain the canary token, proving the runner actually
+# saw the file body — not just the metadata chip.
+- assertVisible:
+    text: ".*DELEGENT_CANARY_TOKEN_2026.*"

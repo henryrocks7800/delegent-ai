@@ -1,0 +1,219 @@
+{
+  "_comment": "Canonical list of every capability we CLAIM on the website (apps/website/src/sections/BuiltInSkills.tsx + BookkeeperFlagship.tsx), each paired with: the runner skill that drives it (services/hermes-runner/skills/delegent), a scoped 'show the mechanic then STOP' prompt (kept small so a run stays well under the ~$1 token cap), a backend signal that proves the mechanic actually started (a tool call OR the reply naming the concrete first step), and whether the flow must exercise the chat paperclip upload. Driven from the emulator by scripts/claim-mechanics-lab.mjs. This is the insurance ledger: every claim has a tested mechanic + a driving skill.",
+  "tokenCapUsdPerClaim": 1,
+  "costPerMillionBillableGbp": 0.63,
+  "claims": [
+    {
+      "id": "BOOK-01",
+      "claim": "Bookkeeping from receipts and bank exports",
+      "category": "finance",
+      "skill": "autonomous-bookkeeper",
+      "needsUpload": true,
+      "prompt": "Be my bookkeeper. I've attached one receipt. Just do the FIRST concrete step to show me it works — read the attached receipt, pull out the date, vendor and amount, and tell me your Mettle/FreeAgent setup plan. Then STOP; don't do the whole month.",
+      "assertAny": [
+        "receipt",
+        "freeagent",
+        "mettle",
+        "vendor",
+        "amount",
+        "reconcil"
+      ]
+    },
+    {
+      "id": "BOOK-03",
+      "claim": "Cashflow and budget dashboards",
+      "category": "finance",
+      "skill": "cashflow-dashboard",
+      "needsUpload": false,
+      "prompt": "Show me you can build a cashflow dashboard: create a tiny 3-row sample cashflow spreadsheet (date, in, out, balance) in my workspace as proof, then STOP and outline what a full one would include.",
+      "assertAny": [
+        "cashflow",
+        "spreadsheet",
+        ".csv",
+        ".xlsx",
+        "balance",
+        "created"
+      ]
+    },
+    {
+      "id": "OPS-01",
+      "claim": "Customer support replies in your tone",
+      "category": "operations",
+      "skill": "customer-support-desk",
+      "needsUpload": false,
+      "prompt": "Show me you can handle support: here's a customer message — 'My order hasn't arrived and I'm upset.' Draft one reply in a calm, professional tone, then STOP.",
+      "assertAny": [
+        "sorry",
+        "order",
+        "apolog",
+        "help",
+        "reply"
+      ]
+    },
+    {
+      "id": "OPS-02",
+      "claim": "Overdue-invoice draft packs and follow-up plans",
+      "category": "operations",
+      "skill": "invoice-chasing",
+      "needsUpload": false,
+      "prompt": "Show me you can chase invoices: draft a polite first reminder for a 14-day overdue 500 GBP invoice to 'Acme Ltd', and outline the follow-up cadence. First draft only, then STOP.",
+      "assertAny": [
+        "overdue",
+        "reminder",
+        "invoice",
+        "payment",
+        "acme"
+      ]
+    },
+    {
+      "id": "OPS-05",
+      "claim": "CRM and sales-pipeline upkeep",
+      "category": "operations",
+      "skill": "crm-sales-pipeline",
+      "needsUpload": false,
+      "prompt": "Show me you can keep a CRM tidy: design a tiny 3-stage pipeline and one sample lead record, then STOP and outline the upkeep routine.",
+      "assertAny": [
+        "pipeline",
+        "lead",
+        "crm",
+        "stage",
+        "follow"
+      ]
+    },
+    {
+      "id": "OPS-06",
+      "claim": "Procurement and supplier coordination",
+      "category": "operations",
+      "skill": "procurement-supplier-manager",
+      "needsUpload": false,
+      "prompt": "Show me you can coordinate suppliers: draft a quote request to three suppliers for 100 units of an item, then STOP.",
+      "assertAny": [
+        "supplier",
+        "quote",
+        "purchase",
+        "request",
+        "vendor"
+      ]
+    },
+    {
+      "id": "DEV-01",
+      "claim": "Static and small-app website builds",
+      "category": "development",
+      "skill": "website-builder",
+      "needsUpload": false,
+      "prompt": "Show me you can build a site: create a one-page index.html landing page in my workspace as proof, then STOP and outline next steps.",
+      "assertAny": [
+        "index.html",
+        "landing",
+        "website",
+        "created",
+        "html"
+      ]
+    },
+    {
+      "id": "DEV-04",
+      "claim": "Database setup and small migrations",
+      "category": "development",
+      "skill": "database-setup",
+      "needsUpload": false,
+      "prompt": "Show me you can set up a database: write the SQL for a tiny 2-table schema (customers, orders) to a file in my workspace, then STOP.",
+      "assertAny": [
+        "create table",
+        "schema",
+        "sql",
+        "migration",
+        "customers"
+      ]
+    },
+    {
+      "id": "OFF-01",
+      "claim": "Spreadsheets and dashboards",
+      "category": "office",
+      "skill": "spreadsheet-excel",
+      "needsUpload": false,
+      "prompt": "Show me you can build a spreadsheet: create a 3-row sample budget spreadsheet in my workspace as proof, then STOP.",
+      "assertAny": [
+        "spreadsheet",
+        ".xlsx",
+        ".csv",
+        "budget",
+        "created"
+      ]
+    },
+    {
+      "id": "OFF-03",
+      "claim": "Reports, briefs, and research summaries",
+      "category": "office",
+      "skill": "report-writer",
+      "needsUpload": false,
+      "prompt": "Show me you can write a report: draft a one-paragraph executive summary for a short report on a topic of your choice, then STOP and outline the full structure.",
+      "assertAny": [
+        "summary",
+        "report",
+        "section",
+        "brief",
+        "introduction"
+      ]
+    },
+    {
+      "id": "OFF-04",
+      "claim": "Proposals and pitch material",
+      "category": "office",
+      "skill": "proposal-writer",
+      "needsUpload": false,
+      "prompt": "Show me you can write a proposal: draft the opening + scope section of a proposal for a generic web project, then STOP.",
+      "assertAny": [
+        "proposal",
+        "scope",
+        "deliverable",
+        "pitch",
+        "client"
+      ]
+    },
+    {
+      "id": "COMM-01",
+      "claim": "Assistant inbox setup checklist",
+      "category": "communications",
+      "skill": "agent-email-inbox",
+      "needsUpload": false,
+      "prompt": "Show me you can set up an assistant inbox: give me the setup checklist for a dedicated assistant email (no access to my personal email). First step only, then STOP.",
+      "assertAny": [
+        "inbox",
+        "email",
+        "checklist",
+        "setup",
+        "assistant"
+      ]
+    },
+    {
+      "id": "COMM-03",
+      "claim": "Phone-concierge setup checklist",
+      "category": "communications",
+      "skill": "phone-concierge-twilio",
+      "needsUpload": false,
+      "prompt": "Show me you can set up a phone concierge: give me the setup checklist for a business number with call routing (Twilio-style). First step only, then STOP.",
+      "assertAny": [
+        "phone",
+        "twilio",
+        "call",
+        "number",
+        "concierge"
+      ]
+    },
+    {
+      "id": "COMM-04",
+      "claim": "Voice-note triage into clear actions",
+      "category": "communications",
+      "skill": "voice-note-triage",
+      "needsUpload": false,
+      "prompt": "Show me you can triage a voice note: here's a transcript — 'remind me to call the bank tomorrow and email Sam the invoice.' Turn it into a clear action list, then STOP.",
+      "assertAny": [
+        "action",
+        "task",
+        "call",
+        "email",
+        "list"
+      ]
+    }
+  ]
+}

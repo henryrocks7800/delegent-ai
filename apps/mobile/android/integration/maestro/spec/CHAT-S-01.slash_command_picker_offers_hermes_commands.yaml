@@ -1,0 +1,62 @@
+appId: com.sidekick.v2
+name: CHAT-S-01 — Slash-command picker offers Hermes commands
+tags:
+  - chat
+  - slash-commands
+# blocked-reason: retired: tests Hermes skills and commands, gone with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: CHAT-S-01
+# Friendly name: Slash command picker offers Hermes commands
+# Defect this regression-guards: #8 — typing "/" used to produce nothing in
+# the composer; users had no way to discover the runner-side commands
+# (/skill, /goal, /memory, etc.). The picker now surfaces matching
+# Hermes commands as the user types, mirroring Slack/Linear UX.
+#
+# Doesn't require a live runner — exercises the UI surface only. The
+# slash command itself isn't dispatched in this flow (we don't tap send),
+# we just confirm the picker exists and filters correctly.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Tap the composer and type a single "/" — the slash panel should appear
+# with at least /help, /skills, and /skill visible (they all start with /).
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "/"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.slashCommands"
+    timeout: 5000
+
+- assertVisible:
+    id: "home.chatPanel.slashCommand.help"
+- assertVisible:
+    id: "home.chatPanel.slashCommand.skills"
+- assertVisible:
+    id: "home.chatPanel.slashCommand.skill"
+- assertVisible:
+    id: "home.chatPanel.slashCommand.goal"
+
+# Filter narrows when more chars are typed — "/sk" should leave only the
+# two skill rows (skills + skill), but not /help.
+- inputText: "sk"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.slashCommand.skills"
+    timeout: 3000
+- assertVisible:
+    id: "home.chatPanel.slashCommand.skill"
+- assertNotVisible:
+    id: "home.chatPanel.slashCommand.help"
+
+# Tapping a row fills the composer with the chosen command.
+- tapOn:
+    id: "home.chatPanel.slashCommand.skills"
+- assertVisible:
+    text: "/skills"

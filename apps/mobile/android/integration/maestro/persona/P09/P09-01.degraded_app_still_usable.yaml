@@ -1,0 +1,21 @@
+appId: com.sidekick.v2
+name: P09-01 — Degraded runner — app still loads, surface visible
+tags:
+  - persona:P09
+  - degraded
+  - unhappy-path
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+- launchApp:
+    clearState: false
+# Either the home chat shows with degraded notice, or a friendly
+# degraded-state surface appears. Either way the app must not crash
+# or show raw runtime vocabulary.
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*runner_unreachable.*"
+- assertNotVisible:
+    text: ".*Hermes Agent error.*"

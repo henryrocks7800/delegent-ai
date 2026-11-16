@@ -1,0 +1,26 @@
+appId: com.sidekick.v2
+name: P09-N01 — Degraded runner — no raw error codes leak (unhappy path)
+tags:
+  - persona:P09
+  - unhappy-path
+  - leak-guard
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*"
+    timeout: 30000
+# A degraded runner must never surface internal vocabulary, even in a
+# status banner. The exact label may vary; the leak guard is universal.
+- assertNotVisible:
+    text: ".*runner_unreachable.*"
+- assertNotVisible:
+    text: ".*EHOSTUNREACH.*"
+- assertNotVisible:
+    text: ".*Internal Server Error.*"
+- assertNotVisible:
+    text: ".*Hermes Agent error.*"
+- assertNotVisible:
+    text: ".*Cloudflare.*"

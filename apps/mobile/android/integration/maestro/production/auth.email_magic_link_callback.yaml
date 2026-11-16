@@ -1,0 +1,22 @@
+appId: com.sidekick.v2
+name: Production - email magic-link callback
+---
+# A malformed or expired sign-in link must be handled gracefully: no crash,
+# and no half-state. The app stays on whichever screen it was on (the chat
+# for a signed-in person, sign-in otherwise) or says what went wrong.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- takeScreenshot: "production_auth_email_magic_link_callback_01_before"
+- openLink: "sidekick://auth/callback#error=invalid_request&error_description=production-ui-expired-link"
+# Signed in before the link, so still signed in after it: a bad link must not
+# end a good session.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- takeScreenshot: "production_auth_email_magic_link_callback_02_after_link"
+- assertVisible:
+    id: "main-menu-button"
+- assertNotVisible:
+    text: "RedBox|Unhandled promise|raw provider|runner URL|service role"

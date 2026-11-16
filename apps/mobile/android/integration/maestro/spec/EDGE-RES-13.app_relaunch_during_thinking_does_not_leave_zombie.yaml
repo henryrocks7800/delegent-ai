@@ -1,0 +1,62 @@
+appId: com.sidekick.v2
+name: EDGE-RES-13 — App Relaunch During Thinking Does Not Leave a Zombie Placeholder
+tags:
+  - edge
+  - resilience
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: EDGE-RES-13 — App Relaunch During Thinking Does Not Leave a
+#   Zombie Placeholder
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §5.9 + §10.6
+#
+# Precondition: a signed-in subscriber (the pack's --sign-in account).
+#
+# What this proves:
+#   Killing and relaunching the app while a reply is being written leaves no
+#   permanently stuck "thinking" state: the sent message comes back from the
+#   server, the reply arrives (the engine finishes it server-side), and the
+#   stop button, which only shows while a reply is being written, is gone.
+#
+# 2026-09-28: WebView chat. The typing dots have no Android id, so "no zombie"
+# is proved by the reply arriving and stopBtn going away.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 1 — send a uniquely tagged message.
+- tapOn:
+    id: "input"
+- inputText: "EDGE13 probe: reply with only the word PEACH."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      text: "EDGE13 probe: reply with only the word PEACH\\."
+    timeout: 15000
+- takeScreenshot: "edge_res_13_sent"
+
+# Step 2 — kill the app mid-reply and cold-launch it.
+- killApp:
+    appId: com.sidekick.v2
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Step 3 — the message came back, the reply lands, nothing is left spinning.
+- extendedWaitUntil:
+    visible:
+      text: "EDGE13 probe: reply with only the word PEACH\\."
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*peach\\W*"
+    timeout: 120000
+- extendedWaitUntil:
+    notVisible:
+      id: "stopBtn"
+    timeout: 30000
+- takeScreenshot: "edge_res_13_post_relaunch_no_zombie"

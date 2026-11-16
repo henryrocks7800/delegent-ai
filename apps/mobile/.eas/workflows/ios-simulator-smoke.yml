@@ -1,0 +1,50 @@
+# iOS simulator smoke: build the app for the iOS simulator in EAS's cloud,
+# then run the portable Maestro flows against it on a cloud simulator.
+#
+# This is the iOS twin of the Android Maestro packs, using the SAME flow
+# files (they are written against testIDs and visible text, which Maestro
+# resolves identically on both platforms; the appId matches too because the
+# iOS bundle id is also com.sidekick.v2).
+#
+# Deliberately a CURATED anonymous pack, not the full persona suite:
+#   - each run costs EAS build minutes (small budget, Alex's constraint), so
+#     this runs on demand for release candidates, not on every push;
+#   - signed-in flows (P01+) need seeded auth state, which the Android
+#     persona-runner does with adb + Supabase setup scripts that have no iOS
+#     equivalent yet. Automating OTP-code sign-in on a cloud simulator is an
+#     open problem, tracked in the iOS runbook. Until then, signed-in
+#     verification is TestFlight + the parity matrix.
+#
+# Run it:   eas workflow:run .eas/workflows/ios-simulator-smoke.yml   (from apps/mobile)
+# Results:  https://expo.dev/accounts/delegentai/projects/sidekick-v2/workflows
+#
+# GATE (verified 2026-08-04): the maestro job type requires a PAID Expo plan;
+# the validation run parsed and uploaded fine and was refused at exactly that
+# gate. The build job alone runs on the free tier. Alex's call on when the
+# subscription is worth it; until then this file is ready-to-enable.
+name: ios-simulator-smoke
+
+on:
+  # On demand only. Add a push trigger later if the minutes budget allows.
+  workflow_dispatch: {}
+
+jobs:
+  build_ios_simulator:
+    name: Build for iOS simulator
+    type: build
+    params:
+      platform: ios
+      profile: ios-simulator
+
+  maestro_smoke:
+    name: Maestro anonymous smoke pack
+    needs: [build_ios_simulator]
+    type: maestro
+    params:
+      build_id: ${{ needs.build_ios_simulator.outputs.build_id }}
+      flow_path:
+        - android/integration/maestro/persona/P00/P00-01.cold_launch_lands_on_landing.yaml
+        - android/integration/maestro/persona/P00/P00-03.no_backend_vocab_on_landing.yaml
+        - android/integration/maestro/persona/P00/P00-06.tap_email_signin_opens_code_prompt.yaml
+        - android/integration/maestro/persona/P00/P00-09.terms_privacy_links_visible.yaml
+        - android/integration/maestro/persona/P00/P00-11.app_data_cleared_returns_to_landing.yaml

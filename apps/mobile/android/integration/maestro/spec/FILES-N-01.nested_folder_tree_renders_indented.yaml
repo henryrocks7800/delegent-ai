@@ -1,0 +1,63 @@
+appId: com.sidekick.v2
+name: FILES-N-01 — Nested folder tree renders with indent
+tags:
+  - files
+  - nested
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: FILES-N-01
+# Friendly name: Nested folder tree renders with indent
+# Defect this regression-guards: Files tab used to be flat — a file at
+# `documents/2026/q1/notes.md` only surfaced under DOCUMENTS without
+# any indication it lived three levels deep. With nested grouping the
+# tree renders Documents → 2026 → q1 → notes.md.
+#
+# Status: live-only. Agent is prompted to create a tiny nested file.
+# Token usage: a single short instruction; the file body is one line.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "create documents/2026/q1/notes.md containing the word hello"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Wait for the assistant reply (and its file-artifact tool card).
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 120000
+
+# Open the Files tab and verify the indented hierarchy lands.
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+
+# Refresh to make sure the runner state propagates.
+- tapOn:
+    id: "files.refreshButton"
+- extendedWaitUntil:
+    visible:
+      id: "files.directory.documents"
+    timeout: 20000
+
+# The two intermediate subfolder rows must exist.
+- assertVisible:
+    id: "files.directory.documents/2026"
+- assertVisible:
+    id: "files.directory.documents/2026/q1"
+
+# The file itself shows under the q1 row.
+- assertVisible:
+    text: ".*notes\\.md.*"

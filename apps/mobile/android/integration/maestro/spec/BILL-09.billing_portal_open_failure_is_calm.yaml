@@ -1,0 +1,112 @@
+appId: com.sidekick.v2
+name: BILL-09 — Billing Portal Open Failure Is Calm
+tags:
+  - bill
+  - live-only
+# blocked-reason: needs live Stripe (Checkout or the billing portal); Stripe is live, so run only on purpose
+---
+# ============================================================================
+# Spec ID: BILL-09 — Billing Portal Open Failure Is Calm
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner)
+# whose database row says subscription.status='active' but who does
+# NOT have a real Stripe customer record — the seed script does not
+# create a Stripe customer, so the Web API's billing-portal endpoint
+# returns an error mapped to one of the calm copies in
+# src/billing/mobileCheckout.ts:349-354. The most likely path for a
+# seeded user is `billing_subscription_required`, whose copy is:
+#   "Your current subscription needs to finish syncing before billing
+#    can change the plan."
+# Other valid calm copies (depending on which branch the Worker
+# takes): `unavailable` → "Billing is not ready. Try again in a
+# moment." and `billing_customer_required` → "Choose a plan first,
+# then billing can manage changes."
+#
+# What this spec verifies:
+#   1. Manage plan tap surfaces ONE of the calm copies under the
+#      button (rendered as a `warning` caption — see App.tsx:1437).
+#   2. No raw error payload, no Stripe API URL, no service_role, no
+#      HTTP status code leaks into the user-facing copy.
+#   3. Profile shell stays intact (no sign-out, no shell collapse).
+#   4. The subscription state has NOT been falsely flipped to
+#      past_due — we never claim "billing needs attention" unless
+#      the actual subscription requires it.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel"
+
+# Step 1 — open Profile from the header avatar.
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.managePlanButton"
+    timeout: 8000
+- assertVisible:
+    id: "profile.managePlanButton"
+
+# Step 2 — tap Manage plan. With no real Stripe customer the Worker's
+# billing-portal endpoint returns an error which the mobile maps to
+# a calm copy via billingPortalError().
+- tapOn:
+    id: "profile.managePlanButton"
+
+# Step 3 — wait for the calm error caption to appear. The error
+# message is rendered as <Text variant="caption" color="warning">
+# next to the Manage plan button (App.tsx:1437). 20s is generous —
+# the Worker call usually resolves within a few seconds.
+- extendedWaitUntil:
+    visible:
+      text: ".*(needs to finish syncing|not ready|Choose a plan first|Sign in again).*"
+    timeout: 20000
+- assertVisible:
+    text: ".*(needs to finish syncing|not ready|Choose a plan first|Sign in again).*"
+- takeScreenshot: "bill_09_01_calm_error_copy_visible"
+
+# Step 4 — profile shell remains intact: no spurious sign-out, no
+# false "billing needs attention" copy. The button returns to its
+# default label after the failure (no stuck "Opening billing…"
+# label).
+- assertVisible:
+    id: "profile.managePlanButton"
+- assertVisible:
+    id: "profile.signOutButton"
+- assertVisible:
+    id: "profile.capacityCard"
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "login.emailButton"
+
+# Step 5 — subscription has NOT been falsely flipped to past_due.
+# The seed says active; the failure surface must not claim
+# attention is needed unless the actual gate kind is past_due/
+# canceled. (For our active seed it should not be.)
+- assertNotVisible:
+    text: ".*Billing needs attention.*"
+- assertNotVisible:
+    text: ".*Past due.*"
+- assertNotVisible:
+    text: ".*Canceled.*"
+
+# Step 6 — no raw provider internals or status codes leak into the
+# calm-error copy.
+- assertNotVisible:
+    text: ".*HTTP 4.*"
+- assertNotVisible:
+    text: ".*HTTP 5.*"
+- assertNotVisible:
+    text: ".*stripe\\.com.*"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*api/billing/portal.*"

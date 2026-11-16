@@ -1,0 +1,53 @@
+appId: com.sidekick.v2
+name: RES-10 — Duplicate Taps Do Not Double Submit
+tags:
+  - res
+  - live-only
+---
+# ============================================================================
+# Spec ID: RES-10 — Duplicate Taps Do Not Double Submit
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# A double tap on Send sends the message once: exactly one bubble carries its
+# text.
+#
+# 2026-09-28: rewritten for the WebView chat, and the Profile Save half is no
+# longer run. It appended "PQ" to the coworker's name and saved it, which on
+# the shared test account renamed a real coworker. Save staying disabled while
+# a save is in flight is pinned by
+# apps/mobile/android/app/src/test/js/profile-edit-readiness.test.mjs.
+# Onboarding Finish and checkout
+# double taps stay out of scope (they need an unonboarded or unsubscribed
+# account).
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "input"
+- inputText: "RES10 probe: reply with only the word FIG."
+- hideKeyboard
+- takeScreenshot: "res_10_01_before_send"
+
+# Two taps in one gesture, at the same point.
+- doubleTapOn:
+    id: "sendBtn"
+
+# Exactly one bubble with the text: the first match exists, a second does not.
+- extendedWaitUntil:
+    visible:
+      text: "RES10 probe: reply with only the word FIG\\."
+    timeout: 15000
+- assertNotVisible:
+    text: "RES10 probe: reply with only the word FIG\\."
+    index: 1
+- takeScreenshot: "res_10_02_after_double_tap_send"
+
+# Let the reply land so the chat is idle for whatever runs next.
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*fig\\W*"
+    timeout: 120000
+- assertNotVisible:
+    text: "service_role|stack trace"

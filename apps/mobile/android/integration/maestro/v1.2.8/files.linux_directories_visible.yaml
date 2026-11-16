@@ -1,0 +1,27 @@
+appId: com.sidekick.v2
+name: v1.2.8 DN8 — Files tab shows the runner's seeded Linux directories
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# Verifies the Files tab fetches from the runner workspace and renders
+# the seeded top-level directories (home / documents / downloads /
+# code / notes). If the runner's /files endpoint doesn't return any
+# rows under those prefixes, this fails and we know either the seed
+# step or the worker proxy regressed.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "tab.artifacts"
+    timeout: 10000
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 8000
+- assertVisible: "HOME"
+- assertVisible: "DOCUMENTS"
+- assertVisible: "DOWNLOADS"
+- assertVisible: "CODE"
+- assertVisible: "NOTES"
+- takeScreenshot: "v128_dn8_files_directories"

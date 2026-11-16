@@ -1,0 +1,19 @@
+appId: com.sidekick.v2
+name: P02-02 — Plan picker shows three tiers
+tags:
+  - persona:P02
+  - paywall
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Choose your plan.*|.*Studio.*|.*pro-office.*"
+    timeout: 30000
+- assertVisible:
+    text: ".*Studio.*"
+- assertVisible:
+    text: ".*[Pp]ro[ -]office.*|.*[Pp]ro [Oo]ffice.*"
+- assertVisible:
+    text: ".*[Ee]nterprise.*"

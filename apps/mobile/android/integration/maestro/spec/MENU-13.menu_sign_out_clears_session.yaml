@@ -1,0 +1,79 @@
+appId: com.sidekick.v2
+name: MENU-13 — Menu Sign Out Clears Session
+tags:
+  - signs-out
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-13 — Menu Sign Out Clears Session
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires a signed-in authenticated user. Seed via
+# `node scripts/seed-test-user.mjs --profile ready-runner` then fire deep link.
+# clearState: false preserves that state.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- takeScreenshot: "menu_13_01_chat"
+- assertVisible:
+    id: "main-menu-button"
+
+# Step 1 — open menu. Sign out button is at the bottom of a scrollable list,
+# so scroll it into view before tapping.
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- takeScreenshot: "menu_13_02_menu_open"
+- scrollUntilVisible:
+    element:
+      id: "menu.signOutButton"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "menu.signOutButton"
+
+# Step 2 — user returns to login. Drawer + chat surface gone.
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertNotVisible:
+    id: "drawer.backdropDismiss"
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "input"
+- takeScreenshot: "menu_13_03_on_login"
+
+# Spec says: relaunch app and assert login remains. This proves the session
+# was cleared from storage (not just the in-memory state).
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- assertVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "menu_13_04_after_relaunch"
+
+# No leaked previous-user data
+- assertNotVisible:
+    text: "Atlas"
+- assertNotVisible:
+    text: "service_role"

@@ -1,0 +1,56 @@
+appId: com.sidekick.v2
+name: Production - Burger menu main navigation
+---
+# The burger menu lists every row in its section, and closes back to the chat.
+#
+# 2026-09-28 (redesign): rewritten for the agent-engine menu. The Files and
+# Monthly capacity rows are gone (Files retired with the runners on
+# 2026-09-18; the allowance lives on Plan & billing), and no Telegram row is
+# shown on an agent-engine account. The taller rows put Help, Delegent AI and
+# Legal below the fold, so the flow scrolls to them rather than assuming one
+# screen shows everything.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 20000
+- takeScreenshot: "production_menu_main_navigation_01"
+- assertVisible:
+    id: "menu.connectionsRow"
+- assertVisible:
+    id: "menu.freshChatRow"
+- assertVisible:
+    id: "menu.skillsRow"
+- assertVisible:
+    id: "menu.howtoRow"
+- assertVisible:
+    id: "menu.setupGuideRow"
+- scrollUntilVisible:
+    element:
+      id: "menu.faqsRow"
+    direction: DOWN
+- assertVisible:
+    id: "menu.helpRow"
+- scrollUntilVisible:
+    element:
+      id: "menu.noticesRow"
+    direction: DOWN
+- assertVisible:
+    id: "menu.websiteRow"
+- assertVisible:
+    id: "menu.termsRow"
+- assertVisible:
+    id: "menu.privacyRow"
+- assertNotVisible:
+    text: "WhatsApp|Signal"
+- takeScreenshot: "production_menu_main_navigation_02"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 15000
+- takeScreenshot: "production_menu_main_navigation_03"

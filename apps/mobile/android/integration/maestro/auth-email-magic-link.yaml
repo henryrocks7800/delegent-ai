@@ -1,0 +1,19 @@
+appId: com.sidekick.v2
+name: Auth A2 - email magic-link smoke
+# blocked-reason: early template (May): the app sends a sign-in code now, not a link; production/auth.email_login_route.yaml covers the email route
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Continue with email"
+- tapOn: "Continue with email"
+- assertVisible: "Email me a sign-in link"
+- tapOn:
+    id: "email-input"
+    optional: true
+- inputText: ${TEST_EMAIL}
+- takeScreenshot: "maestro-email-01-before-submit"
+- tapOn: "Email me a sign-in link"
+- extendedWaitUntil:
+    visible: ".*Tap the secure link.*|.*Check your inbox.*|.*Too many sign-in emails.*|.*Email sign-in needs setup.*|.*Couldn't send.*"
+    timeout: 10000
+- takeScreenshot: "maestro-email-02-after-submit"

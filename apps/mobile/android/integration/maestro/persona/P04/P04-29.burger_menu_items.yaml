@@ -1,0 +1,33 @@
+appId: com.sidekick.v2
+name: P04-29 — Burger menu shows core entries (Chat, Files, Plan & billing, Monthly capacity)
+tags:
+  - persona:P04
+  - navigation
+  - burger
+# blocked-reason: retired: superseded by production/menu.main_navigation.yaml
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 4000
+- assertVisible:
+    id: "menu.filesRow"
+- assertVisible:
+    id: "menu.setupGuideRow"
+- assertVisible:
+    id: "menu.capacityRow"
+- assertVisible:
+    id: "menu.termsRow"
+- assertVisible:
+    id: "menu.privacyRow"
+# Close drawer so the next flow lands on home.chatPanel cleanly.
+- tapOn:
+    id: "drawer.backdropDismiss"

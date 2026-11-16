@@ -1,0 +1,24 @@
+{
+  "name": "@sidekick/provisioner",
+  "version": "1.2.6",
+  "type": "module",
+  "bin": {
+    "sidekick-provisioner": "./dist/cli.js"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "provision:once": "npm run build && node dist/cli.js process-once",
+    "readiness:once": "npm run build && node dist/cli.js readiness-once",
+    "series4:account-deletion-once": "npm run build && node dist/cli.js series4:account-deletion-once",
+    "cleanup:test-runner": "npm run build && node dist/cli.js cleanup-test-runner",
+    "preflight": "npm run build && node dist/cli.js preflight",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@sidekick/shared": "1.2.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,71 @@
+appId: com.sidekick.v2
+name: 'FORENSIC-DRIVE-01 — Send 3 real chats to unlock data-dependent forensic tests'
+tags:
+  - live-only
+  - forensic-data
+# blocked-reason: drives real chats for the forensic pack, which writes to the live database; run only on purpose
+---
+# Sends three distinct messages to the provisioned agent so the
+# forensic suite has real task_runs / assistant messages / file
+# operations to evaluate. Each message exercises a different criterion
+# bucket:
+#   1. Identity → wake-up + first-person assistant copy (R-PROV-06,
+#      R-STYLE-03, R-STYLE-08, R-STYLE-09)
+#   2. File create → home/forensic-drive.md exists (R-AGENT-01)
+#   3. Open-ended task → succeeded task_run + non-empty assistant
+#      content (C-POS-02, R-CHAT-01)
+
+- launchApp:
+    appId: com.sidekick.v2
+- extendedWaitUntil:
+    visible:
+      id: home.chatPanel.messageList
+    timeout: 30000
+
+# ---- Chat 1: identity (drives wake-up + style tests) ----
+- tapOn:
+    id: home.chatPanel.input
+- inputText: 'Tell me your name in one short sentence'
+- extendedWaitUntil:
+    visible:
+      id: home.chatPanel.sendButton
+    timeout: 5000
+- tapOn:
+    id: home.chatPanel.sendButton
+- extendedWaitUntil:
+    notVisible:
+      text: ".*(Thinking|still working|coworker took too long).*"
+    timeout: 90000
+- takeScreenshot: forensic_01_identity_reply
+
+# ---- Chat 2: file creation (drives R-AGENT-01) ----
+- tapOn:
+    id: home.chatPanel.input
+- inputText: 'Create a file named forensic-drive.md in home with body hello-from-forensic-drive'
+- extendedWaitUntil:
+    visible:
+      id: home.chatPanel.sendButton
+    timeout: 5000
+- tapOn:
+    id: home.chatPanel.sendButton
+- extendedWaitUntil:
+    notVisible:
+      text: ".*(Thinking|still working|coworker took too long).*"
+    timeout: 90000
+- takeScreenshot: forensic_02_file_create_reply
+
+# ---- Chat 3: open-ended task (drives C-POS-02) ----
+- tapOn:
+    id: home.chatPanel.input
+- inputText: 'List three good first tasks I could ask you to do today'
+- extendedWaitUntil:
+    visible:
+      id: home.chatPanel.sendButton
+    timeout: 5000
+- tapOn:
+    id: home.chatPanel.sendButton
+- extendedWaitUntil:
+    notVisible:
+      text: ".*(Thinking|still working|coworker took too long).*"
+    timeout: 90000
+- takeScreenshot: forensic_03_open_task_reply

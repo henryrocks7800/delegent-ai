@@ -1,0 +1,24 @@
+appId: com.sidekick.v2
+name: P08-08 — Voice input is blocked / hidden when over quota
+tags:
+  - persona:P08
+  - unhappy-path
+  - quota
+# blocked-reason: needs a seeded account state (over the monthly allowance); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*used this month's.*"
+    timeout: 30000
+# Try the voice path — banner should still be there afterwards.
+- runFlow:
+    when:
+      visible:
+        text: ".*[Mm]ic.*|.*microphone.*"
+    commands:
+      - tapOn:
+          text: ".*[Mm]ic.*|.*microphone.*"
+- assertVisible:
+    text: ".*used this month's.*"

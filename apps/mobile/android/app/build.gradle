@@ -1,0 +1,297 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+// Reads app/google-services.json and generates the Firebase config the
+// messaging SDK needs at runtime. See the classpath note in ../build.gradle.
+apply plugin: "com.google.gms.google-services"
+
+def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+
+/**
+ * This is the configuration block to customize your React Native Android app.
+ * By default you don't need to apply any configuration, just uncomment the lines you need.
+ */
+react {
+    entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", projectRoot, "android", "absolute"].execute(null, rootDir).text.trim())
+    reactNativeDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
+    hermesCommand = new File(["node", "--print", "require.resolve('hermes-compiler/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/hermesc/%OS-BIN%/hermesc"
+    codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
+
+    enableBundleCompression = (findProperty('android.enableBundleCompression') ?: false).toBoolean()
+    // Use Expo CLI to bundle the app, this ensures the Metro config
+    // works correctly with Expo projects.
+    cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
+    bundleCommand = "export:embed"
+
+    /* Folders */
+     //   The root of your project, i.e. where "package.json" lives. Default is '../..'
+    // root = file("../../")
+    //   The folder where the react-native NPM package is. Default is ../../node_modules/react-native
+    // reactNativeDir = file("../../node_modules/react-native")
+    //   The folder where the react-native Codegen package is. Default is ../../node_modules/@react-native/codegen
+    // codegenDir = file("../../node_modules/@react-native/codegen")
+
+    /* Variants */
+    //   The list of variants to that are debuggable. For those we're going to
+    //   skip the bundling of the JS bundle and the assets. By default is just 'debug'.
+    //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
+    // debuggableVariants = ["liteDebug", "prodDebug"]
+
+    /* Bundling */
+    //   A list containing the node command and its flags. Default is just 'node'.
+    // nodeExecutableAndArgs = ["node"]
+
+    //
+    //   The path to the CLI configuration file. Default is empty.
+    // bundleConfig = file(../rn-cli.config.js)
+    //
+    //   The name of the generated asset file containing your JS bundle
+    // bundleAssetName = "MyApplication.android.bundle"
+    //
+    //   The entry file for bundle generation. Default is 'index.android.js' or 'index.js'
+    // entryFile = file("../js/MyApplication.android.js")
+    //
+    //   A list of extra flags to pass to the 'bundle' commands.
+    //   See https://github.com/react-native-community/cli/blob/main/docs/commands.md#bundle
+    // extraPackagerArgs = []
+
+    /* Hermes Commands */
+    //   The hermes compiler command to run. By default it is 'hermesc'
+    // hermesCommand = "$rootDir/my-custom-hermesc/bin/hermesc"
+    //
+    //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
+    // hermesFlags = ["-O", "-output-source-map"]
+
+    /* Autolinking */
+    autolinkLibrariesWithApp()
+}
+
+/**
+ * Set this to true in release builds to optimize the app using [R8](https://developer.android.com/topic/performance/app-optimization/enable-app-optimization).
+ */
+def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBuilds') ?: false).toBoolean()
+
+/**
+ * The preferred build flavor of JavaScriptCore (JSC)
+ *
+ * For example, to use the international variant, you can use:
+ * `def jscFlavor = 'org.webkit:android-jsc-intl:+'`
+ *
+ * The international variant includes ICU i18n library and necessary data
+ * allowing to use e.g. `Date.toLocaleString` and `String.localeCompare` that
+ * give correct results when using with locales other than en-US. Note that
+ * this variant is about 6MiB larger per architecture than default.
+ */
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    namespace 'com.sidekick.v2'
+    defaultConfig {
+        applicationId 'com.sidekick.v2'
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Authoritative version for the bare/committed-android gradle build
+        // AND for EAS builds (EAS uses the native android/ dir, not app.config.ts,
+        // whenever it's present). Keep in lockstep with apps/mobile/app.config.ts
+        // (versionCode 29 / version 2.1.1) — this bare project does NOT run expo
+        // prebuild, so app.config.ts does not flow into the native build.
+        // 28 = a prior out-of-band build already live on Play production (repo
+        //      counter had drifted to 27, so the camera build first tried 28 and
+        //      collided — Play rejected it). 2026-07-19.
+        // 29 = v2.1.1 chat camera button + OS-kill photo recovery + OTA-channel fix
+        //      (native, store build). First version to actually ship the camera.
+        // 30 = v2.2.0 push notifications. NATIVE change (expo-notifications +
+        //      Firebase messaging), so it cannot ship as an OTA. The version
+        //      bump is also the safety mechanism: runtimeVersion follows
+        //      versionName, so 2.1.1 installs stay on their own update lane and
+        //      can never receive JS that imports a native module they lack.
+        //      NEVER publish an OTA to runtimeVersion 2.1.1 from master again.
+        // 32 = v2.4.0 Sign in with Apple (expo-apple-authentication). NATIVE
+        //      change again, same rule: store build only, and the 2.3.0 -> 2.4.0
+        //      runtimeVersion bump keeps 2.3.0 installs on their own OTA lane.
+        //      (31 was v2.3.0 Meta SDK + consent.)
+        // 36 = v2.5.0 re-signed. NO code change and NO native change: the Sign
+        //      in with Apple capability was toggled off and back on on the App
+        //      ID (2026-08-14), which invalidated the provisioning profile, so
+        //      a fresh signature is the entire delta. versionName deliberately
+        //      stays 2.5.0 so the runtime does not fork and build 36 keeps
+        //      receiving the OTAs already published to 2.5.0.
+        // 37 = v2.5.0 with in-app account deletion and data export baked in.
+        //      Apple rejected build 36 under guideline 2.1 asking for more
+        //      information, and the deletion control it also requires (5.1.1(v))
+        //      shipped as an OTA. An OTA only applies once the app has fetched
+        //      it, so a reviewer launching offline would see a binary with no
+        //      deletion control. Baking it in removes that gamble.
+        // 38 = the StoreKit build. Bumped to hold lockstep with the iOS
+        //      buildNumber, which a test enforces. Android ships NOTHING new
+        //      here: expo-iap is iOS-only, Android keeps paying through Stripe,
+        //      and versionName stays 2.5.0 so the Android OTA runtime does not
+        //      move away from the installed Play build.
+        // 39 = build 38 with the three iOS billing defects Alex found on a real
+        //      device fixed. Same lockstep reason; Android still ships nothing.
+        // 40 = the resubmission build for the Guideline 3.1.1 rejection. Build
+        //      39's BAKED JavaScript still contains the StoreKit defects fixed
+        //      on 2026-08-20 (the `ios` key expo-iap does not have, and reading
+        //      the purchase outcome off a return value that never carries it).
+        //      Those are fixed by OTA, but an OTA only helps if the device
+        //      fetches it before the reviewer taps Subscribe. Baking them in
+        //      removes that gamble from the one test the rejection turns on.
+        //      Same lockstep reason as every entry above; Android ships nothing.
+        // 41 = the mirror image of every entry above. ANDROID actually ships
+        //      something this time: the new brain app icon (adaptive-icon.png),
+        //      approved by Alex 2026-08-20. iOS ships nothing here; its
+        //      buildNumber only moved to 41 in app.config.ts to hold the
+        //      lockstep test, and does NOT correspond to a real iOS build.
+        //      Build 40 is still the one sitting in Apple's review queue.
+        //      The next REAL iOS build (icon + the Restore Purchases button,
+        //      batched together once 3.1.1 clears) will be the one that
+        //      actually produces buildNumber 41 on TestFlight.
+        // 42 = master's brand-mark release: the photoreal brain icon, splash
+        //      and in-app mark, plus the Apple instant-provisioning fix. This
+        //      SUPERSEDES 41, which never shipped: its commit sat unmerged on
+        //      feat/ios-apple-subscription-management while 42 went to Play.
+        //      42 also clears Apple's build 40, so a future iOS build from
+        //      master cannot collide with what App Review already holds.
+        // 45 = the iPad release. Moved ONLY to hold the three-way lockstep with
+        //      app.json and app.config.ts's iOS buildNumber, which Apple forces
+        //      up because builds 42 to 44 are already uploaded. Android is NOT
+        //      shipping here: versionName deliberately stays 2.5.0, because the
+        //      OTA runtimeVersion is derived from it and moving it would publish
+        //      every future Android OTA to a runtime nobody is installed on.
+        // 47 = the iOS 2.6.1 preview-video release (2026-09-08). Moved only to
+        //      hold the lockstep with the iOS buildNumber; Android ships nothing
+        //      here and versionName stays 2.5.0 for the same OTA reason as above.
+        // 48 embeds the growth onboarding for fresh installs on the same OTA runtime.
+        // 49 adds expo-store-review. Fork the OTA runtime with this native module.
+        // 51: corrected onboarding and consent are present on first launch.
+        // 52 embeds the onboarding feedback fixes on the first installed launch.
+        // 54 embeds the connected AI assistant (2026-09-15), so a fresh install
+        // opens on the assistant rather than waiting for the over-the-air update.
+        // 55 (2026-09-16) adds the assistant plan as an App Store product for the
+        // iPhone build; Android stays on 54 in Play until its next native change.
+        // versionName stays 2.7.0: the OTA runtime must not fork.
+        versionCode 55
+        versionName "2.7.0"
+
+        buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
+
+        // Meta SDK identity, injected at build time rather than committed.
+        //
+        // This project is BARE and never runs `expo prebuild`, so the
+        // react-native-fbsdk-next config plugin declared in app.config.ts NEVER
+        // EXECUTES. Everything the plugin would have written has to live here
+        // and in AndroidManifest.xml instead. Without these two values the SDK
+        // compiles in, initialises to nothing, and reports no events — which is
+        // indistinguishable from never having added it.
+        //
+        // Both are public values, compiled into every copy of the app exactly
+        // like the Supabase anon key, so the empty-string fallback is about
+        // keeping local and CI builds working, not about secrecy. A production
+        // build with them missing is caught by the readiness test.
+        resValue "string", "facebook_app_id", (System.getenv("EXPO_PUBLIC_META_APP_ID") ?: "")
+        resValue "string", "facebook_client_token", (System.getenv("EXPO_PUBLIC_META_CLIENT_TOKEN") ?: "")
+    }
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        // Play upload key. Driven by gradle properties so the secret keystore is
+        // NEVER committed — scripts/build-play-aab.sh injects them from Doppler
+        // via ORG_GRADLE_PROJECT_* env vars. When the properties are absent
+        // (local / emulator / CI test builds) the release type falls back to the
+        // debug keystore below, so the registered debug SHA-1 (Google Sign-In)
+        // keeps working unchanged. See docs/PLAY_SIGNING_AND_UPLOAD.md.
+        release {
+            if (project.hasProperty('SIDEKICK_UPLOAD_STORE_FILE')) {
+                storeFile file(project.property('SIDEKICK_UPLOAD_STORE_FILE'))
+                storePassword project.property('SIDEKICK_UPLOAD_STORE_PASSWORD')
+                keyAlias project.property('SIDEKICK_UPLOAD_KEY_ALIAS')
+                keyPassword project.property('SIDEKICK_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            // Use the Play upload key when its properties are provided (Play
+            // builds via build-play-aab.sh); otherwise fall back to the debug
+            // keystore so local/test builds + the registered debug-SHA1 Google
+            // Sign-in keep working.
+            signingConfig project.hasProperty('SIDEKICK_UPLOAD_STORE_FILE') ? signingConfigs.release : signingConfigs.debug
+            def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
+            shrinkResources enableShrinkResources.toBoolean()
+            minifyEnabled enableMinifyInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
+            crunchPngs enablePngCrunchInRelease.toBoolean()
+        }
+    }
+    packagingOptions {
+        jniLibs {
+            def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
+            useLegacyPackaging enableLegacyPackaging.toBoolean()
+        }
+    }
+    androidResources {
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
+}
+
+// Apply static values from `gradle.properties` to the `android.packagingOptions`
+// Accepts values in comma delimited lists, example:
+// android.packagingOptions.pickFirsts=/LICENSE,**/picasa.ini
+["pickFirsts", "excludes", "merges", "doNotStrip"].each { prop ->
+    // Split option: 'foo,bar' -> ['foo', 'bar']
+    def options = (findProperty("android.packagingOptions.$prop") ?: "").split(",");
+    // Trim all elements in place.
+    for (i in 0..<options.size()) options[i] = options[i].trim();
+    // `[] - ""` is essentially `[""].filter(Boolean)` removing all empty strings.
+    options -= ""
+
+    if (options.length > 0) {
+        println "android.packagingOptions.$prop += $options ($options.length)"
+        // Ex: android.packagingOptions.pickFirsts += '**/SCCS/**'
+        options.each {
+            android.packagingOptions[prop] += it
+        }
+    }
+}
+
+dependencies {
+    // The version of react-native is set by the React Native Gradle Plugin
+    implementation("com.facebook.react:react-android")
+
+    def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
+    def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
+    def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";
+
+    if (isGifEnabled) {
+        // For animated gif support
+        implementation("com.facebook.fresco:animated-gif:${expoLibs.versions.fresco.get()}")
+    }
+
+    if (isWebpEnabled) {
+        // For webp support
+        implementation("com.facebook.fresco:webpsupport:${expoLibs.versions.fresco.get()}")
+        if (isWebpAnimatedEnabled) {
+            // Animated webp support
+            implementation("com.facebook.fresco:animated-webp:${expoLibs.versions.fresco.get()}")
+        }
+    }
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+}

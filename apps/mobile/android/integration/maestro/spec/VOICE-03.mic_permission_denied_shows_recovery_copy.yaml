@@ -1,0 +1,114 @@
+appId: com.sidekick.v2
+name: VOICE-03 — Mic Permission Denied Shows Recovery Copy
+tags:
+  - voice
+  - live-only
+# blocked-reason: needs a working microphone and real speech; the emulator has neither
+---
+# ============================================================================
+# Spec ID: VOICE-03 — Mic Permission Denied Shows Recovery Copy
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner).
+# The Android RECORD_AUDIO permission is revoked BEFORE this Maestro
+# flow runs, so when the user taps the mic the request comes back
+# as `permission_denied` from startRecording() (see
+# src/chat/HomeChatPanel.tsx:408-414).
+#
+# Pre-step (driven by the test orchestrator BEFORE this YAML runs):
+#   adb shell pm revoke com.sidekick.v2 android.permission.RECORD_AUDIO
+# That makes the runtime permission state "denied" so the next request
+# either fails silently (if "Don't ask again" was previously set) or
+# shows the system dialog and the user dismisses it. Either way the
+# HomeChatPanel handler maps the result to:
+#   'Mic permission was denied. Grant it in system settings to use
+#    voice.'
+# and exposes it via the home.chatPanel.error banner.
+#
+# After this flow runs, the orchestrator restores the permission:
+#   adb shell pm grant com.sidekick.v2 android.permission.RECORD_AUDIO
+# so subsequent VOICE flows aren't poisoned by the revoked state.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- assertVisible:
+    id: "home.chatPanel"
+
+# Pre-condition: empty draft so the mic button is visible (composer
+# shows mic when input is empty; switches to send when typing — see
+# HomeChatPanel.tsx). With clearState:false and a fresh launch the
+# composer is empty.
+- assertVisible:
+    id: "home.chatPanel.micButton"
+- takeScreenshot: "voice_03_01_chat_mic_visible_before_tap"
+
+# Step 1 — tap the mic. With RECORD_AUDIO revoked, the first call
+# to Audio.requestPermissionsAsync() shows the Android runtime
+# permission dialog. (After pm revoke the system clears the prior
+# decision, so the dialog re-appears even if the user previously
+# allowed.) We tap "Don't allow" so startRecording returns
+# { error: 'permission_denied' }, which the HomeChatPanel handler
+# maps to setErrorMessage("Mic permission was denied. Grant it in
+# system settings to use voice.").
+- tapOn:
+    id: "home.chatPanel.micButton"
+
+# Step 2 — handle the runtime permission dialog. On a fresh install
+# the Android 11+ dialog renders three options ("While using the
+# app", "Only this time", "Don't allow") and the user taps
+# "Don't allow". After `pm revoke` the OS may also short-circuit
+# the request — Audio.requestPermissionsAsync() returns
+# { granted: false } immediately without showing a dialog if the
+# permission is already in a "denied" state. Either path lands
+# us at the same `setErrorMessage('Mic permission was denied...')`
+# branch in HomeChatPanel.tsx:410-411. The tap is therefore
+# `optional: true`; the only hard requirement is that the error
+# banner copy appears.
+- tapOn:
+    text: "Don.t allow"
+    optional: true
+
+# Step 3 — error banner appears with the recovery copy. The exact
+# substring "Mic permission was denied" comes directly from
+# HomeChatPanel.tsx:410-411 and is what the user sees. We assert
+# both the banner testID is visible AND the specific substring
+# appears (the substring assertion guards against a generic error
+# banner appearing for a different reason).
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.error"
+    timeout: 15000
+- assertVisible:
+    id: "home.chatPanel.error"
+- assertVisible:
+    text: ".*Mic permission was denied.*"
+- takeScreenshot: "voice_03_02_permission_denied_banner"
+
+# Step 3 — the user can recover by typing. The composer must remain
+# usable: input is editable, the send button appears when text is
+# typed, no recording-mode UI is stuck on screen.
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "VOICE03-FALLBACK-TYPED-MESSAGE"
+- hideKeyboard
+- assertVisible:
+    text: ".*VOICE03-FALLBACK-TYPED-MESSAGE.*"
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+- takeScreenshot: "voice_03_03_typed_fallback_after_mic_denied"
+
+# Leak guards — the permission-denied path must not leak provider
+# internals. (The handler only sets the static recovery copy, so
+# this guards against future regression.)
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*expo-av.*"
+- assertNotVisible:
+    text: ".*android.permission.*"

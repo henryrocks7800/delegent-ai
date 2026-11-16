@@ -1,0 +1,37 @@
+appId: com.sidekick.v2
+name: P14-01 — Sign out + sign back in restores chat state (simulated multi-device)
+tags:
+  - persona:P14
+  - multi-device
+  - auth
+# blocked-reason: needs to read a sign-in code from the test inbox mid-flow, which the pack cannot do
+---
+# Simulating "same user on second device" with sign-out + sign-in on
+# the same emulator. The chat surface must come back after re-auth.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 4000
+# Sign-out button is at the bottom of the drawer; scroll the drawer
+# until it's reachable.
+- scrollUntilVisible:
+    element:
+      id: "menu.signOutButton"
+    timeout: 10000
+    direction: DOWN
+    visibilityPercentage: 60
+- tapOn:
+    id: "menu.signOutButton"
+# Should return to the landing screen after sign-out.
+- extendedWaitUntil:
+    visible:
+      text: ".*Continue with Google.*|.*Continue with email.*"
+    timeout: 15000

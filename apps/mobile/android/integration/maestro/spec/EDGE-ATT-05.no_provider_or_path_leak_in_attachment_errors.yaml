@@ -1,0 +1,71 @@
+appId: com.sidekick.v2
+name: EDGE-ATT-05 — No provider or path leak in attachment / file errors
+# Phase 9 Edge Batch 4, item 5.
+#
+# Why this matters
+# ----------------
+# Across the attach + send flow, every error surface (toast, banner,
+# chip label, modal) must be product-language only. We sweep the
+# composer, the Files tab, and the message thread to catch leaks.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile.
+#
+# What this proves
+# ----------------
+# (a) Composer, Files tab, and chat thread contain no raw provider
+#     vocab anywhere.
+# (b) No path-like strings escape into surface copy.
+#
+# Fixtures: ready-runner seed.
+
+tags:
+  - edge
+  - leak
+  - attachments
+  - files
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+# Sweep 1 — Chat surface.
+- takeScreenshot: "edge_att_05_chat_sweep"
+- assertNotVisible:
+    text: "Supabase|Hermes|Fly|OpenRouter|service_role|service role"
+- assertNotVisible:
+    text: "/var/lib|/data|/opt/delegent|fly_volume|vol_"
+- assertNotVisible:
+    text: "raw provider|runner URL|provider quota id"
+
+# Sweep 2 — Files surface.
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.refreshButton"
+    timeout: 30000
+- takeScreenshot: "edge_att_05_files_sweep"
+- assertNotVisible:
+    text: "Supabase|Hermes|Fly|OpenRouter|service_role|service role"
+- assertNotVisible:
+    text: "/var/lib|/data|/opt/delegent|fly_volume|vol_"
+- assertNotVisible:
+    text: "raw provider|runner URL"
+
+# Back to chat for a final negative space check.
+- tapOn:
+    id: "tab.dashboard"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- takeScreenshot: "edge_att_05_chat_final"
+- assertNotVisible:
+    text: "Supabase|Hermes|Fly|OpenRouter|service_role"

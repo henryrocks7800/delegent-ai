@@ -1,0 +1,86 @@
+appId: com.sidekick.v2
+name: MENU-07 — Use Cases Page Shows Every Use Case
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-07 — Use Cases Page Shows Every Use Case
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). menu.useCasesRow → onChangeView('use-cases')
+# renders the <UseCasesDrawer /> with the canonical useCaseLines list.
+# The first entry is now the activatable "Your bookkeeper" skill at the
+# top; the closing line "A small business PA" is at the bottom. Both must
+# render and the back arrow must return to the menu list.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 1 — open drawer, tap Use cases
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- scrollUntilVisible:
+    element:
+      id: "menu.skillsRow"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "menu.skillsRow"
+
+# 2026-09-28: the page is Skills & use cases now, grouped into categories
+# (first "Inbox & messages", last "Work & side hustle"); the old entries
+# ("Your bookkeeper", "A small business PA") went with the runners.
+# Step 2 — Use cases subpage renders, first entry visible. The first
+# entry is the activatable "Your bookkeeper" skill. Maestro's text
+# selector uses regex matches() semantics, so a bare prefix won't bind —
+# wrap in .*…*.
+- extendedWaitUntil:
+    visible:
+      text: "Inbox & messages"
+    timeout: 8000
+- assertVisible:
+    text: "Inbox & messages"
+- takeScreenshot: "menu_07_01_first_use_case"
+
+# Step 3 — scroll to the last entry, verify the closing line renders
+- scrollUntilVisible:
+    element:
+      text: "Work & side hustle"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    text: "Work & side hustle"
+- takeScreenshot: "menu_07_02_last_use_case"
+
+# Step 4 — Back to menu list via hardware Back. The DN1.3-03e
+# drawer-subpage Back handler maps it to onChangeView('menu')
+# (verified end-to-end by MENU-14). The in-drawer Back arrow has
+# accessibilityLabel="Back" but no resource-id — Maestro's `id:`
+# targets resource-id only, so hardware Back is the deterministic
+# path here.
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "menu.skillsRow"
+    timeout: 8000
+- assertVisible:
+    id: "menu.skillsRow"
+- assertVisible:
+    id: "menu.homeRow"
+- assertNotVisible:
+    text: "Work & side hustle"
+- takeScreenshot: "menu_07_03_back_on_menu"
+
+- assertNotVisible:
+    text: "service_role"

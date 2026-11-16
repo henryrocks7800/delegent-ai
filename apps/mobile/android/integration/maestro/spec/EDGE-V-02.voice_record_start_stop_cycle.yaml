@@ -1,0 +1,65 @@
+appId: com.sidekick.v2
+name: EDGE-V-02 — Voice record start/stop cycle
+# Phase 9 Edge Batch 5, item 2.
+#
+# Why this matters
+# ----------------
+# The mic button is a key affordance for hands-free use. Tapping it
+# must start a recording state, and tapping again must end it cleanly.
+# A stuck recording state leaks battery and stalls the composer.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. RECORD_AUDIO permission granted.
+#
+# What this proves
+# ----------------
+# (a) Mic button is visible.
+# (b) Tap-tap cycle leaves the composer in a usable state.
+# (c) No raw mic/encoder vocab is visible after the cycle.
+#
+# Fixtures: ready-runner seed; permission granted by orchestrator.
+
+tags:
+  - edge
+  - voice
+  - chat
+  - live-only
+# blocked-reason: needs a working microphone and real speech; the emulator has neither
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.micButton"
+    timeout: 15000
+
+# Start recording.
+- tapOn:
+    id: "home.chatPanel.micButton"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: "edge_v_02_recording"
+
+# Stop recording.
+- tapOn:
+    id: "home.chatPanel.micButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: "edge_v_02_stopped"
+
+# Composer must be usable again.
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+
+- assertNotVisible:
+    text: "MediaRecorder|AudioRecord|encoder|ENOENT|EBUSY"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

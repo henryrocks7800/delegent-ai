@@ -1,0 +1,27 @@
+appId: com.sidekick.v2
+name: P16-04 — Stripe cancel deep link returns to plan picker (D4 regression)
+tags:
+  - persona:P16
+  - deep-link
+  - regression-D4
+# blocked-reason: needs a signed-in account with no subscription; the test account the pack signs in is a subscriber
+---
+# Setup is P02 (no sub). After cold launch we should be on the picker.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Choose your plan.*|.*Pick a plan.*"
+    timeout: 60000
+# Fire the cancel deep-link via the Android intent.
+- openLink:
+    link: "sidekick://checkout/cancel"
+# After the deep link we should still see the plan picker, NOT the home
+# chat surface. This guards the D4 regression where the cancel callback
+# accidentally promoted the user onto the home shell.
+- extendedWaitUntil:
+    visible:
+      text: ".*Choose your plan.*|.*Pick a plan.*"
+    timeout: 10000
+- assertNotVisible:
+    text: ".*Message Riley.*"

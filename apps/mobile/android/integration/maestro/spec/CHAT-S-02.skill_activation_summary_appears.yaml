@@ -1,0 +1,52 @@
+appId: com.sidekick.v2
+name: CHAT-S-02 — Skill activation summary appears in chat
+tags:
+  - chat
+  - skills
+  - blocked
+# blocked-reason: retired: tests Hermes skills and commands, gone with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: CHAT-S-02
+# Friendly name: Skill activation summary appears
+# Defect this regression-guards: a missing "activating skill" affordance
+# would make the agent feel like a chatbot instead of a Hermes wrapper.
+# When the user invokes a skill ("can you be my accountant?") we expect
+# the runner to emit a tool-call card naming the skill, so the user sees
+# the wiring at work.
+#
+# Status: live-only. Needs a provisioned runner with the delegent skills
+# library installed. Uses a deliberately tiny prompt to keep token burn
+# low — short query in, short tool-call card out.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "be my accountant"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# A tool-call card appears above the assistant bubble. The exact glyph
+# can be either ✎ (file) or ⚒ (other) depending on how the runner names
+# the skill activation tool, so we assert on the testID instead.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.toolCall"
+    timeout: 60000
+
+# Backstop: assert the assistant ALSO eventually replies (not just the
+# tool card alone), so a stuck-mid-activation run still fails.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 90000
+
+# The chat must not leak runtime internals while activating the skill.
+- assertNotVisible:
+    text: "openrouter|hermes --|service_role|Fly Machines|Railway|Cloudflare"

@@ -1,0 +1,15 @@
+appId: com.sidekick.v2
+name: P05-01 — Pro-office active user lands on chat
+tags:
+  - persona:P05
+  - chat
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*[Cc]apacity full.*"

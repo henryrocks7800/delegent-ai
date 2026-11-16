@@ -1,0 +1,94 @@
+appId: com.sidekick.v2
+name: AUTH-04 — Changing Email After Code Sent Requires a New Code
+tags:
+  - auth
+  - live-only
+---
+# ============================================================================
+# Spec ID: AUTH-04 — Changing Email After Code Sent Requires a New Code
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Signed-out app. First email has already
+# requested a code, then the user edits the email field. The product
+# handler (`handleEmailChange` in App.tsx around line 639-646) must
+# clear `emailSentTo` + `otpCode` and surface "Request a new code
+# for the updated email." so the stale code cannot be reused.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.emailInput"
+    timeout: 30000
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+
+# Step 1 — type email A, request a code.
+- tapOn:
+    id: "login.emailInput"
+# 2026-09-28: the test account the pack signs in (MAESTRO_TEST_EMAIL), not
+# an invented address the live sign-in service would make an account for.
+- inputText: ${MAESTRO_TEST_EMAIL}
+- hideKeyboard
+- tapOn:
+    id: "login.emailSubmit"
+
+# Wait for the OTP input to mount.
+- extendedWaitUntil:
+    visible:
+      id: "login.emailOtpInput"
+    timeout: 20000
+- assertVisible:
+    id: "login.emailOtpInput"
+- assertVisible:
+    id: "login.emailOtpVerify"
+- takeScreenshot: "auth_04_01_code_requested_for_email_a"
+
+# Step 2 — change the email field. handleEmailChange clears
+# emailSentTo + otpCode and sets status to "Request a new code for
+# the updated email." (App.tsx:644). The OTP input + verify button
+# disappear because they're rendered behind `emailSentTo ? (...) :
+# null`.
+- tapOn:
+    id: "login.emailInput"
+- eraseText: 64
+- inputText: "qa+other@example.test"
+- hideKeyboard
+
+# Step 3 — assert the OTP surface is gone AND the prompt copy
+# surfaces. login.emailStatus is the testID for the caption that
+# carries "Request a new code for the updated email.".
+- assertNotVisible:
+    id: "login.emailOtpInput"
+- assertNotVisible:
+    id: "login.emailOtpVerify"
+- assertVisible:
+    id: "login.emailStatus"
+- assertVisible:
+    text: ".*Request a new code for the updated email.*"
+- takeScreenshot: "auth_04_02_email_changed_clears_otp_state"
+
+# Step 4 — the submit button label flips back to the initial label
+# ("Email me a sign-in code") because `emailSentTo` is now null.
+# The cooldown timer may also be still ticking from the first
+# request — accept both labels.
+- assertVisible:
+    text: ".*(Email me a sign-in code|Send another email|Resend in).*"
+
+# Step 5 — still on the login screen, not authenticated.
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "main-menu-button"
+- assertNotVisible:
+    id: "header.profileButton"
+
+# Leak guards.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*supabase\\.co.*"
+- assertNotVisible:
+    text: ".*Traceback.*"

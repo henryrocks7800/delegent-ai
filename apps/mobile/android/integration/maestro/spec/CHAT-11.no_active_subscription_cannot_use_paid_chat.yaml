@@ -1,0 +1,59 @@
+appId: com.sidekick.v2
+name: CHAT-11 — No Active Subscription Cannot Use Paid Chat
+tags:
+  - chat
+  - live-only
+# blocked-reason: needs a signed-in account with no subscription; the test account the pack signs in is a subscriber
+---
+# ============================================================================
+# Spec ID: CHAT-11 — No Active Subscription Cannot Use Paid Chat
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Authenticated unsubscribed-onboarded user (seed
+# --profile unsubscribed). The product's gate routes this user to
+# the plan picker (setup wizard) rather than the paid chat surface.
+# Verify the user lands on the plan picker and cannot reach the chat
+# composer.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 15000
+
+# Step 1 — unsubscribed user is on the plan picker, NOT the paid chat
+- assertVisible:
+    id: "setup.stepIndicator"
+- assertVisible:
+    text: "Pick a plan, meet your coworker"
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    id: "home.chatPanel.sendButton"
+- assertNotVisible:
+    id: "home.chatPanel.micButton"
+- takeScreenshot: "chat_11_01_plan_picker_for_unsubscribed"
+
+# Step 2 — paid-chat-only testIDs are NOT reachable. The shell didn't
+# show the chat tab at all (tab.dashboard is part of the post-setup
+# shell, not the plan picker).
+- assertNotVisible:
+    id: "tab.dashboard"
+- assertNotVisible:
+    id: "tab.artifacts"
+- assertNotVisible:
+    id: "main-menu-button"
+
+# Step 3 — at minimum one plan tier card renders (the picker is
+# functional). Studio is the default seed-tier and is always present.
+- assertVisible:
+    id: "setup.plan.studio"
+- takeScreenshot: "chat_11_02_paid_chat_gated"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "stack trace"

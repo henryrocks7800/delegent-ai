@@ -1,0 +1,84 @@
+appId: com.sidekick.v2
+name: Production - Visual page sweep
+---
+# One pass through every main screen for screenshots and a leak check: the
+# chat, the menu, Connections, Skills, How-to guides, Plan & billing and
+# Profile, returning to the chat each time.
+#
+# 2026-09-28: rewritten for the chat-first shell of the agent engine. The
+# bottom Chat / Files tabs it used to tap went with the runners on
+# 2026-09-18; everything is reached from the menu and the header now.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- takeScreenshot: "production_visual_page_sweep_01_chat"
+
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 15000
+- takeScreenshot: "production_visual_page_sweep_02_menu"
+
+- tapOn:
+    id: "menu.connectionsRow"
+- extendedWaitUntil:
+    visible:
+      id: "connections.summary"
+    timeout: 20000
+- takeScreenshot: "production_visual_page_sweep_03_connections"
+- back
+
+- tapOn:
+    id: "menu.skillsRow"
+- extendedWaitUntil:
+    visible:
+      text: "Inbox & messages"
+    timeout: 15000
+- takeScreenshot: "production_visual_page_sweep_04_skills"
+- back
+
+- tapOn:
+    id: "menu.howtoRow"
+- extendedWaitUntil:
+    visible:
+      text: "Connect your apps"
+    timeout: 15000
+- takeScreenshot: "production_visual_page_sweep_05_howto"
+- back
+
+- tapOn:
+    id: "menu.setupGuideRow"
+- extendedWaitUntil:
+    visible:
+      text: "Monthly allowance"
+    timeout: 20000
+- takeScreenshot: "production_visual_page_sweep_06_plan"
+- back
+- runFlow:
+    when:
+      visible:
+        id: "menu.homeRow"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.editToggle"
+    timeout: 15000
+- takeScreenshot: "production_visual_page_sweep_07_profile"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 15000
+- takeScreenshot: "production_visual_page_sweep_08_back_to_chat"
+- assertNotVisible:
+    text: "RedBox|Unhandled promise|raw provider|runner URL|service role"

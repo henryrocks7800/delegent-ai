@@ -1,0 +1,26 @@
+appId: com.sidekick.v2
+name: P19-N01 — Enterprise sub doesn't show lower-tier tier names (unhappy path)
+tags:
+  - persona:P19
+  - enterprise
+  - unhappy-path
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.capacityRow"
+    timeout: 4000
+# The capacity row should show the Enterprise allowance, not a Studio
+# or Pro Office name.
+- assertVisible:
+    text: ".*Capacity.*"
+- tapOn:
+    id: "drawer.backdropDismiss"

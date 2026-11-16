@@ -1,0 +1,32 @@
+appId: com.sidekick.v2
+name: Production - home chat panel first land
+---
+# A signed-in user lands straight in the chat: the header with the menu and
+# profile buttons, and the composer with its tools, no scrolling needed.
+#
+# 2026-09-28 (redesign): the chat has been a WebView since May 2026, so its
+# controls are the chat document's element ids (input, attachBtn, micBtn,
+# helpBtn), which Android exposes as resource ids. The old native
+# home.chatPanel.* ids and the Chat / Files tab bar no longer exist (Files
+# went with the runners on 2026-09-18), which is why this flow had been
+# failing since August.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- takeScreenshot: "production_home_chat_panel_first_land_01"
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- assertVisible:
+    id: "attachBtn"
+- assertVisible:
+    id: "micBtn"
+- assertVisible:
+    id: "helpBtn"
+- assertNotVisible:
+    text: "WhatsApp|Signal"
+- assertNotVisible:
+    text: "Cloud space warming up|workspace is preparing|workspace is not ready"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider|Supabase|Cloudflare|OpenRouter"

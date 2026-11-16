@@ -1,0 +1,17 @@
+appId: com.sidekick.v2
+name: P12-01 — Cancelled sub, period elapsed - paywall locks the user out
+tags:
+  - persona:P12
+  - billing
+  - cancelled
+# blocked-reason: needs a seeded account state (cancelled, period ended); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+# Should land on the plan picker / paywall (subscription not entitled).
+- extendedWaitUntil:
+    visible:
+      text: ".*Choose your plan.*|.*Studio.*|.*Choose a plan.*|.*Pick a plan.*"
+    timeout: 30000
+- assertNotVisible:
+    id: "home.chatPanel.input"

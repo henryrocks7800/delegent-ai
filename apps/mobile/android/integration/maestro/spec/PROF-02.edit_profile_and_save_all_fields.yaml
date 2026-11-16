@@ -1,0 +1,97 @@
+appId: com.sidekick.v2
+name: PROF-02 — Edit Profile and Save All Fields
+tags:
+  - prof
+  - live-only
+# blocked-reason: saves new profile details on the account; run on purpose on a throwaway account, never the shared test account
+---
+# ============================================================================
+# Spec ID: PROF-02 — Edit Profile and Save All Fields
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed signed-in user on chat home (seed
+# --profile ready-runner). This flow exercises the full Profile edit
+# write path: all three editable fields change, Save fires, the in-app
+# UI confirms via a Saved badge. A paired backend assertion (querying
+# Supabase for the new agent_name) lives in the test harness around
+# this flow; the Maestro flow itself focuses on the UI contract.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- assertVisible:
+    id: "header.profileButton"
+
+# Step 1 — open Profile, enter edit mode
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.signOutButton"
+    timeout: 15000
+- takeScreenshot: "prof_02_01_profile"
+- tapOn:
+    text: "Edit profile"
+
+# Scroll into view + change Display name
+- scrollUntilVisible:
+    element:
+      id: "profile.displayNameInput"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "profile.displayNameInput"
+- eraseText: 50
+- inputText: "Atlas Tester PROF-02"
+- hideKeyboard
+
+# Change Coworker name
+- scrollUntilVisible:
+    element:
+      id: "profile.agentNameInput"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "profile.agentNameInput"
+- eraseText: 40
+- inputText: "Nova-Edit"
+- hideKeyboard
+
+# Change Region
+- scrollUntilVisible:
+    element:
+      id: "profile.regionInput"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "profile.regionInput"
+- eraseText: 50
+- inputText: "Manchester, UK"
+- hideKeyboard
+- takeScreenshot: "prof_02_02_fields_changed"
+
+# Step 2 — Save
+- scrollUntilVisible:
+    element:
+      id: "profile.saveButton"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "profile.saveButton"
+
+# Step 3 — saved confirmation. The app surfaces a "Saved" Badge on success.
+- extendedWaitUntil:
+    visible:
+      text: "Saved"
+    timeout: 15000
+- assertVisible:
+    text: "Saved"
+- takeScreenshot: "prof_02_03_saved"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "couldn't save"

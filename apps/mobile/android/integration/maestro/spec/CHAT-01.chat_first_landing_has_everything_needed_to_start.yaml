@@ -1,0 +1,57 @@
+appId: com.sidekick.v2
+name: CHAT-01 — Chat First Landing Has Everything Needed to Start
+tags:
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-01
+# Friendly name: Chat First Landing Has Everything Needed to Start
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in, onboarded subscriber (the pack's --sign-in
+# account).
+#
+# 1. The app opens on the chat: menu and profile in the header, the composer
+#    (text box, Attach, Voice) ready, Send waiting for words.
+# 2. No messenger surfaces that are parked (WhatsApp, Signal).
+# 3. No "warming up" or "preparing" copy.
+# 4. No provider internals.
+#
+# 2026-09-28: the composer is part of the chat WebView, so its controls are
+# the chat document's element ids. Send is always drawn now and stays
+# disabled until there is a draft (it used to swap with the mic). The
+# Chat / Files tab bar it counted went with the runners.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- takeScreenshot: "chat_01_01_landed"
+
+# Step 1 — header and composer.
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- assertVisible:
+    id: "input"
+- assertVisible:
+    id: "attachBtn"
+- assertVisible:
+    id: "micBtn"
+- assertVisible:
+    id: "sendBtn"
+    enabled: false
+
+# Step 2 — parked messengers stay out of sight.
+- assertNotVisible:
+    text: "WhatsApp|Signal"
+
+# Step 3 — no warming-up copy.
+- assertNotVisible:
+    text: "warming up|preparing|getting ready|workspace is"
+
+# Step 4 — no leaks.
+- assertNotVisible:
+    text: "service_role|runner URL|OpenRouter|Cloudflare|Supabase|Railway"
+- takeScreenshot: "chat_01_02_assertions_complete"

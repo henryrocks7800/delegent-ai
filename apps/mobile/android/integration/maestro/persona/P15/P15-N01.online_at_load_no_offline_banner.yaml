@@ -1,0 +1,23 @@
+appId: com.sidekick.v2
+name: P15-N01 - Online at load, no spurious offline banner (unhappy path)
+tags:
+  - persona:P15
+  - offline
+  - unhappy-path
+---
+# When the user is genuinely online at load time, we must NOT show an
+# offline / no-network banner. This guards against false-positive
+# offline detection.
+- launchApp:
+    clearState: false
+- runFlow: ../../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*[Oo]ffline.*"
+- assertNotVisible:
+    text: ".*No internet connection.*"
+- assertNotVisible:
+    text: ".*Try again.*offline.*"

@@ -1,0 +1,80 @@
+appId: com.sidekick.v2
+name: RES-06 — Malformed App Link Is Ignored Safely
+tags:
+  - res
+  - release
+---
+# ============================================================================
+# Spec ID: RES-06 — Malformed App Link Is Ignored Safely
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: release. Self-contained — no provider state required. Cold
+# launch with clearState, then open a malformed `sidekick://...` deep
+# link (an unknown host + garbage path that doesn't match any of the
+# documented auth/checkout/billing handlers). The app must remain on
+# its safe entry screen (the Login surface, since clearState wiped any
+# session) with no crash and no raw URL fragment leaked into the UI.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+
+# Step 1 — fire a malformed sidekick:// link with an unknown host AND a
+# bogus path/query. The URL is deliberately a non-checkout, non-billing
+# host with garbage params.
+- openLink: "sidekick://garbage-host/some/bogus/path?foo=%xx&bar=%%%"
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 8000
+- takeScreenshot: "res_06_01_after_malformed_link"
+
+# Step 2 — the app must remain on the login surface (its safe pre-auth
+# screen). No authenticated shell, no fake checkout/billing UI, no raw
+# URL parser error text, no provider internals.
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailButton"
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "main-menu-button"
+- assertNotVisible:
+    id: "header.profileButton"
+- assertNotVisible:
+    text: "garbage-host"
+- assertNotVisible:
+    text: "bogus/path"
+- assertNotVisible:
+    text: "stack trace"
+- assertNotVisible:
+    text: "Traceback"
+- assertNotVisible:
+    text: "URIError"
+- assertNotVisible:
+    text: "TypeError"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Checkout complete"
+- assertNotVisible:
+    text: "Billing portal"
+
+# Step 3 — second malformed variant: a sidekick://auth/callback URL
+# that's structurally close to the real auth deep link but with no
+# valid tokens (empty/garbage query). The app's auth handler must
+# reject it cleanly without firing a fake-success or crashing.
+- openLink: "sidekick://auth/callback?code=&access_token=&refresh_token="
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 8000
+- assertVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "res_06_02_after_empty_auth_link"

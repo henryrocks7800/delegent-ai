@@ -1,0 +1,22 @@
+{
+  "name": "@sidekick/worker",
+  "version": "1.2.6",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "deploy": "wrangler deploy --env production"
+  },
+  "dependencies": {
+    "@sidekick/billing": "1.2.6",
+    "@sidekick/shared": "1.2.6",
+    "@supabase/supabase-js": "^2.105.4",
+    "stripe": "^22.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "wrangler": "^4.87.0"
+  }
+}

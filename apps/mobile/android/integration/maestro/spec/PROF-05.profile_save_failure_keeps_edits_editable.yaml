@@ -1,0 +1,146 @@
+appId: com.sidekick.v2
+name: PROF-05 — Profile Save Failure Keeps Edits Editable
+tags:
+  - prof
+  - live-only
+# blocked-reason: needs a server failure injected on purpose; the live service has no switch for it
+---
+# ============================================================================
+# Spec ID: PROF-05 — Profile Save Failure Keeps Edits Editable
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner).
+# The Save Profile button hits Supabase via mobileProfile.update; the
+# only way to force the 'unavailable' error path
+# (src/profile/mobileProfile.ts:50-54) deterministically without a
+# fixture is to drop network. We drop it via adb BEFORE Maestro runs,
+# then restore it AFTER the flow finishes.
+#
+# Pre-step (driven by the test orchestrator BEFORE this YAML runs):
+#   adb shell svc wifi disable
+#   adb shell svc data disable
+#   # Wait for connection to die (Supabase fetch must time out, not
+#   # hang forever). The mobile Supabase client uses fetch which on
+#   # Android resolves to 'unavailable' within a few seconds when
+#   # there's no usable transport.
+#
+# Post-step (driven by the test orchestrator AFTER this YAML runs):
+#   adb shell svc wifi enable
+#   adb shell svc data enable
+#   # Wait for network to stabilise before any subsequent flow runs.
+#
+# What this spec verifies:
+#   1. Editing flow reachable: header avatar → profile.editProfile →
+#      profile.regionInput is editable.
+#   2. Save with no network → safe error caption appears (the copy
+#      mapped from 'unavailable': "Couldn't save your profile. Try
+#      again in a moment.").
+#   3. Fields STAY editable and STILL contain the attempted values
+#      after the failure (no silent reset to server state, no
+#      destructive Cancel).
+#   4. Save button is re-enabled (canSave=true again) so the user
+#      can retry once recovery is possible.
+#   5. No raw provider internals or status codes leak into the
+#      error copy.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+# Step 1 — open Profile.
+- assertVisible:
+    id: "header.profileButton"
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.managePlanButton"
+    timeout: 8000
+
+# Step 2 — enter Edit mode. The Edit profile button is a Button
+# with label "Edit profile" (not editing) / "Cancel" (editing) and
+# no testID — we tap by text.
+- tapOn:
+    text: "Edit profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile.saveButton"
+    timeout: 8000
+- assertVisible:
+    id: "profile.regionInput"
+- assertVisible:
+    id: "profile.saveButton"
+- takeScreenshot: "prof_05_01_edit_mode_open"
+
+# Step 3 — change a field. We append a unique marker to the region
+# field so the post-save assertion can confirm the attempted value
+# is preserved. The seed default region is empty; we add a clean
+# string that meets the canSave length check (>= 2 chars).
+- tapOn:
+    id: "profile.regionInput"
+- inputText: "PROF05-CITY-MARKER"
+- hideKeyboard
+- assertVisible:
+    text: ".*PROF05-CITY-MARKER.*"
+
+# Step 4 — tap Save with the network down. The Supabase update
+# throws → updateMobileProfile catches → returns
+# { error: { reason: 'unavailable', message: "Couldn't save your
+# profile. Try again in a moment." } }. The component sets
+# saveState={ status: 'error', message } which renders the
+# warning caption between fields and Save button.
+- assertVisible:
+    id: "profile.saveButton"
+- tapOn:
+    id: "profile.saveButton"
+
+# Step 5 — error caption appears. Save button stops showing
+# "Saving…" (the saving state ends with the failure). 25s budget —
+# the Supabase fetch may take a few seconds to fail when wifi/data
+# are disabled (some emulators short-circuit; others wait for the
+# default timeout).
+- extendedWaitUntil:
+    visible:
+      text: ".*Couldn.t save your profile.*"
+    timeout: 25000
+- assertVisible:
+    text: ".*Couldn.t save your profile.*"
+- takeScreenshot: "prof_05_02_save_failure_caption_visible"
+
+# Step 6 — fields still editable AND still hold the attempted value.
+# The component does NOT reset to server state on error (only on
+# success). The Save button must still be tappable after the error
+# so the user can retry once network recovers.
+- assertVisible:
+    id: "profile.regionInput"
+- assertVisible:
+    text: ".*PROF05-CITY-MARKER.*"
+- assertVisible:
+    id: "profile.saveButton"
+- assertVisible:
+    id: "profile.displayNameInput"
+- assertVisible:
+    id: "profile.agentNameInput"
+- takeScreenshot: "prof_05_03_fields_still_editable_after_failure"
+
+# Step 7 — no raw provider internals or status codes leak into the
+# error caption.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*supabase\\.co.*"
+- assertNotVisible:
+    text: ".*HTTP 4.*"
+- assertNotVisible:
+    text: ".*HTTP 5.*"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*ECONNREFUSED.*"
+- assertNotVisible:
+    text: ".*ETIMEDOUT.*"
+- assertNotVisible:
+    text: ".*Network request failed.*"

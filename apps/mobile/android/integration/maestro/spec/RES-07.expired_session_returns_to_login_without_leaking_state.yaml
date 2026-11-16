@@ -1,0 +1,77 @@
+appId: com.sidekick.v2
+name: RES-07 — Expired Session Returns to Login Without Leaking State
+tags:
+  - res
+  - live-only
+# blocked-reason: needs an expired stored session on the device
+---
+# ============================================================================
+# Spec ID: RES-07
+# Friendly name: Expired Session Returns to Login Without Leaking State
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires the device to have an expired/revoked Supabase
+# session present at app launch. The harness:
+#   1. Signs the user in via sign-in-via-admin-link.mjs
+#   2. Via Supabase admin API, revokes the user's refresh token (or
+#      forcibly expires the session in the persisted auth storage)
+#   3. Relaunches the app via clearState: false
+# Then this flow asserts that the app returns to login without leaking the
+# previous user's data.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Missing auth-expiry flow.
+# **Precondition:** Stored session is expired/revoked.
+#
+# **Flow and assertions:**
+# 1. Launch app — auth restore path must detect the expired session.
+# 2. Login is shown — Google + email entry visible.
+# 3. Chat / Profile / Files are NOT visible with stale data.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 20000
+- takeScreenshot: "res_07_01_relaunch_lands_login"
+
+# Step 2 — login surface assertions
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "login.emailSubmit"
+
+# Step 3 — chat / profile / files surfaces MUST NOT be present
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    id: "header.profileButton"
+- assertNotVisible:
+    id: "profile.capacityCard"
+- assertNotVisible:
+    id: "files.runnerFileList"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "setup.stepIndicator"
+
+# Stale user data must NOT linger — the previous-user agent name shouldn't
+# show, and no provider internals should leak in any error copy.
+- assertNotVisible:
+    text: "Atlas"
+- assertNotVisible:
+    text: "Nova"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "anon key"
+- assertNotVisible:
+    text: "runner URL"
+- assertNotVisible:
+    text: "Supabase"
+- takeScreenshot: "res_07_02_login_clean_no_leak"

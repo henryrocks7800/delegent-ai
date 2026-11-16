@@ -1,0 +1,97 @@
+appId: com.sidekick.v2
+name: EDGE-Q-01 — Hard Token Limit Shows Quota Pause Card and Replaces the Composer
+tags:
+  - edge
+  - quota
+  - chat
+  - live-only
+# blocked-reason: needs a seeded account state (at the monthly allowance); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+# ============================================================================
+# Spec ID: EDGE-Q-01 — Hard Token Limit Shows Quota Pause Card and
+#   Replaces the Composer
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §4.3
+# Goal-doc anchor: Phase 10 Edge Batch 2, item 1
+#
+# Precondition: seed-test-user --profile ready-runner --email <test_email>
+#               --usage hard-limited
+# (The --usage hard-limited profile already exists in seed-test-user.mjs;
+# it seeds 115% of monthly_token_quota so the quota gate flips and
+# productState.usageSummary.hardLimited becomes true.)
+#
+# What this proves:
+#   The QuotaPauseCard component (extracted in Phase 4 of the chat
+#   liftout) renders correctly when productState says the user is
+#   over the cap. Specifically:
+#     (a) home.chatPanel.quotaPause is visible (the card surface)
+#     (b) home.chatPanel.quotaPause.title carries the byte-identical
+#         copy that mirrors quotaJourney.ts on the Worker side
+#     (c) home.chatPanel.quotaPause.upgrade + .manage are both
+#         tappable Pressables
+#     (d) home.chatPanel.input (the composer text field) is NOT
+#         visible — the card replaces the composer, it doesn't sit
+#         underneath it
+#     (e) No raw backend vocab leaks anywhere on the surface
+#
+# Why the test exists:
+#   The Phase 4 extraction of QuotaPauseCard kept the testIDs but
+#   relocated the source. The readiness pack proves the testIDs are
+#   in source; this is the live-emulator complement that proves they
+#   resolve on the rendered surface AND the composer-replace contract
+#   is preserved.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 1 — the pause card must render automatically on landing because
+# the seed flipped hardLimited=true. No interaction needed.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.quotaPause"
+    timeout: 8000
+- assertVisible:
+    id: "home.chatPanel.quotaPause"
+- assertVisible:
+    id: "home.chatPanel.quotaPause.title"
+- assertVisible:
+    id: "home.chatPanel.quotaPause.body"
+- takeScreenshot: "edge_q_01_pause_card_rendered"
+
+# Step 2 — title carries the byte-identical mirror of the Worker copy.
+- assertVisible:
+    text: ".*You've used this month's included assistant time, so I've paused new tasks for now.*"
+
+# Step 3 — body carries the call-to-action copy.
+- assertVisible:
+    text: ".*You can upgrade to keep going today.*"
+
+# Step 4 — both CTAs visible and presumably tappable (we don't fire them
+# in this flow to keep it idempotent; BILL-08 covers the manage path).
+- assertVisible:
+    id: "home.chatPanel.quotaPause.upgrade"
+- assertVisible:
+    id: "home.chatPanel.quotaPause.manage"
+
+# Step 5 — composer is replaced, NOT just disabled. The TextInput's
+# testID must NOT resolve at all.
+- assertNotVisible:
+    id: "home.chatPanel.input"
+
+# Step 6 — no backend vocab leaks. (Worker sanitiser + the chat-client
+# error map prevent these at the data layer; this is the rendered
+# surface verification.)
+- assertNotVisible:
+    text: ".*Supabase.*"
+- assertNotVisible:
+    text: ".*Hermes.*"
+- assertNotVisible:
+    text: ".*Fly.*"
+- assertNotVisible:
+    text: ".*OpenRouter.*"
+- assertNotVisible:
+    text: ".*service_role.*"
+- takeScreenshot: "edge_q_01_no_leaks_no_composer"

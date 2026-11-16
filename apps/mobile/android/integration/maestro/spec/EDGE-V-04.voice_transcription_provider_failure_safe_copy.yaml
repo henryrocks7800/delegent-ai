@@ -1,0 +1,63 @@
+appId: com.sidekick.v2
+name: EDGE-V-04 — Voice transcription provider failure safe copy
+# Phase 9 Edge Batch 5, item 4.
+#
+# Why this matters
+# ----------------
+# When the transcription backend is down or rate-limited, the UI must
+# show a friendly retry — not a raw vendor / network error. The
+# composer must remain reachable so the user can fall back to typing.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. Orchestrator (where supported)
+# blocks the transcription endpoint via `iptables` or a portproxy
+# rule before the flow runs.
+#
+# What this proves
+# ----------------
+# (a) The mic record cycle still completes locally.
+# (b) Composer is still reachable after a transcription failure.
+# (c) No raw vendor or HTTP-status leak.
+#
+# Fixtures: ready-runner seed; mic permission granted; orchestrator
+# blocks transcription endpoint.
+
+tags:
+  - edge
+  - voice
+  - chat
+  - network
+  - live-only
+# blocked-reason: needs a working microphone and real speech; the emulator has neither
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.micButton"
+    timeout: 15000
+- tapOn:
+    id: "home.chatPanel.micButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: "home.chatPanel.micButton"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: "edge_v_04_after_failed_transcribe"
+
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+
+- assertNotVisible:
+    text: "503|429|fetch failed|Whisper|Deepgram|AssemblyAI|stt"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider|OpenRouter"

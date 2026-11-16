@@ -1,0 +1,21 @@
+appId: com.sidekick.v2
+name: P10-N01 — Sleeping (grace) — app still loads, no crash (unhappy path)
+tags:
+  - persona:P10
+  - unhappy-path
+  - sleeping
+# blocked-reason: needs a seeded account state (cancelled, still inside the paid period); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*|.*coworker.*|.*paused.*|.*Resume.*"
+    timeout: 30000
+# The grace window must NEVER surface internal sleep state vocabulary.
+- assertNotVisible:
+    text: ".*hermes_instance.status.*"
+- assertNotVisible:
+    text: ".*volume_retention_until.*"
+- assertNotVisible:
+    text: ".*deleted_at.*"

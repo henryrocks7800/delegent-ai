@@ -1,0 +1,78 @@
+# Series 4 — agent document toolchain (FREE / open-source).
+#
+# Installed at BUILD time into the golden runner image (see Dockerfile.fly
+# runtime stage). These land in the system site-packages the `delegent`
+# runtime user can import, so the Hermes agent's `terminal` + `file` toolsets
+# can read/write documents out of the box — no runtime pip/apt, which the
+# R-UPG-02 forensic guard forbids in the live server path.
+#
+# Capability coverage (forensic capability tests in tests/forensic/E-agent.test.mjs):
+#   R-AGENT-03  summarise/extract PDFs            -> pypdf, pdfplumber, pymupdf
+#   R-AGENT-23  multi-PDF research (quote+page)   -> pdfplumber, pymupdf
+#   R-AGENT-13  receipt PDF -> date/total/VAT      -> pdfplumber (text+tables) / pymupdf
+#   R-AGENT-11  photo OCR (parking-ticket image)  -> pytesseract + Pillow (+ apt tesseract-ocr)
+#   (scanned PDF OCR)                              -> pdf2image (+ apt poppler-utils) -> pytesseract
+#   R-AGENT-27  cashflow .xlsx (>=3 sheets+chart) -> openpyxl (read/write + native charts)
+#   R-AGENT-33  5-slide .pptx                      -> python-pptx
+#   (.docx authoring)                              -> python-docx
+#   PDF authoring (invoices/letters/reports)      -> reportlab, xhtml2pdf (HTML+CSS -> PDF)
+#   PDF form FILLING (fill an existing AcroForm)  -> pypdf (field values + regenerated
+#                                                    appearance streams + NeedAppearances, so
+#                                                    the value stays an editable/screen-reader
+#                                                    field AND is baked visible for printing);
+#                                                    pymupdf as the fallback filler + flatten.
+#                                                    Single source of truth: the
+#                                                    pdf-document-creation skill.
+#   CSV / tabular data wrangling                   -> pandas (+ numpy)
+#   optional charts as PNG                          -> matplotlib (Agg backend, headless)
+#
+# Wheel/build notes (verified against PyPI on 2026-05-31, base = python:3.11-slim-bookworm):
+#   - All of these resolve to prebuilt wheels for cp311 / manylinux_2_28 x86_64;
+#     none compile from source, so no build-essential is needed in the runtime
+#     stage (it is intentionally absent there).
+#   - pymupdf 1.27.2.3 ships a cp310-abi3 manylinux_2_28 wheel; abi3 wheels are
+#     forward-compatible, so pip on Python 3.11 installs it without a source build.
+#   - pandas/numpy require Python >=3.11 (satisfied) and ship cp311 wheels.
+
+# --- PDF read / extract + form FILL -----------------------------------------
+# pypdf and pymupdf are BOTH also the PDF form-filling engines (see the
+# pdf-document-creation skill). Do NOT drop them as "read only": pypdf fills
+# AcroForm fields and regenerates their appearance streams, and pymupdf is the
+# fallback filler / flattener. Pure-Python / abi3 wheels, no system libs.
+pypdf==6.12.2
+pdfplumber==0.11.9
+pymupdf==1.27.2.3
+
+# --- OCR (Python side; system tesseract-ocr + poppler-utils via apt) --------
+pytesseract==0.3.13
+pdf2image==1.17.0
+Pillow==12.2.0
+
+# --- CSV / tabular data -----------------------------------------------------
+numpy==2.4.6
+pandas==3.0.3
+
+# --- Office authoring -------------------------------------------------------
+openpyxl==3.1.5
+python-pptx==1.0.2
+python-docx==1.2.0
+
+# --- PDF authoring (CREATE PDFs: invoices, letters, statements, reports) -----
+# reportlab is the core PDF engine (pure-Python cp311 wheels, no system libs).
+# xhtml2pdf renders HTML+CSS -> PDF on top of reportlab, so the agent can
+# describe a document (e.g. an invoice) as HTML and produce a PDF with no
+# browser. Both are pure-Python wheels, so the no-system-libs / no-runtime-pip
+# contract (R-UPG-02) still holds. Capability test: forensic R-AGENT-38.
+reportlab==4.2.5
+xhtml2pdf==0.2.16
+
+# --- Optional plotting (headless PNG charts) --------------------------------
+matplotlib==3.10.9
+
+# --- Developer / test execution ---------------------------------------------
+# pytest lets the coworker run a user's Python test suite and report
+# pass/fail + exit status as a real terminal tool_call (forensic R-AGENT-07:
+# "run pytest ... terminal tool_call recorded with exit status"). Small
+# pure-Python wheel + tiny deps (pluggy/iniconfig/packaging); no system libs,
+# so it stays inside the no-runtime-pip contract (R-UPG-02).
+pytest==8.3.5

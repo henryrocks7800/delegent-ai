@@ -1,0 +1,37 @@
+appId: com.sidekick.v2
+name: 'P04-44 — Skills menu: Operations chip invokes the operations manager'
+tags:
+  - persona:P04
+  - skills
+  - skills-live
+# blocked-reason: retired: tests Hermes skills and commands, gone with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.skillsRow"
+- tapOn:
+    id: "skills.category.ops"
+- takeScreenshot: "skills-ops-01-category"
+- tapOn:
+    id: "skills.category.ops.try"
+- extendedWaitUntil:
+    visible:
+      text: ".*be my operations manager.*"
+    timeout: 15000
+- takeScreenshot: "skills-ops-02-phrase-sent"
+# Credential-first contract: the skill checks what is connected (calendar,
+# email, tasks) and reports the state honestly before promising to run the day.
+- extendedWaitUntil:
+    visible:
+      text: ".*(calendar|tasks|email|connected|Connections).*"
+    timeout: 120000
+- assertNotVisible:
+    text: ".*(skill.{0,24}not (found|available)|doesn.t exist|not in the current environment).*"
+- takeScreenshot: "skills-ops-03-reply"

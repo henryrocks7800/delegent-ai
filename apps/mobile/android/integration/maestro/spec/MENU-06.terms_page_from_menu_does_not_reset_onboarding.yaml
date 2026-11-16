@@ -1,0 +1,104 @@
+appId: com.sidekick.v2
+name: MENU-06 — Terms Page From Menu Does Not Reset Onboarding
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-06 — Terms Page From Menu Does Not Reset Onboarding
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). Opening the Terms drawer subpage from the menu must
+# NOT trigger a re-acknowledgement gate — the onboarded user remains
+# onboarded after closing Terms and after a relaunch.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 1 — open drawer, scroll to and tap Terms
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- scrollUntilVisible:
+    element:
+      id: "menu.termsRow"
+    direction: DOWN
+    timeout: 8000
+- tapOn:
+    id: "menu.termsRow"
+
+# Step 2 — Terms subpage renders (NOT the onboarding terms checkbox)
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent AI Terms.*"
+    timeout: 8000
+- assertVisible:
+    text: ".*Delegent AI Terms.*"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "onboarding.finishButton"
+- assertNotVisible:
+    id: "onboarding.termsCheckbox"
+- takeScreenshot: "menu_06_01_terms_subpage"
+
+# Step 3 — scroll within the Terms subpage to prove it's the readable
+# Terms document, not a re-acceptance form (a re-acceptance form would
+# have the onboarding.termsCheckbox above the body).
+- scrollUntilVisible:
+    element:
+      text: ".*Eligibility and your account.*"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    text: ".*Eligibility and your account.*"
+- assertNotVisible:
+    id: "onboarding.termsCheckbox"
+
+# Step 4 — Back to menu list, then Back to chat home
+- pressKey: Back
+# The menu reopens at its top when a page closes (2026-09-28: it always
+# has; the taller rows just put this one below the fold), so wait on the
+# top row.
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 8000
+- assertVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "menu_06_02_back_to_chat"
+
+# Step 5 — relaunch (force-stop + cold start). Onboarding must NOT
+# re-appear; the user lands on chat home directly. (2026-09-28: through the
+# ready step, which gives a cold start's "Loading conversation" its full
+# minute; 15 seconds failed on the emulator.)
+- stopApp
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- assertVisible:
+    id: "main-menu-button"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "onboarding.finishButton"
+- assertNotVisible:
+    id: "onboarding.termsCheckbox"
+- takeScreenshot: "menu_06_03_relaunch_no_onboarding"
+
+- assertNotVisible:
+    text: "service_role"

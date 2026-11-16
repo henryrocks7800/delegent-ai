@@ -1,0 +1,61 @@
+appId: com.sidekick.v2
+name: CHAT-S-04 — Near-token-limit user is paused before next send
+tags:
+  - chat
+  - quota
+  - live-only
+# blocked-reason: needs a seeded account state (near the monthly allowance); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+# ============================================================================
+# Spec ID: CHAT-S-04
+# Friendly name: Near-token-limit user is paused before next send
+# Defect this regression-guards: a user who burns their entire monthly
+# token quota must hit a calm "pause" surface (QuotaPauseCard) with
+# clear upgrade copy, NOT a vague "your coworker is offline" error or a
+# silently-failing send. The pause card replaces the composer until the
+# user upgrades or the month rolls over.
+#
+# Status: live-only. The harness must seed the user's quota row to be
+# within ~1k tokens of the hard limit before the flow starts (via the
+# Supabase admin shim — see scripts/seed-near-token-limit.mjs in the
+# follow-up).
+# Token usage: deliberately a short prompt that nudges them over.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "summarise hermes in one sentence"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Wait for the assistant reply to land then dispatch a second small
+# prompt that pushes the user over the hard cap.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistantText"
+    timeout: 90000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "and a one-line follow up"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# The QuotaPauseCard takes over the composer area — testID lives in
+# apps/mobile/src/chat/cards/QuotaPauseCard.tsx.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.quotaPauseCard"
+    timeout: 30000
+
+# Upgrade CTA inside the pause card must be present + tappable.
+- assertVisible:
+    text: ".*[Uu]pgrade.*"
+- assertNotVisible:
+    text: "openrouter|hermes --|service_role|Fly Machines|Railway"

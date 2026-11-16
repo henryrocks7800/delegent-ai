@@ -1,0 +1,22 @@
+appId: com.sidekick.v2
+name: P04-01 - Send hi gets a streaming text reply
+tags:
+  - persona:P04
+  - chat
+  - streaming
+---
+# A greeting gets a reply. 2026-09-28: WebView chat; the greeting asks for one
+# known word so the reply can be recognised without guessing its wording.
+- launchApp:
+    clearState: false
+- runFlow: ../../production/_signed_in_ready.yaml
+- tapOn:
+    id: "input"
+- inputText: "Hi! Reply with only the word MELON."
+- hideKeyboard
+- tapOn:
+    id: "sendBtn"
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*melon\\W*"
+    timeout: 120000

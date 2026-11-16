@@ -1,0 +1,59 @@
+appId: com.sidekick.v2
+name: ONB-02 — Finish Setup Is Blocked Until Terms Are Accepted
+tags:
+  - onb
+  - live-only
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+# ============================================================================
+# Spec ID: ONB-02 — Finish Setup Is Blocked Until Terms Are Accepted
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Authenticated, unonboarded user (seed --profile
+# onboarding). Verifies the disabled→enabled transition of the Finish
+# button gates on the acknowledgement checkbox.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 15000
+- takeScreenshot: "onb_02_01_onboarding"
+
+# Step 1 — type a valid name but DO NOT tick the acknowledgement checkbox.
+- tapOn:
+    id: "onboarding.agentNameInput"
+- inputText: "Atlas"
+- hideKeyboard
+
+# Finish setup is rendered disabled. Maestro can't directly assert disabled
+# state, but we exercise the proof: tap it; if it were enabled, the user
+# would advance off this screen. Then assert we're STILL on onboarding.
+- tapOn:
+    id: "onboarding.finishButton"
+- assertVisible:
+    id: "onboarding.agentNameInput"
+- assertVisible:
+    id: "onboarding.termsCheckbox"
+- takeScreenshot: "onb_02_02_finish_disabled_no_checkbox"
+
+# Step 2 — tick the checkbox. Finish setup must now be enabled and the
+# next tap advances off the onboarding screen.
+- tapOn:
+    id: "onboarding.termsCheckbox"
+- takeScreenshot: "onb_02_03_terms_accepted"
+- tapOn:
+    id: "onboarding.finishButton"
+- extendedWaitUntil:
+    notVisible:
+      id: "onboarding.agentNameInput"
+    timeout: 20000
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- takeScreenshot: "onb_02_04_post_finish"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Supabase"

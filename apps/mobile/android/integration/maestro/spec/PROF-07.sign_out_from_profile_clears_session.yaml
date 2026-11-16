@@ -1,0 +1,74 @@
+appId: com.sidekick.v2
+name: PROF-07 — Sign Out From Profile Clears Session
+tags:
+  - signs-out
+  - prof
+  - live-only
+---
+# ============================================================================
+# Spec ID: PROF-07 — Sign Out From Profile Clears Session
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires a signed-in subscribed user. Seed via
+# `node scripts/seed-test-user.mjs --profile ready-runner`.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+- assertVisible:
+    id: "header.profileButton"
+- takeScreenshot: "prof_07_01_chat"
+
+# Step 1 — open Profile via the header avatar
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.signOutButton"
+    timeout: 15000
+- takeScreenshot: "prof_07_02_profile"
+- assertVisible:
+    id: "profile.signOutButton"
+
+# Step 2 — tap Sign out
+- tapOn:
+    id: "profile.signOutButton"
+
+# Step 3 — must land on login. No authenticated surface should remain.
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "profile.signOutButton"
+- assertNotVisible:
+    id: "profile.agentAllowance"
+- takeScreenshot: "prof_07_03_on_login"
+
+# Re-launch should remain at login (session is gone from storage)
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- assertVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "prof_07_04_after_relaunch"
+
+- assertNotVisible:
+    text: "Atlas"
+- assertNotVisible:
+    text: "service_role"

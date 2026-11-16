@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="any" href="/app-icon.png" />
+    <link rel="apple-touch-icon" href="/app-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Meta (Facebook) domain verification for the business portfolio
+      "Delegent AI" (0000000000000000), domain id 0000000000000000.
+
+      WHY IT LIVES HERE AND NOT IN A COMPONENT. Meta's own instructions are
+      explicit: "Verification will fail if the meta-tag code is outside of the
+      <head> section or in a section loaded dynamically by JavaScript." This
+      site is a Vite React SPA, so anything rendered by React arrives after
+      Meta's crawler has read the page. It has to be static in this file, and
+      it must NOT be moved into App.tsx or a Helmet-style component later.
+
+      WHAT IT UNLOCKS. Verifying the domain is what lets us configure web
+      conversion events for the Pixel and use Aggregated Event Measurement.
+      Today's campaign optimises for link clicks and does not need it; this is
+      the prerequisite for optimising on something better than a click.
+
+      This value is public by design, exactly like the Pixel id: it ships in
+      the page source of every site that uses one. It is not a secret.
+    -->
+    <meta name="facebook-domain-verification" content="wrf052fy6uswd8furjwbc2kyixo3pb" />
+
+    <!--
+      Canonical. The same Firebase site also answers on the lookalike API
+      domain (delegantai.co.uk, with an "a"), and on 2026-09-08 Google had
+      indexed THAT as the site. This tag tells search engines which one is real.
+    -->
+    <link rel="canonical" href="https://delegentai.co.uk/" />
+    <title>Delegent AI - Your connected AI coworker</title>
+    <meta name="description" content="Delegent AI is your connected AI coworker. It works in Gmail, Outlook, your calendar and dozens more apps, sorts your inbox, plans trips, compares prices, writes letters and makes documents, and remembers how you like things done." />
+    <meta name="theme-color" content="#F5F2EB" />
+
+    <meta property="og:title" content="Delegent AI - Your connected AI coworker" />
+    <meta property="og:description" content="The AI coworker that works in your apps. It sorts your inbox, plans your trips, compares prices, writes the letters and makes the documents." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://delegentai.co.uk" />
+    <meta property="og:image" content="https://delegentai.co.uk/og.png" />
+    <meta property="og:locale" content="en_GB" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Delegent AI - Your connected AI coworker" />
+    <meta name="twitter:description" content="The AI coworker that works in your apps and takes everyday jobs off your hands." />
+
+    <!-- Tells search engines this page is about an app and where the stores are. No prices: they change. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Delegent AI",
+      "alternateName": "Delegent AI: Your AI Coworker",
+      "description": "A connected AI coworker: it works in your email, calendar and dozens more apps, sorts your inbox, plans trips, compares prices, writes letters and makes documents.",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Android, iOS",
+      "url": "https://delegentai.co.uk/",
+      "installUrl": "https://delegentai.co.uk/install",
+      "sameAs": [
+        "https://play.google.com/store/apps/details?id=com.sidekick.v2",
+        "https://apps.apple.com/gb/app/id6800837608"
+      ],
+      "author": { "@type": "Organization", "name": "Delegent AI", "url": "https://delegentai.co.uk/" }
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-bg text-ink font-sans antialiased">
+    <div id="root"></div>
+    <!-- Buy Sell Startups listing badge (Alex, 2026-09-24). Their crawler checks the homepage HTML
+         hourly and the free listing stays live only while this is present. Remove once sold. -->
+    <div style="display:flex;justify-content:center;padding:8px 16px 32px">
+      <a href="https://buysellstartups.com/listings/delegent-ai-mufg2smb" target="_blank" rel="noopener">
+        <img src="https://buysellstartups.com/api/badge/delegent-ai-mufg2smb" alt="For Sale on Buy Sell Startups" width="280" height="68" style="max-width:100%;height:auto">
+      </a>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

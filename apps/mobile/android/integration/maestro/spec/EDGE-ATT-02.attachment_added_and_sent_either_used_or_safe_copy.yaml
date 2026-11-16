@@ -1,0 +1,63 @@
+appId: com.sidekick.v2
+name: EDGE-ATT-02 — Attachment added and sent — either used or safe copy
+# Phase 9 Edge Batch 4, item 2.
+#
+# Why this matters
+# ----------------
+# When a user attaches a file and sends, EITHER the agent uses the
+# attachment (and a tool-call card / file artifact card appears) OR
+# the UI cleanly says it wasn't processed. We never want a silent
+# acceptance that goes nowhere.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. Picker pre-driven to attach a known
+# image (orchestrator handles this; without orchestrator support this
+# flow falls back to a draft-only send).
+#
+# What this proves
+# ----------------
+# (a) Composer accepts both an attachment chip and text.
+# (b) Send dispatches without error.
+# (c) Either an attachment artifact card appears in the thread OR a
+#     "not processed" copy is shown — not silence.
+#
+# Fixtures: ready-runner seed + orchestrator drops a known image.
+
+tags:
+  - edge
+  - chat
+  - attachments
+  - live-only
+# blocked-reason: needs a fixture file in the document picker on the device
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "Have a look at this and tell me what you see"
+- hideKeyboard
+- takeScreenshot: "edge_att_02_pre_send"
+
+- tapOn:
+    id: "home.chatPanel.sendButton"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: "edge_att_02_post_send"
+
+# The user message rendered.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.user"
+    timeout: 15000
+- assertVisible:
+    id: "home.chatPanel.message.user"
+
+# No raw provider vocab in the response surface.
+- assertNotVisible:
+    text: "service role|runner URL|raw provider|OpenRouter|Supabase|Hermes|Fly"

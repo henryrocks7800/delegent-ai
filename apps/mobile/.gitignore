@@ -1,0 +1,7 @@
+
+# iOS signing material, created by infra/scripts/apple-create-ios-credentials.py.
+# The certificate private key and provisioning profile must NEVER be committed;
+# Doppler holds the durable copies.
+credentials.json
+ios-credentials/
+.publish-ota.lock

@@ -1,0 +1,99 @@
+appId: com.sidekick.v2
+name: RES-03 — App Resume Refreshes Workspace and Files
+tags:
+  - res
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: RES-03 — App Resume Refreshes Workspace and Files
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). Background the app via HOME, wait, then resume via
+# launchApp (clearState: false). On resume the AppState listener
+# should refresh productState + runner files; no login flicker, no
+# auth re-prompt, the user lands back on the same authenticated
+# shell.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 1 — open Files tab so the resume path also exercises the
+# files refresh code (RunnerFilesStateCard re-fetches on AppState
+# resume to active).
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+- assertVisible:
+    id: "files.runnerFileList"
+- takeScreenshot: "res_03_01_files_before_background"
+
+# Step 2 — background the app via the HOME button. The launcher
+# becomes foreground; com.sidekick.v2 is sent to background.
+- pressKey: Home
+
+# Step 3 — bring the app back to foreground via launchApp without
+# clearState. The launchApp command itself synchronises on the
+# launcher → app transition, which gives AppState time to change
+# from inactive/background → active and fire the resume refresh.
+# Note: launchApp force-stops + cold-starts the app, so React Native
+# in-memory state (including which tab was active) resets. The shell
+# defaults to the Chat tab. The post-resume contract we verify is:
+# session persists, authenticated shell renders, and a navigation
+# back to Files re-fetches successfully.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 4 — Authenticated shell is intact after resume. No login flicker,
+# no auth re-prompt, no setup-wizard re-route — the gate evaluated
+# correctly against the persisted session.
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- assertVisible:
+    id: "tab.dashboard"
+- assertVisible:
+    id: "tab.artifacts"
+- assertNotVisible:
+    id: "login.emailButton"
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    id: "setup.stepIndicator"
+- takeScreenshot: "res_03_02_chat_after_resume"
+
+# Step 5 — navigate back to Files. The runner-files endpoint is
+# re-fetched fresh; the runner file list root renders. This proves
+# the resume didn't leave the runner-files state machine in a stuck
+# or broken state.
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+- assertVisible:
+    id: "files.runnerFileList"
+- assertVisible:
+    id: "tab.artifacts"
+- takeScreenshot: "res_03_03_files_after_resume"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "stack trace"

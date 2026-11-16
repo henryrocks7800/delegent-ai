@@ -1,0 +1,23 @@
+appId: com.sidekick.v2
+name: P17-01 — Reinstall (in-place upgrade analogue) preserves subscription
+tags:
+  - persona:P17
+  - upgrade
+  - data-preservation
+# blocked-reason: needs the app reinstalled mid-flow
+---
+# Persona setup wipes app data + reinstalls + signs in. If the
+# server-side state (profile, agent_name, subscription) is preserved,
+# the user lands on home — NOT onboarding or the plan picker.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    text: ".*Choose your plan.*"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"

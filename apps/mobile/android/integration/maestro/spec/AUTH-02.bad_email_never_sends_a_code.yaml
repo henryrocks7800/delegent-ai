@@ -1,0 +1,81 @@
+appId: com.sidekick.v2
+name: AUTH-02 — Bad Email Never Sends a Code
+tags:
+  - auth
+  - release
+---
+# ============================================================================
+# Spec ID: AUTH-02
+# Friendly name: Bad Email Never Sends a Code
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: release. Pure UI validation — no provider state needed.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Missing negative flow.
+# **Precondition:** Signed-out app.
+#
+# **Flow and assertions:**
+# 1. Login — type `not-an-email`; tap email submit.
+# 2. Login with validation/error — assert honest error; OTP input does NOT
+#    appear; user is NOT moved to onboarding or setup.
+# 3. Login recovery — replace bad email with valid email; old status changes
+#    to "Request a new code…" or equivalent; user can submit again.
+#
+# **Backend/provider assertions:** No authenticated session is created.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+
+# Step 1 — type an obviously bad email and submit
+- tapOn:
+    id: "login.emailInput"
+- inputText: "not-an-email"
+- hideKeyboard
+- takeScreenshot: "auth_02_01_bad_email_typed"
+
+# The Send button is gated on a basic email-shape check (canRequestEmailLink).
+# A truly malformed value should leave the submit disabled or, if tapped,
+# surface an error without producing the OTP UI.
+- tapOn:
+    id: "login.emailSubmit"
+
+# Step 2 — assert the OTP UI does NOT appear, user stays on login
+- assertNotVisible:
+    id: "login.emailOtpInput"
+- assertNotVisible:
+    id: "login.emailOtpVerify"
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailInput"
+
+# Must NOT have moved to onboarding or plan picker
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    id: "setup.stepIndicator"
+- assertNotVisible:
+    id: "billing.checkoutButton"
+- takeScreenshot: "auth_02_02_still_on_login"
+
+# Step 3 — recovery: clear the bad value, enter a well-formed email,
+# the email submit becomes available again
+- eraseText
+- inputText: "qa+auth02-recovery@example.test"
+- hideKeyboard
+- takeScreenshot: "auth_02_03_valid_email_typed"
+- assertVisible:
+    id: "login.emailSubmit"
+
+# No leak of provider internals at any point
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "anon key"
+- assertNotVisible:
+    text: "Supabase"

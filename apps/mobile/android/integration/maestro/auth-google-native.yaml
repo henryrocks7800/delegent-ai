@@ -1,0 +1,13 @@
+appId: com.sidekick.v2
+name: Auth A1 - native Google sign-in smoke
+# blocked-reason: early template (May), superseded by production/auth.google_native_handoff.yaml, which also brings the app back
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Continue with Google"
+- takeScreenshot: "maestro-google-01-login"
+- tapOn: "Continue with Google"
+- extendedWaitUntil:
+    visible: ".*Email or phone.*|.*Choose an account.*|.*Add another account.*|.*Google sign-in needs setup.*|.*Couldn't complete sign-in.*"
+    timeout: 10000
+- takeScreenshot: "maestro-google-02-native-or-setup"

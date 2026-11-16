@@ -1,0 +1,130 @@
+appId: com.sidekick.v2
+name: RES-02 — Product Refresh Error Retry Works
+tags:
+  - res
+  - live-only
+# blocked-reason: needs a server failure injected on purpose; the live service has no switch for it
+---
+# ============================================================================
+# Spec ID: RES-02 — Product Refresh Error Retry Works
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Active subscriber (seed --profile ready-runner).
+# The product-state refresh hits Supabase via useMobileProductState;
+# the only deterministic way to surface the ProductStateNotice
+# 'error' branch (App.tsx:2208-2222) without a fixture is to drop
+# network around the cold-launch. We drop it via adb BEFORE Maestro
+# runs and restore it AFTER the flow completes.
+#
+# Pre-step (driven by the test orchestrator BEFORE this YAML runs):
+#   adb shell svc wifi disable
+#   adb shell svc data disable
+#
+# Mid-step (driven by the test orchestrator BETWEEN the two
+# launchApp blocks below — observed via maestro.log entry "Take
+# screenshot res_02_01_error_notice_visible"):
+#   adb shell svc wifi enable
+#   adb shell svc data enable
+#   # Wait ~5s for connectivity to come back before maestro fires
+#   # the Retry tap.
+#
+# Post-step (driven by the test orchestrator AFTER this YAML runs):
+#   # (network already restored by the mid-step; nothing else needed)
+#
+# What this spec verifies:
+#   1. Cold launch under offline network → ProductStateNotice
+#      'error' renders with "Couldn't refresh." plus the Retry
+#      affordance.
+#   2. Retry is reachable by accessibilityLabel ("Retry workspace
+#      refresh") because there is no testID on the inner Pressable.
+#   3. After the mid-step restores network and Retry is tapped, the
+#      ProductStateNotice clears (status returns to 'live') and the
+#      authoritative chat-home shell remains rendered.
+#   4. No raw provider internals or status codes leak into the
+#      error caption.
+# ============================================================================
+# BLOCKED — spec design conflict with product (Batch 7 closure
+# note 2026-05-17).
+#
+# This spec assumes the app surfaces ProductStateNotice
+# "Couldn't refresh." in the chat shell on an offline cold launch.
+# Reading the current App.tsx (around line 2767), the shell does
+# NOT mount on a cold launch when productState has never been
+# authoritative — it sits on `<View testID="shell.productStateLoading">`
+# until the first authoritative fetch lands. With network down
+# pre-launch the fetch never returns, the loading screen never
+# completes, and the home.chatPanel + Retry surfaces the spec
+# asserts here never render.
+#
+# Three workable fixes (any one is fine — pick one in the next
+# session before re-enabling this spec):
+#   (a) Add a cached-productState path so subsequent cold launches
+#       can show the chat shell offline and the existing fetch-error
+#       surfaces this notice.
+#   (b) Refactor the spec into a two-phase orchestration: launch
+#       online → reach chat home → drop network → trigger a
+#       refresh path that the UI actually exposes from chat home
+#       (currently there isn't one; the Retry only appears once
+#       ProductStateNotice is already in 'error').
+#   (c) Re-scope the spec to assert the loading-screen ProductStateNotice
+#       "Couldn't refresh." copy (not the in-shell pill) and
+#       remove the chat-shell assertions in Step 3.
+#
+# Leaving the original assertions intact so the spec stays an
+# honest red, not a fabricated green. Skip-tag prevents the live
+# runner from picking this up while the fixture/product mismatch
+# is unresolved.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Couldn.t refresh.*"
+    timeout: 30000
+
+# Step 1 — error notice visible after offline cold-launch.
+- assertVisible:
+    text: ".*Couldn.t refresh.*"
+- assertVisible:
+    text: "Retry"
+- takeScreenshot: "res_02_01_error_notice_visible"
+
+# Step 2 — orchestrator restores network in the window between this
+# screenshot and the tap below (it polls the maestro.log for the
+# Take-screenshot entry above). We then tap Retry, which calls
+# onProductRetry → useMobileProductState refresh → Supabase fetch
+# succeeds → status flips back to 'live' → ProductStateNotice
+# returns null. The chat-home shell underneath has been mounted
+# throughout (the notice sits inside it, not as a replacement).
+- tapOn:
+    text: "Retry"
+
+# Step 3 — recovered. The notice clears within a few seconds once
+# the fetch succeeds. We also assert that core navigation surfaces
+# remained usable.
+- extendedWaitUntil:
+    notVisible:
+      text: ".*Couldn.t refresh.*"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*Couldn.t refresh.*"
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "main-menu-button"
+- assertVisible:
+    id: "header.profileButton"
+- takeScreenshot: "res_02_02_recovered_after_retry"
+
+# Step 4 — no provider internals leaked.
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*supabase\\.co.*"
+- assertNotVisible:
+    text: ".*HTTP 5.*"
+- assertNotVisible:
+    text: ".*Traceback.*"
+- assertNotVisible:
+    text: ".*ECONNREFUSED.*"
+- assertNotVisible:
+    text: ".*Network request failed.*"

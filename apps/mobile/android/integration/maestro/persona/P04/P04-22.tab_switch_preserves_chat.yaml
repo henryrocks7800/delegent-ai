@@ -1,0 +1,25 @@
+appId: com.sidekick.v2
+name: P04-22 — Switch to Files then back to Chat keeps the chat surface intact
+tags:
+  - persona:P04
+  - navigation
+# blocked-reason: retired: the Chat / Files tab bar went with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 10000
+- tapOn:
+    id: "tab.dashboard"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 6000

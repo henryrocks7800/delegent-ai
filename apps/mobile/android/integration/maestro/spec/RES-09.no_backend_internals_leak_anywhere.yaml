@@ -1,0 +1,97 @@
+appId: com.sidekick.v2
+name: RES-09 — No Backend Internals Leak Anywhere
+tags:
+  - res
+  - live-only
+---
+# ============================================================================
+# Spec ID: RES-09 — No Backend Internals Leak Anywhere
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# Visits the major surfaces and asserts no provider or internal identifier
+# appears on any of them.
+#
+# Banned strings (a representative subset of the spec list):
+#   Supabase, service_role, anon key, RLS, sk_live, sk_test, price_id,
+#   cs_test_, cs_live_, Railway, Cloudflare, OpenRouter, Hermes config,
+#   runner URL, runner secret, raw chat, raw update, bearer token,
+#   stack trace, Traceback.
+#
+# 2026-09-28: Connections and Plan & billing replace the Files tab and the
+# Monthly capacity page, both retired.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+
+# Surface 1: the chat.
+- takeScreenshot: "res_09_01_chat"
+- assertNotVisible:
+    text: "service_role|Supabase|anon key|Railway|Cloudflare|OpenRouter|runner URL|runner secret"
+
+# Surface 2: Profile.
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.editToggle"
+    timeout: 15000
+- takeScreenshot: "res_09_02_profile"
+- assertNotVisible:
+    text: "service_role|Supabase|anon key|stripe_customer_id|stripe_subscription_id|price_id|cus_.*|sub_.*"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "main-menu-button"
+    timeout: 8000
+
+# Surface 3: the menu.
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- takeScreenshot: "res_09_03_menu"
+- assertNotVisible:
+    text: "service_role|Supabase"
+
+# Surface 4: Connections.
+- tapOn:
+    id: "menu.connectionsRow"
+- extendedWaitUntil:
+    visible:
+      id: "connections.summary"
+    timeout: 20000
+- takeScreenshot: "res_09_04_connections"
+- assertNotVisible:
+    text: "service_role|Supabase|composio|Composio|access token|refresh token|stack trace|Traceback"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+
+# Surface 5: Plan & billing.
+- tapOn:
+    id: "menu.setupGuideRow"
+- extendedWaitUntil:
+    visible:
+      text: "Monthly allowance"
+    timeout: 15000
+- takeScreenshot: "res_09_05_plan"
+- assertNotVisible:
+    text: "service_role|anon key|monthly_token_quota|stripe_subscription_id|Hermes|Cloudflare|sk_live|sk_test"
+- pressKey: Back
+- runFlow:
+    when:
+      visible:
+        id: "menu.homeRow"
+    commands:
+      - pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 8000
+- takeScreenshot: "res_09_06_back_on_chat"

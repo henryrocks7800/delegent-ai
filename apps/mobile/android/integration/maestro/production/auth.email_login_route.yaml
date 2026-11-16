@@ -1,0 +1,33 @@
+appId: com.sidekick.v2
+name: Production - email login route
+---
+# Signing in by email: an address goes in, a code is sent, and the box for
+# the code appears. The flow stops there and never enters a code.
+#
+# 2026-09-28: the address is the test account's, passed in by the pack
+# (run-mobile-test-pack.sh --sign-in <email> sets MAESTRO_TEST_EMAIL). The
+# flow used to send to qa+production-ui@example.test, which asked the live
+# sign-in service to create an account for an address nobody owns every time
+# the pack ran.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.emailInput"
+    timeout: 60000
+- tapOn:
+    id: "login.emailInput"
+- inputText: ${MAESTRO_TEST_EMAIL}
+- hideKeyboard
+- takeScreenshot: "production_auth_email_login_route_01_email"
+- tapOn:
+    id: "login.emailSubmit"
+- extendedWaitUntil:
+    visible:
+      id: "login.emailOtpInput"
+    timeout: 30000
+- takeScreenshot: "production_auth_email_login_route_02_code_box"
+- assertVisible:
+    id: "login.emailOtpVerify"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

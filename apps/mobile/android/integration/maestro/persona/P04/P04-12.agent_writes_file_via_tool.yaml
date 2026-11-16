@@ -1,0 +1,86 @@
+appId: com.sidekick.v2
+name: P04-12 — Agent writes a file via its tool, file lands in Files tab
+tags:
+  - persona:P04
+  - chat
+  - files
+  - hermes-tool-call
+  - known-flake-on-openrouter-auto
+# NOTE — this is the most direct proof of the rich Hermes experience
+# (streaming + tool call + artifact visible in drawer). It is flaky
+# against openrouter/auto because some routes return a chat-only model
+# that won't call tools no matter how explicit the prompt. Run-to-run
+# variance, not a code defect. Pin HERMES_MODEL to a tool-reliable
+# model on the runner image to make this deterministic.
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# Proves the rich Hermes experience: streaming tokens + tool call card +
+# file artefact visible in the Files drawer. End-to-end Hermes agent
+# behaviour Alex's been waiting to see.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+# Very explicit instruction — openrouter/auto routes vary and some
+# models default to chatting unless told repeatedly to use the tool.
+- inputText: "TASK: Use ONLY your write_file tool to create exactly the file notes/persona-test.md with the literal content: hello from P04. Do not respond with anything else until the tool call has executed."
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Wait for streaming activity to land — either a tool card OR the
+# eventual "still working" / completion message. The model is
+# non-deterministic; we just need SOME response in chat so we know
+# the round-trip is happening.
+- extendedWaitUntil:
+    visible:
+      text: ".*[Rr]iley.*|.*[Ff]ile.*|.*[Cc]reated.*|.*[Ww]orking.*|.*notes.*"
+    timeout: 30000
+
+# Wait an extra beat for the tool call to actually flush to disk on
+# the runner volume. openrouter/auto routes vary; some take >60s.
+- waitForAnimationToEnd:
+    timeout: 60000
+
+# Files tab → refresh → scroll to find the new file. Triple-refresh
+# pattern: the runner /files endpoint occasionally needs a beat to
+# show a brand-new write.
+- tapOn:
+    id: "tab.artifacts"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 10000
+- tapOn:
+    id: "files.refreshButton"
+- waitForAnimationToEnd:
+    timeout: 6000
+- tapOn:
+    id: "files.refreshButton"
+- waitForAnimationToEnd:
+    timeout: 6000
+- tapOn:
+    id: "files.refreshButton"
+- waitForAnimationToEnd:
+    timeout: 4000
+- scrollUntilVisible:
+    element:
+      text: ".*persona-test.*"
+    timeout: 60000
+    direction: DOWN
+    visibilityPercentage: 30
+
+- assertVisible:
+    id: "files.directory.notes"
+
+# Backend leak guard — no provider vocabulary on the Files tab.
+- assertNotVisible:
+    text: ".*OpenRouter.*"
+- assertNotVisible:
+    text: ".*Hermes agent.*"
+- assertNotVisible:
+    text: ".*Cloudflare.*"

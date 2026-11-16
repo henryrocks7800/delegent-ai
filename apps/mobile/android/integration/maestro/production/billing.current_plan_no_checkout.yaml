@@ -1,0 +1,26 @@
+appId: com.sidekick.v2
+name: Production - current plan without checkout
+---
+# A subscriber opening Plan & billing sees their plan, and nothing that would
+# start a second checkout.
+#
+# 2026-09-28: the Monthly capacity row is gone (the allowance lives on Plan &
+# billing since the agent engine), so the flow opens the plan from the menu.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.setupGuideRow"
+- extendedWaitUntil:
+    visible:
+      text: "Your plan"
+    timeout: 20000
+- takeScreenshot: "production_billing_current_plan_no_checkout_01"
+- assertVisible:
+    text: "Go to chat"
+- assertNotVisible:
+    text: "Start your free month|Subscribe now|Checkout"
+- assertNotVisible:
+    text: "Checkout session id|Stripe customer id|raw provider"

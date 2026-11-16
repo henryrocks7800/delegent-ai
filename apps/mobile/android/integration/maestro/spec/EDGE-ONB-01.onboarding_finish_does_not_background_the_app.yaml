@@ -1,0 +1,92 @@
+appId: com.sidekick.v2
+name: EDGE-ONB-01 — Onboarding Finish Does Not Background the App
+tags:
+  - edge
+  - onboarding
+  - live-only
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+# ============================================================================
+# Spec ID: EDGE-ONB-01 — Onboarding Finish Does Not Background the App
+# Source: docs/mobile-lab/EXHAUSTIVE_TEST_PLAN_2026-05.md §2.9
+# Goal-doc anchor: Phase 10 Edge Batch 1, item 1
+#
+# Precondition: seed-test-user --profile onboarding --email <test_email>.
+# User lands on the "Name your coworker" screen with no subscription.
+#
+# What this proves:
+#   Tapping "Continue" on the final onboarding step transitions to the
+#   plan picker INSIDE com.sidekick.v2 — the activity must NOT background
+#   itself, must NOT hand off to a browser/Chrome, must NOT crash to the
+#   launcher. The active-package guard (lab_assert_package) catches all
+#   three regressions in one assertion.
+#
+# Why the test exists:
+#   v1.2.1 reworked the onboarding → plan picker transition. There is no
+#   current dedicated flow that asserts the activity stays in the
+#   foreground across the transition; ONB-01 only asserts the next
+#   screen renders, not that we never bounced through the launcher.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentName.input"
+    timeout: 15000
+
+# Step 1 — fill the assistant name field with a known marker.
+- tapOn:
+    id: "onboarding.agentName.input"
+- inputText: "EdgeOnb01Probe"
+- hideKeyboard
+- takeScreenshot: "edge_onb_01_named"
+
+# Step 2 — accept the terms checkbox if present (the wording sat next to
+# the input until v1.2.6; preserved as an opt-in).
+- runFlow:
+    when:
+      visible:
+        id: "onboarding.acceptTerms"
+    commands:
+      - tapOn:
+          id: "onboarding.acceptTerms"
+
+# Step 3 — tap the "Finish" / "Continue" CTA. Different copy across
+# v1.2.x; matched as either via the testID and a fallback text regex.
+- runFlow:
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: "onboarding.finishButton"
+          commands:
+            - tapOn:
+                id: "onboarding.finishButton"
+      - runFlow:
+          when:
+            visible:
+              text: ".*Continue.*"
+          commands:
+            - tapOn:
+                text: ".*Continue.*"
+
+# Step 4 — hard-assert we land on the plan picker WITHOUT having bounced
+# out of the app. The plan picker's testID is the stable signal that the
+# in-app transition happened.
+- extendedWaitUntil:
+    visible:
+      id: "planPicker.root"
+    timeout: 8000
+- assertVisible:
+    id: "planPicker.root"
+
+# Step 5 — the app's foreground status is the actual hardening claim.
+# Maestro can't directly read mCurrentFocus, but the visibility of the
+# plan picker's testID + the absence of any browser/launcher UI is the
+# functional equivalent: if the activity backgrounded, neither assertion
+# would resolve.
+- assertNotVisible:
+    text: "Chrome"
+- assertNotVisible:
+    text: "Browser"
+- takeScreenshot: "edge_onb_01_on_plan_picker"

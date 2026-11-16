@@ -1,0 +1,81 @@
+appId: com.sidekick.v2
+name: AUTH-05 — Google Sign-In Cancel Comes Back Safely
+tags:
+  - auth
+  - release
+---
+# ============================================================================
+# Spec ID: AUTH-05 — Google Sign-In Cancel Comes Back Safely
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: release. Self-contained — no live provider state required.
+# Cold-launch the app, tap "Continue with Google", dismiss the native
+# Google account-picker via system Back, and verify the app returns to
+# the login screen with no authenticated shell visible.
+# ============================================================================
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    text: "Continue with Google"
+- takeScreenshot: "auth_05_01_login"
+
+# Step 1 — open the native Google sign-in surface
+- tapOn:
+    id: "login.googleButton"
+- takeScreenshot: "auth_05_02_after_google_tap"
+# Wait for Google's own screen to be up before backing out of it, or Back can
+# land on the sign-in screen first and the sheet open afterwards (2026-09-28).
+- extendedWaitUntil:
+    visible: "Google|Choose an account|Use another account|Checking info…|Checking info\\.\\.\\.|Checking info|sign-in needs setup|couldn't complete|Couldn't complete"
+    timeout: 30000
+
+# Step 2 — cancel via system Back. We do not assert the Google picker
+# itself rendered (it is Google-side / Play Services UI we cannot
+# selector-bind to deterministically) — we assert that Back returns the
+# user safely to our login surface, no fake-authenticated state appears,
+# and the email-entry and Google buttons remain available.
+# Google can stack a second screen of its own ("Sign in with ease", a
+# phone-number lookup) behind the account sheet, so back out until the
+# sign-in screen is back rather than pressing Back once (2026-09-28).
+- repeat:
+    times: 3
+    while:
+      notVisible:
+        id: "login.googleButton"
+    commands:
+      - pressKey: Back
+      - waitForAnimationToEnd:
+          timeout: 3000
+
+# Step 3 — back on Delegent login. assertVisible login.googleButton +
+# assertNotVisible home.chatPanel together prove (a) the cancel landed
+# us back on the login surface and (b) no Supabase session was created
+# for the cancelled attempt (no authenticated shell, no menu, no
+# setup wizard).
+- extendedWaitUntil:
+    visible:
+      id: "login.googleButton"
+    timeout: 15000
+- assertVisible:
+    id: "login.googleButton"
+- assertVisible:
+    id: "login.emailButton"
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "main-menu-button"
+- assertNotVisible:
+    id: "header.profileButton"
+- assertNotVisible:
+    id: "onboarding.agentNameInput"
+- assertNotVisible:
+    text: "Signed in"
+- assertNotVisible:
+    text: "Welcome back"
+- takeScreenshot: "auth_05_03_back_on_login"

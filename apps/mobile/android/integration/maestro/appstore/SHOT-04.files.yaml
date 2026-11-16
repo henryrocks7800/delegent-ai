@@ -1,0 +1,41 @@
+appId: com.sidekick.v2
+name: SHOT-04 - files the coworker produced
+tags:
+  - appstore
+  - live-only
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# App Store screenshot 4 of 4, mirroring the Play listing's 02-files.png.
+# Last because it is the proof shot: the work persists as real files the user
+# owns, which is the thing that separates this from a chatbot.
+- runFlow: ../sweep-shared/signin.yaml
+
+# THIS FLOW DOES NOT TYPE. Maestro cannot enter text into the chat WebView on
+# the EAS iOS simulator (see SHOT-02 for the evidence), so SEED-00 asks the
+# agent to create the files from the Android emulator first. Files live in the
+# runner and are shared per account, so they are already here.
+#
+# Why seed at all: the live workspace has a year of real testing in it and its
+# newest files are called test.txt and photo-1786688797306.jpg. Honest, but it
+# reads as a test rig rather than a working business, and this is the frame
+# that has to prove the work persists. The seeded files are real files the
+# agent really creates; nothing is mocked.
+- tapOn:
+    id: 'tab.artifacts'
+- extendedWaitUntil:
+    visible:
+      id: 'files.runnerFileList'
+    timeout: 45000
+# Refresh so the list is populated rather than showing a cold empty state, and
+# wait for the refreshed list before shooting.
+- tapOn:
+    id: 'files.refreshButton'
+- extendedWaitUntil:
+    visible:
+      id: 'files.runnerFileList'
+    timeout: 45000
+- extendedWaitUntil:
+    notVisible:
+      text: ".*Files didn't refresh.*"
+    timeout: 20000
+- takeScreenshot: 'shot_04_files'

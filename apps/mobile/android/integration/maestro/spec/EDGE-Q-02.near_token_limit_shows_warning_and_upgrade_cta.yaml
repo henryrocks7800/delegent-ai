@@ -1,0 +1,62 @@
+appId: com.sidekick.v2
+name: EDGE-Q-02 — Near token limit shows warning copy and upgrade CTA
+# Phase 9 Edge Batch 2, item 2.
+#
+# Why this matters
+# ----------------
+# When a user is ~92% through their monthly quota the chat surface
+# should give a calm warning + a clear upgrade path BEFORE the gate
+# flips to hard-limited. The composer must remain usable.
+#
+# Precondition
+# ------------
+# seed-test-user --profile ready-runner --email <test_email>
+#                --usage near-limit
+# (Sets ~92% of monthly_token_quota; productState.usageSummary.nearLimit
+# becomes true but hardLimited stays false.)
+#
+# What this proves
+# ----------------
+# (a) home.chatPanel.input is STILL visible — the composer is not
+#     replaced; the user can keep working.
+# (b) Capacity warning text is visible on the surface (either the
+#     status line under the header, or a notice strip).
+# (c) An upgrade CTA is reachable from chat without leaving the panel.
+# (d) No raw backend vocab leaks.
+#
+# Fixtures: requires near-limit seed profile.
+
+tags:
+  - edge
+  - quota
+  - chat
+  - live-only
+# blocked-reason: needs a seeded account state (near the monthly allowance); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+# Composer must remain usable.
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+
+# Capacity warning is reachable from the menu's capacity row.
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.capacityRow"
+- takeScreenshot: "edge_q_02_capacity_near_limit"
+- assertVisible:
+    text: "Capacity is nearly full|nearly full|headroom|Upgrade|Move up"
+
+# No backend vocab leaks.
+- assertNotVisible:
+    text: "Supabase|Hermes|Fly|OpenRouter|service_role|service role"
+- assertNotVisible:
+    text: "raw provider|runner URL|provider quota id"

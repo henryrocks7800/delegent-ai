@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Delegent AI",
+    "slug": "sidekick-v2",
+    "scheme": "sidekick",
+    "version": "2.7.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#FAFAF7"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.sidekick.v2",
+      "minSdkVersion": 26,
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FAFAF7"
+      },
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 55
+    },
+    "extra": {
+      "eas": {
+        "projectId": "814ee5d5-c8d8-44c2-93b0-932e898eabd8"
+      }
+    },
+    "owner": "delegentai",
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#2C4A38"
+        }
+      ]
+    ]
+  }
+}

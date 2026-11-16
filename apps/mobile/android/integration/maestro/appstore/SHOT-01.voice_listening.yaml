@@ -1,0 +1,49 @@
+appId: com.sidekick.v2
+name: SHOT-01 - voice listening orb
+tags:
+  - appstore
+  - live-only
+# blocked-reason: App Store screenshot tool, not a test; run on purpose when refreshing store images
+---
+# App Store screenshot 1 of 4. Mirrors the Play listing's first frame
+# (03-voice-listening.png) at Alex's request: he likes that set and that order.
+#
+# Voice leads because it reads as a different kind of product in one glance.
+# See docs/play-store/LISTING.md, "Why this order".
+#
+# These flows exist to CAPTURE, not to assert. They still fail loudly if a
+# screen does not appear, because a screenshot of the wrong screen is worse
+# than none: it would go on the store.
+- runFlow: ../sweep-shared/signin.yaml
+
+- tapOn:
+    id: 'tab.dashboard'
+- extendedWaitUntil:
+    visible:
+      id: 'home.chatPanel'
+    timeout: 30000
+
+# Talk is the live voice relay. The mic (dictation) is Android-only on iOS
+# builds, so Talk is the correct voice surface to show an Apple reviewer.
+#
+# Match loosely. Maestro anchors `text` to the WHOLE accessibility label, and
+# the button carries aria-label="Talk live with your coworker" with only a
+# visual caption reading "Talk". An exact 'Talk' therefore finds nothing on
+# iOS, which is what failed the first cloud run.
+- tapOn:
+    text: '.*Talk.*'
+- extendedWaitUntil:
+    visible:
+      text: '.*Listening.*|.*Connecting.*'
+    timeout: 45000
+# Let the orb settle into Listening rather than catching Connecting.
+- extendedWaitUntil:
+    visible:
+      text: '.*Listening.*'
+    timeout: 45000
+- takeScreenshot: 'shot_01_voice_listening'
+
+# Leave the session closed. An open realtime socket bills and would keep the
+# runner's microphone stream alive after the flow ends.
+- tapOn:
+    text: 'End'

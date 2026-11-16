@@ -1,0 +1,61 @@
+appId: com.sidekick.v2
+name: EDGE-V-01 — Voice permission denied shows safe copy
+# Phase 9 Edge Batch 5, item 1.
+#
+# Why this matters
+# ----------------
+# When the user denies the microphone permission, the mic button must
+# either be hidden or surface a friendly "permission denied" copy.
+# We never want a raw RECORD_AUDIO not-granted exception on screen.
+#
+# Precondition
+# ------------
+# Signed-in, ready-runner profile. Orchestrator has revoked
+# android.permission.RECORD_AUDIO via `adb shell pm revoke` before
+# launch (or the user has already denied via system prompt).
+#
+# What this proves
+# ----------------
+# (a) Chat surface is normal (input + send are visible).
+# (b) Tapping the mic button does NOT produce a raw error.
+# (c) No vendor / framework error vocab leaks.
+#
+# Fixtures: ready-runner seed; permission revoked by orchestrator
+# wrapper before flow start.
+
+tags:
+  - edge
+  - voice
+  - permissions
+  - live-only
+# blocked-reason: needs a working microphone and real speech; the emulator has neither
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- assertVisible:
+    id: "home.chatPanel.input"
+- assertVisible:
+    id: "home.chatPanel.sendButton"
+
+# The mic button may not be visible at all when permission is denied;
+# either path is OK. If it IS visible, tapping it must produce safe copy.
+- runFlow:
+    when:
+      visible:
+        id: "home.chatPanel.micButton"
+    commands:
+      - tapOn:
+          id: "home.chatPanel.micButton"
+      - waitForAnimationToEnd:
+          timeout: 3000
+      - takeScreenshot: "edge_v_01_after_mic_tap"
+
+- assertNotVisible:
+    text: "RECORD_AUDIO|SecurityException|permission denied at|granted=false|not granted"
+- assertNotVisible:
+    text: "service role|runner URL|raw provider"

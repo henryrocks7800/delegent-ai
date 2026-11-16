@@ -1,0 +1,25 @@
+appId: com.sidekick.v2
+name: P15-01 — Disable network AFTER app loads — composer still rendered, no crash
+tags:
+  - persona:P15
+  - offline
+  - network
+---
+# The persona-runner sets P15 up online so auth + productState resolve
+# fully. This flow then disables network AFTER home.chatPanel has been
+# asserted, so the user's latched product state keeps the shell up.
+- launchApp:
+    clearState: false
+- runFlow: ../../production/_signed_in_ready.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "input"
+# At this point the app's productState is latched (productEverAuthoritative).
+# Even if the user goes offline now, the shell must remain on screen.
+- assertNotVisible:
+    text: ".*network_error.*"
+- assertNotVisible:
+    text: ".*ECONNREFUSED.*"

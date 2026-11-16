@@ -1,0 +1,23 @@
+appId: com.sidekick.v2
+name: P07-N01 — Near quota doesn't block sending (unhappy path)
+tags:
+  - persona:P07
+  - unhappy-path
+  - quota
+# blocked-reason: needs a seeded account state (near the monthly allowance); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+# Near-quota (80-99% used) must NOT block sending — only over-quota does
+# (covered by P08-02). Verify the composer is still interactive.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertVisible:
+    id: "home.chatPanel.input"
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "near-limit check"
+- assertVisible:
+    id: "home.chatPanel.sendButton"

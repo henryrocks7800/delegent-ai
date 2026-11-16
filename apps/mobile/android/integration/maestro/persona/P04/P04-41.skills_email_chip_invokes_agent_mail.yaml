@@ -1,0 +1,38 @@
+appId: com.sidekick.v2
+name: 'P04-41 — Skills menu: Email chip invokes Agent Mail (credential-first)'
+tags:
+  - persona:P04
+  - skills
+  - skills-live
+# blocked-reason: retired: tests Hermes skills and commands, gone with the runners on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.skillsRow"
+- tapOn:
+    id: "skills.category.email"
+- takeScreenshot: "skills-email-01-category"
+- tapOn:
+    id: "skills.category.email.try"
+- extendedWaitUntil:
+    visible:
+      text: ".*set up agent mail.*"
+    timeout: 15000
+- takeScreenshot: "skills-email-02-phrase-sent"
+# Credential-first contract, Alex's minimum bar: teach the user to get the
+# AgentMail key, then take the handoff. The reply must steer to the provider
+# sign-up / API key journey.
+- extendedWaitUntil:
+    visible:
+      text: ".*(AgentMail|agentmail\\.to|API key|sign ?up|create.*inbox).*"
+    timeout: 120000
+- assertNotVisible:
+    text: ".*(skill.{0,24}not (found|available)|doesn.t exist|not in the current environment).*"
+- takeScreenshot: "skills-email-03-reply"

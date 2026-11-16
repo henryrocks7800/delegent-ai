@@ -1,0 +1,169 @@
+node_modules/
+# Real inbox trial material stays local and out of Git.
+/artifacts/typesafe/private/
+/artifacts/typesafe/*-schema.json
+.expo/
+.hermes/
+dist/
+build/
+.next/
+# Full-regression orchestrator working dir + per-run reports (scripts/full-regression.mjs)
+.regression/
+docs/regression/
+# Allure HTML reports — heavy + regenerable; the permanent copies are attached to
+# GitHub releases. The date folders + README stay; the generated HTML does not.
+tests/reports/**/*.html
+tests/reports/**/*/
+!tests/reports/README.md
+.env
+.env.*
+!.env.example
+!.env.public.example
+!.env.integration.example
+.env.integration.local
+.env.live
+.coworker-ai/*.env
+**/.coworker-ai/*.env
+*.apk
+*.aab
+
+# Maestro / observation screenshots dropped at repo root. The canonical
+# evidence path is docs/mobile-lab/evidence/<ts>/; the bare PNGs at the
+# project root are by-products of ad-hoc test runs and must never ship.
+/*.png
+/newuser_*.png
+/production_*.png
+/matrix_*.png
+/main_event_*.png
+
+# Per-agent skill caches dropped under .claude/skills/. These are private
+# to the active Claude session and must not ship — they're 100s of MB.
+.claude/skills/
+.claude/worktrees/
+
+# Phone-ready release bundle artifacts. The canonical copy is hosted at
+# https://your-firebase-project.web.app/v1.1.0-test-*.zip. The local zip is
+# regenerated on every redeploy; never commit it.
+releases/*.zip
+releases/v1.1.0-test-*/
+apps/website/public/v1.1.0-test-*.zip
+apps/website/public/delegent-test-*.apk
+coverage/
+*.tsbuildinfo
+__pycache__/
+.pytest_cache/
+.venv-assets/
+supabase/.temp/
+evidence/
+share/
+
+# Per-run evidence dirs. Kept on disk for triage but never committed —
+# each timestamp dir is megabytes of screenshots + logcat.
+docs/mobile-lab/evidence/
+docs/mobile-lab/maestro-evidence/
+.lab/
+apps/worker/.wrangler/
+apps/worker/.hermes-tmp-worker-entry.ts
+# The Firebase CLI's upload cache, written on every `firebase deploy`.
+apps/webapp/.firebase/
+.claude/*
+# Skills are private per-agent caches (100s of MB of Android upstream
+# docs). Re-allow only the bespoke project skill that's actually
+# checked into the repo.
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/delegent-mobile-testing/
+!.claude/skills/delegent-expo-rn-testing/
+!.claude/skills/delegent-integration-validation/
+!.claude/skills/firebase-test-lab/
+!.claude/skills/delegent-full-test-run/
+!.claude/skills/delegent-add-a-connection/
+!.claude/skills/new-ai-business/
+!.claude/skills/delegent-always-on-session/
+tmp/
+!docs/tmp/
+.tmp_*
+*.nexit
+*:Zone.Identifier
+# Underscore-prefixed scratch scripts (commit-batch helpers, one-off probes,
+# rerun wrappers). Convention: scripts/_* are throwaway — never commit them.
+scripts/_*
+
+# Local provider dumps / unredacted debugging artifacts
+*.unredacted.json
+*.secret.json
+
+# Local provider/API tokens — never commit. Series 4 (Fly Machines)
+# provisioner tokens are emitted as <name>-provisioner-dev.txt at the repo
+# root by the operator's setup flow.
+/*-provisioner-dev.txt
+/.env.fly.local
+/.env.provider.local
+apps/website/public/install/delegent-ai-release.zip
+apps/website/public/install/v124-signed-out-flow.mp4
+apps/website/public/install/*.mp4
+apps/website/public/install/*.mp4
+apps/mobile/android/.kotlin/
+
+# The web app's chat surface is generated from apps/mobile/assets/chat-webview/
+# by apps/webapp/scripts/sync-chat-webview.mjs, which the build and the tests both
+# run. Committing it would let a stale copy outlive a chat fix.
+apps/webapp/public/chat-frame/
+
+# Rendered marketing media. The scripts and specs are the source of truth and
+# are committed; the renders are regenerable megabytes, and a stale render can
+# outlive a claim we have since retracted (see the softened-claims table in
+# docs/play-store/LISTING.md).
+marketing/video/out/
+marketing/screenshots/out/
+# The 2026-08 Meta ad set. Same rule, different directory: infra/scripts/
+# build-ad-*.py and build-meta-ad.py are the source of truth and are committed,
+# the 61 MB of renders under here are not. The README is kept because the
+# source footage under ads-v2/source/ is NOT regenerable by those scripts.
+marketing/video/ads-v2/*
+!marketing/video/ads-v2/README.md
+# Dan's September ad creative, 77 MB of .mov straight off his machine. Same
+# rule: the README is tracked, the binaries are not. These ARE the masters and
+# nothing in this repo regenerates them, so read the README before assuming a
+# copy exists elsewhere.
+marketing/video/dan-2026-09-01/*
+!marketing/video/dan-2026-09-01/README.md
+
+# Windows desktop download binary (build artifact; produced by the desktop build)
+apps/website/public/install/delegent-ai-windows.zip
+
+# Operations dashboard: generated, and carries live customer usage data
+ops/cost-dashboard/index.html
+ops/cost-dashboard/economics.html
+ops/cost-dashboard/snapshot.json
+# The copy of the economics page that gets bundled into the private Worker
+ops/cost-dashboard/publish/page.html
+
+# Local-only credential drop for eas submit. Never commit.
+.secrets/
+
+# Renders and generated audio live on the YouTube channel as unlisted archive
+# copies (see delegent-ai-operations/marketing/video-archive.md), not in git.
+marketing/video/*.mp4
+marketing/video/*.mp3
+marketing/video/interview/*.mp4
+
+# Google Ads video cuts are renders of the 9:16 masters; rebuild with marketing/video/build-google-ads-videos.sh
+marketing/google-ads/video/*.mp4
+
+# September 9 source footage and renders stay local; retain the build recipes.
+marketing/video/night/*
+!marketing/video/night/PROMPTS.md
+!marketing/video/night/build-night.sh
+!marketing/video/night/build-night-v2.sh
+marketing/video/interview-pro/*
+!marketing/video/interview-pro/PROMPTS.md
+!marketing/video/interview-pro/build-interview-pro.sh
+marketing/video/demo-v2/*
+!marketing/video/demo-v2/README.md
+# Generated contact sheets and end cards are reproducible media, not source.
+marketing/google-ads/video/*-check.png
+marketing/video/store-endcard-*.png
+
+# Model evaluation output (regenerable, synthetic data only)
+/apps/agent/eval/results/

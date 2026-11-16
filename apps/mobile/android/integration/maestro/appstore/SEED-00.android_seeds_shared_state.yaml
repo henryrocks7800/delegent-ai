@@ -1,0 +1,71 @@
+appId: com.sidekick.v2
+name: SEED-00 - Android seeds the chat and files the iOS shots need
+tags:
+  - appstore
+  - live-only
+# blocked-reason: App Store screenshot tool, not a test; run on purpose when refreshing store images
+---
+# WHY THIS EXISTS, and why it runs on ANDROID.
+#
+# Maestro cannot type into the chat WebView on the EAS iOS simulator. Proven on
+# 2026-08-14: SHOT-02 and SHOT-04 both reported inputText and the send tap as
+# COMPLETED, and nothing was ever sent. Three runs, three identical frames
+# frozen on the same history. The Android emulator on this box types into the
+# same WebView without trouble, and so does a real iPhone, so this is a
+# harness limitation rather than a defect.
+#
+# The way around it is that chat history and files are SHARED per account, not
+# per device. So Android seeds the state, and the iOS flows only need to look
+# at it, which they can do.
+#
+# Run on the emulator:
+#   npm run mobile:maestro -- apps/mobile/android/integration/maestro/appstore/SEED-00.android_seeds_shared_state.yaml
+- runFlow: ../sweep-shared/signin.yaml
+
+- tapOn:
+    id: 'tab.dashboard'
+- extendedWaitUntil:
+    visible:
+      id: 'home.chatPanel'
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      text: '.*Message.*'
+    timeout: 30000
+
+# 1. The invoice email SHOT-02 photographs. The number is what makes the wait
+#    real: this account's history already contains an older invoice draft, and
+#    waiting on generic words like "Kind regards" matched that instantly.
+- tapOn:
+    text: '.*Message.*'
+- inputText: 'Draft a short polite email chasing invoice 2041, which is 14 days overdue'
+- tapOn:
+    text: 'Send message'
+- extendedWaitUntil:
+    visible:
+      text: '.*2041.*'
+    timeout: 240000
+- extendedWaitUntil:
+    notVisible:
+      text: '.*Thinking.*|.*Working.*'
+    timeout: 90000
+- takeScreenshot: 'seed_00_invoice_reply'
+
+# 2. The files SHOT-04 photographs. The live workspace has a year of real
+#    testing in it and its newest files are called test.txt and
+#    photo-1786688797306.jpg: honest, but it reads as a test rig rather than a
+#    working business. These are real files the agent really creates.
+- tapOn:
+    text: '.*Message.*'
+- inputText: 'Create three small files in my workspace: Monthly-Expenses-July.csv with a few example expense rows, Invoice-Reminders.md listing two outstanding invoices, and Supplier-Contacts.csv with three suppliers. Just confirm when done.'
+- tapOn:
+    text: 'Send message'
+- extendedWaitUntil:
+    visible:
+      text: '.*Supplier-Contacts.*'
+    timeout: 300000
+- extendedWaitUntil:
+    notVisible:
+      text: '.*Thinking.*|.*Working.*'
+    timeout: 90000
+- takeScreenshot: 'seed_00_files_created'

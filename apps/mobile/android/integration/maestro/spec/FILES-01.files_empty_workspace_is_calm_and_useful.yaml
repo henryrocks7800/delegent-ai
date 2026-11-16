@@ -1,0 +1,90 @@
+appId: com.sidekick.v2
+name: FILES-01 — Files Empty Workspace Is Calm and Useful
+tags:
+  - files
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: FILES-01
+# Friendly name: Files Empty Workspace Is Calm and Useful
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Requires a signed-in user whose runner workspace is
+# empty (no files saved yet). The harness signs the user in via
+# sign-in-via-admin-link.mjs against a clean runner.
+#
+# ----- Spec body ------------------------------------------------------------
+# **Status:** Covered by production smoke `files.empty_drawer_state.yaml`,
+# but this version pins concrete assertions for the empty state.
+# **Precondition:** Signed-in user, runner workspace empty.
+#
+# **Flow and assertions:**
+# 1. Tap the Files tab.
+# 2. The empty state copy "Anything your coworker saves for you lands here."
+#    is visible alongside a Refresh action. No legacy "warming up" copy. No
+#    provider/runner internals leaked.
+# 3. Tap Refresh — refreshes without crashing or replacing the empty state
+#    with a noisy error.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: "Files"
+    timeout: 15000
+- takeScreenshot: "files_01_01_landed_chat_or_files"
+
+- tapOn:
+    text: "Files"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 15000
+- takeScreenshot: "files_01_02_files_tab_open"
+
+# Step 2 — empty-state pins. The full subtitle "Anything your coworker saves
+# for you lands here." wraps across two lines on the device, and Maestro's
+# `assertVisible text:` is per-line, so we pin a substring that lives within
+# one visual line.
+- assertVisible:
+    id: "files.runnerFileList"
+- assertVisible:
+    text: ".*Anything your coworker.*"
+- assertVisible:
+    id: "files.refreshButton"
+
+# Legacy "warming up" copy must NOT come back. The header may show a
+# "Preparing" status badge when the runner is still being provisioned — that
+# is unrelated to the Files empty state, so we don't blanket-block "preparing".
+- assertNotVisible:
+    text: "Cloud space warming up"
+- assertNotVisible:
+    text: ".*warming up.*"
+- assertNotVisible:
+    text: "not_ready"
+- assertNotVisible:
+    text: ".*workspace is preparing.*"
+
+# No leaks
+- assertNotVisible:
+    text: "runner URL"
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "Railway"
+- assertNotVisible:
+    text: "Cloudflare"
+
+# Step 3 — Refresh works and the empty state remains
+- tapOn:
+    id: "files.refreshButton"
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 10000
+- takeScreenshot: "files_01_03_after_refresh"
+- assertVisible:
+    id: "files.runnerFileList"
+- assertVisible:
+    text: ".*Anything your coworker.*"

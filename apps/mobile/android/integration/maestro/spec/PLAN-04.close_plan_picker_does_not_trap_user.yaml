@@ -1,0 +1,82 @@
+appId: com.sidekick.v2
+name: PLAN-04 — Close Plan Picker Does Not Trap User
+tags:
+  - plan
+  - live-only
+# blocked-reason: needs a signed-in account with no subscription; the test account the pack signs in is a subscriber
+---
+# ============================================================================
+# Spec ID: PLAN-04 — Close Plan Picker Does Not Trap User
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Authenticated unsubscribed-onboarded user
+# (seed --profile unsubscribed). The product's gate auto-routes
+# this user to the plan picker (setup wizard). We tap the Close
+# setup button and assert the user is NOT trapped — they remain
+# in a safe unsubscribed-aware state where the paid-chat surface
+# isn't fraudulently active and the picker remains reachable.
+#
+# The spec also lists a second path: active subscriber opens
+# setup from the menu (menu.setupGuideRow), taps Close, returns
+# to Chat. That second path is logged in BATCH-5-REPORT.md as a
+# follow-up — a single Maestro flow can't switch user states
+# mid-run, and the subscriber→close path exhibited a timing-
+# sensitive failure (the menu-row tap intermittently landed the
+# app on the launcher) that needs separate isolation work.
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 15000
+- assertVisible:
+    id: "setup.stepIndicator"
+- assertVisible:
+    text: "Pick a plan, meet your coworker"
+- takeScreenshot: "plan_04_01_auto_routed_picker"
+
+# Step 1 — Close the setup wizard. The wizard's close button has
+# accessibilityLabel="Close setup guide" but no resource-id, and
+# Maestro 2.5.1's `id:` selector doesn't bind to content-desc on
+# this build. The wizard's onRequestClose handler also fires on
+# hardware Back (App.tsx onModalRequestClose: view='setup' →
+# onClose()), so the user-facing contract is identical.
+- pressKey: Back
+
+# Step 2 — User is NOT trapped on a dead-end. The app must remain in a
+# safe unsubscribed-aware state — paid-chat surfaces (composer, mic,
+# send) must NOT be active, and the picker must remain reachable
+# (either still visible OR re-routable via a navigation affordance).
+# The most reliable assertion: the chat composer is NOT shown as
+# active (no input, send, mic), and the picker re-shows on relaunch.
+- assertNotVisible:
+    id: "input"
+- assertNotVisible:
+    id: "sendBtn"
+- assertNotVisible:
+    id: "micBtn"
+- takeScreenshot: "plan_04_02_after_close"
+
+# Step 3 — Cold relaunch. The unsubscribed user lands back on the
+# picker (the product correctly re-routes them to the paid-content
+# gate, proving the close didn't leave the user in a fake-subscribed
+# state in storage).
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 15000
+- assertVisible:
+    id: "setup.stepIndicator"
+- assertVisible:
+    text: "Pick a plan, meet your coworker"
+- assertNotVisible:
+    id: "input"
+- takeScreenshot: "plan_04_03_picker_re_shown_after_relaunch"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: "stack trace"

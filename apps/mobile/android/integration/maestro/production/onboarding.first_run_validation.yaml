@@ -1,0 +1,57 @@
+appId: com.sidekick.v2
+name: Production - onboarding first-run validation
+---
+# Whatever a launch lands on is checked: onboarding's app step, its naming
+# step (where Finish stays locked until the Terms are accepted), or the chat
+# with no onboarding over it. The pack's test account is onboarded, so it
+# normally lands on the chat.
+#
+# 2026-09-28: the steps are probed but never completed. The old flow ticked
+# the Terms and finished onboarding with the name "Delegent QA Agent", which
+# would have renamed the live test account's coworker had it ever seen the
+# step. The first wait covers every landing (the chat header's "Online",
+# "Name your coworker", the app step's question), so no run can pass having
+# checked nothing.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "Online|Name your coworker|First run|What would you like help managing\\?"
+    timeout: 60000
+- takeScreenshot: "production_onboarding_first_run_validation_01"
+
+# App step.
+- runFlow:
+    when:
+      visible: "What would you like help managing\\?"
+    commands:
+      - assertVisible:
+          id: "onboarding.appsContinue"
+
+# Naming step: Finish is locked until the Terms box is ticked.
+- runFlow:
+    when:
+      visible: "Name your coworker|First run"
+    commands:
+      - assertVisible:
+          id: "onboarding.agentNameInput"
+      - assertVisible:
+          id: "onboarding.termsCheckbox"
+      - tapOn:
+          id: "onboarding.finishButton"
+      - assertVisible:
+          id: "onboarding.agentNameInput"
+      - takeScreenshot: "production_onboarding_first_run_validation_02_locked"
+
+# Already onboarded: the chat, with no onboarding on top of it.
+- runFlow:
+    when:
+      visible:
+        id: "home.chatPanel"
+    commands:
+      - assertNotVisible:
+          id: "onboarding.agentNameInput"
+      - assertNotVisible:
+          id: "onboarding.appsContinue"
+
+- assertNotVisible:
+    text: "raw provider|runner URL|service role"

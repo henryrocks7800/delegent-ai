@@ -1,0 +1,52 @@
+appId: com.sidekick.v2
+name: CHAT-03 — Send Message Shows Mine, Thinking, Then Reply
+tags:
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-03 — Send Message Shows Mine, Thinking, Then Reply
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# The typed message appears as the person's own bubble with its exact text,
+# and the coworker's reply arrives. The message asks for one known word, so
+# the reply is recognised without guessing its wording.
+#
+# 2026-09-28: rewritten for the WebView chat. Bubbles and the typing dots are
+# part of the chat document and have no Android ids, so the bubbles are
+# matched by their text; the deferred "reply arrives" half now runs for real
+# on the agent engine (the stub runner it waited for is retired).
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "input"
+- inputText: "Reply with only the word MANGO."
+- hideKeyboard
+- takeScreenshot: "chat_03_01_before_send"
+- assertVisible:
+    id: "sendBtn"
+- tapOn:
+    id: "sendBtn"
+
+# The person's own bubble, with the exact text.
+- extendedWaitUntil:
+    visible:
+      text: "Reply with only the word MANGO\\."
+    timeout: 15000
+- takeScreenshot: "chat_03_02_mine"
+
+# The reply.
+- extendedWaitUntil:
+    visible:
+      text: "(?i)\\W*mango\\W*"
+    timeout: 120000
+- takeScreenshot: "chat_03_03_reply"
+- assertVisible:
+    id: "input"
+
+# No raw backend or provider text.
+- assertNotVisible:
+    text: "service_role|stack trace|Traceback|runner-stub"

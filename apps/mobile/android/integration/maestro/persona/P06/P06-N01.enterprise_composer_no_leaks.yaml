@@ -1,0 +1,20 @@
+appId: com.sidekick.v2
+name: P06-N01 — Enterprise composer doesn't leak provider vocab (unhappy path)
+tags:
+  - persona:P06
+  - unhappy-path
+  - leak-guard
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*OpenRouter.*"
+- assertNotVisible:
+    text: ".*Hermes agent.*"
+- assertNotVisible:
+    text: ".*Stripe.*subscription_id.*"

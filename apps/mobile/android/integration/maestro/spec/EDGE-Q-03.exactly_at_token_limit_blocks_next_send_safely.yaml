@@ -1,0 +1,67 @@
+appId: com.sidekick.v2
+name: EDGE-Q-03 — Exactly at token limit blocks next send safely
+# Phase 9 Edge Batch 2, item 3.
+#
+# Why this matters
+# ----------------
+# A user who lands exactly at the cap (e.g. their last send pushed them
+# over) must see a clear, calm pause card — not an error, not a silent
+# no-op. The pause card replaces the composer to make the state
+# obvious; tapping send must not enqueue a new request.
+#
+# Precondition
+# ------------
+# seed-test-user --profile ready-runner --email <test_email>
+#                --usage hard-limited
+# (Same seed as EDGE-Q-01; this flow proves the SEND PATH is also gated,
+# not just the surface state.)
+#
+# What this proves
+# ----------------
+# (a) Pause card is present.
+# (b) Composer (text input) is NOT in the tree — the pause card
+#     replaces it.
+# (c) The upgrade and manage CTAs are reachable on the card.
+# (d) No backend vocab leaks.
+#
+# Fixtures: requires hard-limited seed profile.
+
+tags:
+  - edge
+  - quota
+  - chat
+  - live-only
+# blocked-reason: needs a seeded account state (exactly at the monthly allowance); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.quotaPause"
+    timeout: 15000
+
+- assertVisible:
+    id: "home.chatPanel.quotaPause"
+- assertVisible:
+    id: "home.chatPanel.quotaPause.upgrade"
+- assertVisible:
+    id: "home.chatPanel.quotaPause.manage"
+
+# The composer must be REPLACED, not just disabled — the input testID
+# must not resolve.
+- assertNotVisible:
+    id: "home.chatPanel.input"
+- assertNotVisible:
+    id: "home.chatPanel.sendButton"
+
+- takeScreenshot: "edge_q_03_at_limit_pause_card"
+
+- assertNotVisible:
+    text: "Supabase|Hermes|Fly|OpenRouter|service_role|service role"
+- assertNotVisible:
+    text: "raw provider|runner URL|provider quota id"

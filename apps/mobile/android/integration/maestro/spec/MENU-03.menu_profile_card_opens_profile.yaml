@@ -1,0 +1,46 @@
+appId: com.sidekick.v2
+name: MENU-03 — Menu Profile Card Opens Profile
+tags:
+  - menu
+  - live-only
+---
+# ============================================================================
+# Spec ID: MENU-03 — Menu Profile Card Opens Profile
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+# The account card at the top of the menu opens Profile, which shows the same
+# account, and the menu is closed behind it.
+#
+# 2026-09-28: the card is found by its label ("Open profile") rather than a
+# seeded name ("Test Customer 4", a user the retired seeding scripts
+# made), and the account is recognised by the address the pack signed in with
+# (MAESTRO_TEST_EMAIL).
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- takeScreenshot: "menu_03_01_drawer_open"
+- tapOn:
+    text: "Open profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile.editToggle"
+    timeout: 8000
+- assertVisible:
+    id: "profile.signOutButton"
+- assertVisible:
+    text: ${MAESTRO_TEST_EMAIL}
+- assertNotVisible:
+    id: "menu.homeRow"
+- assertNotVisible:
+    id: "menu.signOutButton"
+- takeScreenshot: "menu_03_02_profile_open"
+- assertNotVisible:
+    text: "service_role"

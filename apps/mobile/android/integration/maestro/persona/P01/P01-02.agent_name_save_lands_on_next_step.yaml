@@ -1,0 +1,34 @@
+appId: com.sidekick.v2
+name: P01-02 — Save agent name lands on next step and does not lose focus (D1)
+tags:
+  - persona:P01
+  - onboarding
+  - regression:D1
+# blocked-reason: needs a signed-in account that has not finished onboarding; the test account the pack signs in has
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "onboarding.agentNameInput"
+    timeout: 30000
+- tapOn:
+    id: "onboarding.agentNameInput"
+- inputText: "Riley"
+# Accept the Terms checkbox if present (canSubmit gating).
+- runFlow:
+    when:
+      visible:
+        text: ".*[Aa]ccept.*[Tt]erms.*|.*I accept.*"
+    commands:
+      - tapOn:
+          text: ".*[Aa]ccept.*[Tt]erms.*|.*I accept.*"
+- tapOn:
+    id: "onboarding.finishButton"
+# Within 4s the app must still be in foreground showing either home
+# (chat panel) or the next onboarding step (plan picker). The D1 bug
+# was: app lost focus and landed on home screen.
+- extendedWaitUntil:
+    visible:
+      text: ".*Riley.*|.*Choose your plan.*|.*Hi! I.m Riley.*|.*Capacity.*|.*Online.*"
+    timeout: 12000

@@ -1,0 +1,61 @@
+appId: com.sidekick.v2
+name: EDGE-S-02 — Global spend pause shows safe copy
+# Phase 9 Edge Batch 2, item 5.
+#
+# Why this matters
+# ----------------
+# An ops-level guard (global token spend pause) must produce calm,
+# self-help copy in the user UI, never an alarming error. The pause
+# should look like a per-user quota event, not an outage.
+#
+# Precondition
+# ------------
+# A worker-level spend-pause flag is active. Today this is controlled
+# by a Cloudflare KV key the user never sees. Track follow-up: add a
+# spec-only emulator stub so this can be run as a deterministic flow.
+#
+# What this proves
+# ----------------
+# (a) The pause card or equivalent state is visible.
+# (b) Copy stays product-facing: no "Worker", "Cloudflare", "spend",
+#     "budget" etc.
+# (c) Manage/upgrade path is reachable (the user has a next step).
+#
+# Fixtures: requires global spend-pause flag. Skip if not seeded.
+
+tags:
+  - edge
+  - quota
+  - ops
+  - live-only
+# blocked-reason: needs a server failure injected on purpose; the live service has no switch for it
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+
+# The pause card or a similar "tasks paused" surface is visible.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.quotaPause"
+    timeout: 15000
+- assertVisible:
+    id: "home.chatPanel.quotaPause"
+- takeScreenshot: "edge_s_02_global_pause_safe_copy"
+
+# The user has a self-serve next step.
+- assertVisible:
+    id: "home.chatPanel.quotaPause.upgrade"
+- assertVisible:
+    id: "home.chatPanel.quotaPause.manage"
+
+# Ops vocab must not leak.
+- assertNotVisible:
+    text: "Worker|Cloudflare|KV|OpenRouter|Hermes|Fly|Supabase"
+- assertNotVisible:
+    text: "spend pause|budget|billing event|provider"
+- assertNotVisible:
+    text: "service_role|service role|raw provider|runner URL"

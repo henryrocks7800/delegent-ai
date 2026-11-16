@@ -1,0 +1,23 @@
+appId: com.sidekick.v2
+name: P03-N01 — Provisioning state shows no internal vocabulary (unhappy path)
+tags:
+  - persona:P03
+  - provisioning
+  - unhappy-path
+  - leak-guard
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Preparing.*|.*Setting up.*"
+    timeout: 30000
+- assertNotVisible:
+    text: ".*hermes_instance.status.*"
+- assertNotVisible:
+    text: ".*provisioning_tier_id.*"
+- assertNotVisible:
+    text: ".*fly_machine_id.*"
+- assertNotVisible:
+    text: ".*fly_app_name.*"

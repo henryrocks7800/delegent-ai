@@ -1,0 +1,58 @@
+appId: com.sidekick.v2
+name: CHAT-02 — Typing Changes Mic Into Send
+tags:
+  - chat
+  - live-only
+---
+# ============================================================================
+# Spec ID: CHAT-02
+# Friendly name: Typing Changes Mic Into Send
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+#
+# 1. Empty composer: Voice (mic) ready, Send drawn but disabled.
+# 2. Type text: Send enabled, Voice still there.
+# 3. Clear the text: Send disabled again.
+#
+# 2026-09-28: in the redesigned composer Send no longer swaps places with the
+# mic. Both stay on the tools row (the mic is Voice, beside Talk), and Send
+# stays disabled until there is something to send. The spec's intent, that
+# an empty draft cannot be sent and a typed one can, is what is checked.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- takeScreenshot: "chat_02_01_landed_empty_draft"
+
+# Step 1 — empty draft.
+- assertVisible:
+    id: "micBtn"
+- assertVisible:
+    id: "sendBtn"
+    enabled: false
+
+# Step 2 — type some text.
+- tapOn:
+    id: "input"
+- inputText: "Hello"
+- takeScreenshot: "chat_02_02_after_typing"
+- extendedWaitUntil:
+    visible:
+      id: "sendBtn"
+      enabled: true
+    timeout: 5000
+- assertVisible:
+    id: "micBtn"
+
+# Step 3 — erase it; Send is disabled again and nothing was sent.
+- eraseText: 10
+- hideKeyboard
+- takeScreenshot: "chat_02_03_after_erase"
+- extendedWaitUntil:
+    visible:
+      id: "sendBtn"
+      enabled: false
+    timeout: 5000
+- assertNotVisible:
+    text: "service_role|runner URL"

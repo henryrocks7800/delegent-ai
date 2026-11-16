@@ -1,0 +1,25 @@
+appId: com.sidekick.v2
+name: P05-04 — Quota meter shows pro-office 600k denominator
+tags:
+  - persona:P05
+  - quota
+# blocked-reason: retired: tests the Studio / Pro Office / Enterprise tiers, replaced by one plan on 2026-09-15
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.capacityRow"
+    timeout: 4000
+- tapOn:
+    id: "menu.capacityRow"
+- extendedWaitUntil:
+    visible:
+      text: ".*Plenty of room.*|.*[Cc]apacity.*|.*600,?000.*|.*600k.*|.*Manage plan.*"
+    timeout: 6000

@@ -1,0 +1,113 @@
+appId: com.sidekick.v2
+name: 'SWEEP-00 - Sign in with a session minted outside the app'
+tags:
+  - sweep
+  - live-only
+env:
+  ACCESS_TOKEN: ${MAESTRO_ACCESS_TOKEN}
+  REFRESH_TOKEN: ${MAESTRO_REFRESH_TOKEN}
+# blocked-reason: iOS cloud sweep: signs in with a session minted outside the app (MAESTRO_ACCESS_TOKEN); runs in the EAS Maestro workflow
+---
+# The door into every signed-in sweep flow that follows.
+#
+# Why not sign in through the UI: tapping `login.emailSubmit` makes the app
+# call signInWithOtp, which mints a NEW code and supersedes any code we minted
+# beforehand. We cannot read the emailed one (it goes to a Gmail account we do
+# not have IMAP on), and minting AFTER the tap would need the Supabase
+# service-role key inside Expo's cloud. That key bypasses row-level security
+# entirely, so it does not travel to a third party to make a test convenient.
+#
+# Instead the operator mints a real session on their own box (admin
+# generate_link, then verify) and passes only the resulting tokens in. They
+# expire in an hour and are scoped to one user, which is a far smaller blast
+# radius than the service-role key.
+#
+# The query-string form matches what the app already parses (see AUTH-09).
+# `clearState: true` matters twice over: it guarantees a known starting point,
+# AND completeEmailLinkSignIn deliberately REFUSES a link while a session
+# exists, so a leftover session would make this fail by design.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: 'login.googleButton'
+    timeout: 30000
+- takeScreenshot: 'sweep_00_01_login'
+
+- openLink: 'sidekick://auth/callback?access_token=${ACCESS_TOKEN}&refresh_token=${REFRESH_TOKEN}&type=magiclink'
+
+# iOS puts a SYSTEM confirmation in front of any custom-scheme link that comes
+# from outside the app: "Open in 'Delegent AI'?" with Cancel / Open. Android
+# just delivers the intent. Without this tap the link is never delivered.
+#
+# It also has to be handled BEFORE any "did we leave the login screen" check,
+# because the dialog physically covers the login controls: the first version of
+# this flow asserted the Google button had gone, passed on the dialog obscuring
+# it, and reported a sign-in that had not happened. Absence is not arrival.
+- runFlow:
+    when:
+      visible:
+        text: 'Open'
+    commands:
+      - tapOn:
+          text: 'Open'
+- takeScreenshot: 'sweep_00_02_link_opened'
+
+# The first-run ad-consent modal is dealt with BEFORE anything else, because it
+# covers the entire shell: waiting on main-menu-button first would time out
+# while the app was perfectly healthy, which is exactly how the first two
+# attempts at this flow failed.
+#
+# clearState: true guarantees a fresh install, so on this flow the modal is
+# EXPECTED, not optional, and waiting for it deterministically beats a
+# conditional that races it. Matched on its visible text rather than a testID,
+# because on iOS a React Native Modal renders in its own window and the backdrop
+# testID proved unreliable to query there.
+#
+# Declined deliberately: a test must never opt a real account into advertising
+# tracking, and decline is also the privacy-preserving default.
+- extendedWaitUntil:
+    visible:
+      text: 'No thanks'
+    timeout: 90000
+- takeScreenshot: 'sweep_00_03_ad_consent'
+- tapOn:
+    text: 'No thanks'
+- extendedWaitUntil:
+    notVisible:
+      text: 'No thanks'
+    timeout: 20000
+
+# A staged OTA banner would equally sit over the shell. "Later", never
+# "Restart": restarting mid-pack would drop the session the rest depends on.
+- runFlow:
+    when:
+      visible:
+        text: 'Later'
+    commands:
+      - tapOn:
+          text: 'Later'
+
+# NOW the real check: positive evidence of the signed-in shell, not merely the
+# absence of the login screen.
+- extendedWaitUntil:
+    visible:
+      id: 'main-menu-button'
+    timeout: 60000
+- assertNotVisible:
+    id: 'login.googleButton'
+- assertNotVisible:
+    id: 'login.emailInput'
+- assertVisible:
+    id: 'tab.dashboard'
+- assertVisible:
+    id: 'tab.artifacts'
+- takeScreenshot: 'sweep_00_04_shell_clear'
+
+# Nothing internal may ever be on screen, on any surface, at any time.
+- assertNotVisible:
+    text: '.*service_role.*'
+- assertNotVisible:
+    text: '.*Supabase.*'
+- assertNotVisible:
+    text: '.*Traceback.*'

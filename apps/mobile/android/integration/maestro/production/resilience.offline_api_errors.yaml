@@ -1,0 +1,62 @@
+appId: com.sidekick.v2
+name: Production - Offline and API errors
+onFlowComplete:
+  - setAirplaneMode: disabled
+---
+# With the network gone, a screen that reads from our servers says so in plain
+# words, keeps what it last knew, offers a retry, and recovers when the
+# network comes back, without a restart.
+#
+# 2026-09-28: rewritten on Connections (it reads two services and has a retry)
+# with real airplane mode. The Files tab this used to probe went with the
+# runners. onFlowComplete turns airplane mode off again even if a step fails.
+- launchApp:
+    clearState: false
+- runFlow: _signed_in_ready.yaml
+
+# Online first, so there is a complete list to remember.
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.connectionsRow"
+- extendedWaitUntil:
+    visible:
+      id: "connections.summary"
+    timeout: 30000
+- back
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 10000
+- back
+
+- setAirplaneMode: enabled
+- tapOn:
+    id: "main-menu-button"
+- tapOn:
+    id: "menu.connectionsRow"
+- extendedWaitUntil:
+    visible:
+      id: "connections.readError"
+    timeout: 45000
+- takeScreenshot: "production_resilience_offline_api_errors_01_offline"
+- assertVisible:
+    text: "Some cards show the last known connection status\\..*"
+- assertVisible:
+    text: "Email"
+- assertNotVisible:
+    text: "RedBox|Unhandled promise|TypeError|Network request failed|raw provider|runner URL|service role"
+
+- setAirplaneMode: disabled
+# The phone needs a few seconds to rejoin the network before a retry can
+# work. Maestro has no plain pause, so this waits in its script engine.
+- evalScript: ${ var until = Date.now() + 8000; while (Date.now() < until) {} }
+- tapOn:
+    id: "connections.retry"
+# A retry that failed would put the error back within a couple of seconds.
+- evalScript: ${ var until = Date.now() + 6000; while (Date.now() < until) {} }
+- assertNotVisible:
+    id: "connections.readError"
+- assertVisible:
+    id: "connections.summary"
+- takeScreenshot: "production_resilience_offline_api_errors_02_recovered"

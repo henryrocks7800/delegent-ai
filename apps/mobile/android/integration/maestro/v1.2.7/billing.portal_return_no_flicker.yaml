@@ -1,0 +1,31 @@
+appId: com.sidekick.v2
+name: v1.2.7 D7 — Stripe billing portal return does not flicker the login screen
+# blocked-reason: needs live Stripe (Checkout or the billing portal); Stripe is live, so run only on purpose
+---
+# Simulates the Stripe-portal-back-to-app deep link. Before the v1.2.7
+# shell-latch fix, productState briefly went 'loading' on the refresh,
+# authReadyForShell flicked false, LoginScreen mounted for 200-600ms,
+# then Shell remounted. This flow asserts that for at least 4s after
+# the deep link, the Login screen never mounts.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "tab.dashboard"
+    timeout: 10000
+- openLink: "sidekick://billing/return"
+- waitForAnimationToEnd
+# Repeatedly assert the Shell is up and the LoginScreen is NOT visible
+# for ~4 seconds. The shell-latch fix should keep the home surface
+# mounted throughout the productState.refresh().
+- assertNotVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "tab.dashboard"
+- takeScreenshot: "v127_d7_portal_return_1s"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "login.emailInput"
+- assertVisible:
+    id: "tab.dashboard"
+- takeScreenshot: "v127_d7_portal_return_2s"

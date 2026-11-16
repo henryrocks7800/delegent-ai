@@ -1,0 +1,60 @@
+appId: com.sidekick.v2
+name: RES-05 — Cold Start From Checkout Cancel Link
+tags:
+  - res
+  - live-only
+# blocked-reason: needs a signed-in account with no subscription; the test account the pack signs in is a subscriber
+---
+# ============================================================================
+# Spec ID: RES-05 — Cold Start From Checkout Cancel Link
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Authenticated unsubscribed-onboarded user
+# (seed --profile unsubscribed). Cold launch via `sidekick://checkout/cancel`
+# — the user must remain on the plan picker (their real gate) and
+# never see a "Thank you" / "active plan" banner from the cancel
+# return path.
+# ============================================================================
+
+# Pre-step (driven by the test orchestrator BEFORE this YAML runs):
+#   adb shell am start -W -a android.intent.action.VIEW \
+#     -d 'sidekick://checkout/cancel' -p com.sidekick.v2
+# The -p flag pins the intent to com.sidekick.v2 so the app's deep-link
+# handler always receives it. Maestro's `openLink` doesn't pass -p,
+# so on this build the OS routed the link via a chooser path that
+# briefly backgrounded the app and the in-app session was lost.
+# The orchestrator-driven adb am start mirrors the real Stripe-cancel
+# return path on Android (the browser's intent system routes the
+# sidekick:// scheme to the app) without the chooser ambiguity.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "setup.stepIndicator"
+    timeout: 30000
+- assertVisible:
+    id: "setup.stepIndicator"
+- assertVisible:
+    text: "Pick a plan, meet your coworker"
+- takeScreenshot: "res_05_01_landed_on_plan_picker"
+
+# No "thank you" / "active plan" / "checkout complete" copy
+- assertNotVisible:
+    text: ".*Checkout complete.*"
+- assertNotVisible:
+    text: ".*Thank you for subscribing.*"
+- assertNotVisible:
+    text: ".*Active plan.*"
+
+# Paid-chat surfaces must NOT be reachable
+- assertNotVisible:
+    id: "home.chatPanel"
+- assertNotVisible:
+    id: "input"
+- assertNotVisible:
+    id: "sendBtn"
+
+- assertNotVisible:
+    text: "service_role"
+- assertNotVisible:
+    text: ".*hermes --resume.*"

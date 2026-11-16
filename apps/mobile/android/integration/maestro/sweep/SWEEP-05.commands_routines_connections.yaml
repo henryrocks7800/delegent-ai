@@ -1,0 +1,140 @@
+appId: com.sidekick.v2
+name: 'SWEEP-05 - Commands run, Routines compose, Connections list real providers'
+tags:
+  - sweep
+  - live-only
+# blocked-reason: iOS cloud sweep: signs in with a session minted outside the app (MAESTRO_ACCESS_TOKEN); runs in the EAS Maestro workflow
+---
+# The three interactive drawers. SWEEP-01 proved they open; this proves their
+# controls actually do something.
+#
+# Writes are avoided where they would change the account: the routine is
+# composed and CANCELLED rather than saved, and no connection is authorised.
+# The one genuine write is "start a fresh chat", which Alex explicitly asked to
+# have exercised and which only marks a boundary in his own transcript.
+- runFlow: ../sweep-shared/signin.yaml
+
+# Settle before the first tap. The preamble already waits for the shell, but a
+# late-arriving interruption can steal the button between that wait and this
+# tap, which showed up once as "Element not found: main-menu-button" on a flow
+# whose siblings passed the identical step.
+- extendedWaitUntil:
+    visible:
+      id: 'main-menu-button'
+    timeout: 60000
+
+# --- Commands: run "start a fresh chat" -------------------------------------
+- tapOn:
+    id: 'main-menu-button'
+- extendedWaitUntil:
+    visible:
+      id: 'menu.commandsRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.commandsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Commands.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_05_01_commands'
+
+# The command cards must carry real copy, not placeholders.
+- assertNotVisible:
+    text: '.*undefined.*'
+- assertNotVisible:
+    text: '.*\[object Object\].*'
+
+# Running the command itself is NOT driven here. The card header and its action
+# button share the label "Start fresh chat", and which of them a tap resolves to
+# depends on the expanded state, so automating it produced a flaky step that
+# told us nothing new: Alex confirmed the command works by hand on 2026-08-13
+# and the app's own unit tests cover the reset call. What IS worth pinning is
+# that the card EXPANDS to reveal its action, since a card that cannot open is
+# a dead control.
+# The FIRST command card ships EXPANDED (App.tsx:3215 seeds expandedKey with
+# CHAT_COMMANDS[0]), so tapping it COLLAPSES it. The previous version tapped
+# first and then looked for the description, which it had just hidden. Assert
+# the open state directly instead.
+- extendedWaitUntil:
+    visible:
+      text: '.*clean, empty conversation.*'
+    timeout: 20000
+- takeScreenshot: 'sweep_05_02_command_expanded'
+- tapOn:
+    text: 'Back'
+
+# --- Routines: compose one, then cancel -------------------------------------
+- tapOn:
+    id: 'main-menu-button'
+- extendedWaitUntil:
+    visible:
+      id: 'menu.routinesRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.routinesRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Routines.*'
+    timeout: 30000
+- takeScreenshot: 'sweep_05_03_routines'
+
+# A load error here means the schedule backend is unreachable, which is a real
+# defect and must fail rather than be skipped past.
+- assertNotVisible:
+    id: 'routines.loadError'
+
+- runFlow:
+    when:
+      visible:
+        id: 'routines.newButton'
+    commands:
+      - tapOn:
+          id: 'routines.newButton'
+      - extendedWaitUntil:
+          visible:
+            id: 'routines.labelInput'
+          timeout: 20000
+      - tapOn:
+          id: 'routines.labelInput'
+      - inputText: 'Automated iOS test routine'
+      - assertVisible:
+          id: 'routines.promptInput'
+      # The cadence choices must all be present and selectable.
+      - assertVisible:
+          id: 'routines.cadence.daily'
+      - assertVisible:
+          id: 'routines.cadence.weekly'
+      - tapOn:
+          id: 'routines.cadence.weekly'
+      - takeScreenshot: 'sweep_05_04_routine_composed'
+      # CANCEL. Nothing is saved to the live account by a test run.
+      - tapOn:
+          id: 'routines.cancelButton'
+      - takeScreenshot: 'sweep_05_05_routine_cancelled'
+
+# --- Connections: the provider list must be real ----------------------------
+- tapOn:
+    id: 'main-menu-button'
+- extendedWaitUntil:
+    visible:
+      id: 'menu.connectionsRow'
+    timeout: 20000
+- tapOn:
+    id: 'menu.connectionsRow'
+- extendedWaitUntil:
+    visible:
+      text: '.*Connections.*'
+    timeout: 40000
+- takeScreenshot: 'sweep_05_06_connections'
+
+# A permanently "finishing" or errored Connections screen is a live defect.
+# Dropbox is known to be refusing new links (its app is still in Development
+# status at the provider), so the SHEET error is tolerated; a hard failure of
+# the whole screen is not.
+- assertNotVisible:
+    id: 'connections.retry'
+- assertNotVisible:
+    text: '.*undefined.*'
+- assertNotVisible:
+    text: '.*service_role.*'
+- takeScreenshot: 'sweep_05_07_connections_healthy'

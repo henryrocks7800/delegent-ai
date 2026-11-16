@@ -1,0 +1,19 @@
+appId: com.sidekick.v2
+name: P10-01 — Cancelled-in-grace user sees a resume / re-subscribe CTA
+tags:
+  - persona:P10
+  - cancelled
+  - grace
+# blocked-reason: needs a seeded account state (cancelled, still inside the paid period); the seeding scripts write to the live database, so seed on purpose and run with --include-blocked
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Delegent.*"
+    timeout: 30000
+# The app must not crash and shouldn't show a permanently-locked dead end.
+- assertNotVisible:
+    text: ".*sub_synthetic.*"
+- assertNotVisible:
+    text: ".*service_role.*"

@@ -1,0 +1,50 @@
+appId: com.sidekick.v2
+name: BILL-07 — Manage Plan Opens From Profile
+tags:
+  - bill
+  - live-only
+---
+# ============================================================================
+# Spec ID: BILL-07 — Manage Plan Opens From Profile
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. A signed-in subscriber (the pack's --sign-in account).
+#
+# What this spec verifies:
+#   1. Profile is reachable from the header avatar.
+#   2. The Manage plan button is there for a subscriber.
+#   3. Tapping it opens the plan inside the app: the Monthly allowance card
+#      on Plan & billing, with the way back to the chat.
+#   4. Nothing collapses on the way: no sign-out, no error text, no leak.
+#
+# 2026-09-28: rewritten. "Manage plan" used to open Stripe's billing portal
+# (the spec asserted the "Opening billing…" label); since the D3/D6 fixes it
+# opens the plan in the app, because the portal is cancel-only and could not
+# upgrade anyone. Cancelling is its own button and is not pressed here.
+# production/billing.upgrade_plan_portal.yaml checks the same hand-off.
+# ============================================================================
+- launchApp:
+    clearState: false
+- runFlow: ../production/_signed_in_ready.yaml
+- tapOn:
+    id: "header.profileButton"
+- extendedWaitUntil:
+    visible:
+      id: "profile.managePlanButton"
+    timeout: 15000
+- assertVisible:
+    id: "profile.signOutButton"
+- assertVisible:
+    text: "Manage plan"
+- takeScreenshot: "bill_07_01_profile_with_manage_plan_visible"
+- tapOn:
+    id: "profile.managePlanButton"
+- extendedWaitUntil:
+    visible:
+      text: "Monthly allowance"
+    timeout: 20000
+- takeScreenshot: "bill_07_02_plan_opened_in_app"
+- assertNotVisible:
+    id: "login.googleButton"
+- assertNotVisible:
+    text: "service_role|.*Hermes.*|.*OpenRouter.*|.*HTTP 502.*|.*Traceback.*|CURRENT SUBSCRIPTION|BILLING INFORMATION"

@@ -1,0 +1,38 @@
+appId: com.sidekick.v2
+name: P04-36 — Quota meter shows accurate usage after a single message
+tags:
+  - persona:P04
+  - quota
+  - regression:D2
+# blocked-reason: retired: the Monthly capacity page went with the agent engine; its numbers are the Monthly allowance card on Plan & billing, checked by production/menu.capacity_page.yaml
+---
+# Regression test for D2 — Alex hit quota exhaustion after 3 messages
+# on Studio because monthlyTokenQuota=0 (unconfigured) made any positive
+# usage hard-limit instantly. This flow verifies that with a configured
+# quota the meter shows realistic usage (≤5% used after one short msg).
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 30000
+
+- tapOn:
+    id: "home.chatPanel.input"
+- inputText: "hi"
+- tapOn:
+    id: "home.chatPanel.sendButton"
+
+# Assistant reply lands.
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel.message.assistant"
+    timeout: 30000
+
+# Assert the quota-exhausted banner is NOT visible.
+- assertNotVisible:
+    text: ".*used this month's.*capacity.*|.*used this month.*included assistant time.*"
+
+# Assert the composer input remains visible (the gate isn't blocking it).
+- assertVisible:
+    id: "home.chatPanel.input"

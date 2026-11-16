@@ -1,0 +1,73 @@
+appId: com.sidekick.v2
+name: MENU-04 — Menu Chat and Files Rows Navigate Correctly
+tags:
+  - menu
+  - blocked
+# blocked-reason: retired: the Files drawer went with the runners on 2026-09-18
+---
+# ============================================================================
+# Spec ID: MENU-04 — Menu Chat and Files Rows Navigate Correctly
+# Source of truth: docs/tmp/delegent_maestro_suggested_missing_journeys.md
+#
+# Status: live-only. Subscribed user on chat home (seed --profile
+# ready-runner). menu.filesRow → openTab('artifacts'); menu.homeRow →
+# openTab('dashboard').
+# ============================================================================
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 15000
+
+# Step 1 — open menu, tap Files
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.filesRow"
+    timeout: 8000
+- tapOn:
+    id: "menu.filesRow"
+
+# Step 2 — Files screen appears. The Files tab is selected (tab.artifacts
+# rendered with the active styling) and the runner file list root is
+# visible. The drawer is closed (menu rows gone).
+- extendedWaitUntil:
+    visible:
+      id: "files.runnerFileList"
+    timeout: 8000
+- assertVisible:
+    id: "files.runnerFileList"
+- assertVisible:
+    id: "tab.artifacts"
+- assertNotVisible:
+    id: "menu.filesRow"
+- assertNotVisible:
+    id: "home.chatPanel"
+- takeScreenshot: "menu_04_01_files_open"
+
+# Step 3 — open menu again, tap Chat
+- tapOn:
+    id: "main-menu-button"
+- extendedWaitUntil:
+    visible:
+      id: "menu.homeRow"
+    timeout: 8000
+- tapOn:
+    id: "menu.homeRow"
+
+# Step 4 — Chat panel appears, chat tab selected, files list gone
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 8000
+- assertVisible:
+    id: "home.chatPanel"
+- assertVisible:
+    id: "tab.dashboard"
+- assertNotVisible:
+    id: "menu.homeRow"
+- assertNotVisible:
+    id: "files.runnerFileList"
+- takeScreenshot: "menu_04_02_chat_open"

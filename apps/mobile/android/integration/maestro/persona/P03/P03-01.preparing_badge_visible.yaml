@@ -1,0 +1,13 @@
+appId: com.sidekick.v2
+name: P03-01 - Subscribed but runner not ready shows Preparing affordance
+tags:
+  - persona:P03
+  - provisioning
+# blocked-reason: retired: tests the per-user runner (provisioning, waking, its workspace), retired on 2026-09-18
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      text: ".*Preparing.*|.*coming online.*|.*Setting up.*|.*cloud computer.*"
+    timeout: 30000

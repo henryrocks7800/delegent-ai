@@ -1,0 +1,43 @@
+appId: com.sidekick.v2
+name: v1.2.8 DN11 — OTP input accepts the full 8-character Supabase code
+# blocked-reason: retired: superseded by spec/AUTH-03 (a short code keeps Sign in locked, a wrong eight-character code is refused), which uses the test account instead of an invented address
+---
+# Alex's v1.2.7 regression: Supabase's mailer_otp_length=8 but the
+# mobile input was capped at 6, so the code in the email never worked.
+# After requesting an email, the OTP input should accept 8 digits and
+# only enable the verify button when 8 are typed.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Continue with email|Continue with Google"
+    timeout: 10000
+- tapOn:
+    id: "login.emailInput"
+- inputText: "qa-v128@example.test"
+- hideKeyboard
+- tapOn:
+    id: "login.emailSubmit"
+- waitForAnimationToEnd:
+    timeout: 4000
+- takeScreenshot: "v128_dn11_after_submit"
+# The OTP input only appears on a successful send. Fake emails get
+# rate-limited; skip the 8-char input drill if the OTP UI isn't up.
+- runFlow:
+    when:
+      visible:
+        id: "login.emailOtpInput"
+    commands:
+      # Type only 6 digits — verify must stay disabled.
+      - tapOn:
+          id: "login.emailOtpInput"
+      - inputText: "123456"
+      - hideKeyboard
+      - takeScreenshot: "v128_dn11_six_chars_disabled"
+      # Add two more digits to reach 8 — verify button accepts the tap.
+      - tapOn:
+          id: "login.emailOtpInput"
+      - inputText: "78"
+      - hideKeyboard
+      - takeScreenshot: "v128_dn11_eight_chars_ready"
+      - assertVisible:
+          id: "login.emailOtpVerify"

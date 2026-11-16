@@ -1,0 +1,53 @@
+appId: com.sidekick.v2
+name: 'helper - signed-in shell ready, first-run interruptions cleared'
+---
+# Every signed-in production flow starts here (release mode skips files that
+# start with an underscore, so this never runs as a test of its own).
+#
+# Waits for the chat, then clears the one-off interruptions a freshly signed-in
+# install can show, each at most once: the ad-measurement question (declined:
+# a test never opts a real account into advertising measurement), an update
+# prompt ("Later", never "Restart", which would drop the session mid-flow),
+# and the chat's "Quick tour of your toolbar" card, which sits over the
+# composer on every new install and blocks typing. Written 2026-09-28, when
+# the pack began signing in fresh before each signed-in flow.
+#
+# First, a system "... isn't responding" dialog left by another app (Chrome
+# hung on the emulator after a flow opened the website) covers everything and
+# would fail every flow after it: close that app.
+- runFlow:
+    when:
+      visible:
+        text: ".*isn't responding.*"
+    commands:
+      - tapOn:
+          text: "Close app"
+- extendedWaitUntil:
+    visible:
+      id: "home.chatPanel"
+    timeout: 60000
+- runFlow:
+    when:
+      visible:
+        text: "No thanks"
+    commands:
+      - tapOn:
+          text: "No thanks"
+- runFlow:
+    when:
+      visible:
+        text: "Later"
+    commands:
+      - tapOn:
+          text: "Later"
+- extendedWaitUntil:
+    visible:
+      id: "input"
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: "toolbarTourClose"
+    commands:
+      - tapOn:
+          id: "toolbarTourClose"

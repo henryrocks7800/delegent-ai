@@ -1,0 +1,94 @@
+{
+  "name": "@sidekick/mobile",
+  "version": "1.2.6",
+  "private": true,
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "eas-build-pre-install": "node ./scripts/eas-prune-monorepo.mjs",
+    "eas-build-post-install": "npm run build --prefix ../../packages/shared",
+    "ota:publish": "eas update --branch production",
+    "typecheck": "tsc --noEmit",
+    "test:ts": "node --test --import tsx \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
+    "test": "npm run test:ts && node --test android/app/src/test/js/branding-assets.test.mjs android/app/src/test/js/auth-readiness.test.mjs android/app/src/test/js/android-test-pack-readiness.test.mjs android/app/src/test/js/stable-selectors-readiness.test.mjs android/app/src/test/js/live-product-state.test.mjs android/app/src/test/js/inspirations-readiness.test.mjs android/app/src/test/js/ui-feedback-iteration.test.mjs android/app/src/test/js/secure-session-storage.test.mjs android/app/src/test/js/legal-terms-readiness.test.mjs android/app/src/test/js/onboarding-readiness.test.mjs android/app/src/test/js/checkout-readiness.test.mjs android/app/src/test/js/runner-files-readiness.test.mjs android/app/src/test/js/profile-edit-readiness.test.mjs android/app/src/test/js/profile-account-privacy-readiness.test.mjs android/app/src/test/js/account-deletion-readiness.test.mjs android/app/src/test/js/public-env-bake-readiness.test.mjs android/app/src/test/js/conversation-lifecycle-readiness.test.mjs android/app/src/test/js/production-ui-flow-suite-readiness.test.mjs android/app/src/test/js/hermes-streaming-readiness.test.mjs android/app/src/test/js/sentry-observability-readiness.test.mjs android/app/src/test/js/chat-file-open-routing.test.mjs android/app/src/test/js/chat-inline-handler-safety.test.mjs android/app/src/test/js/chat-open-init-idempotence.test.mjs android/app/src/test/js/chat-frame-error-reporting.test.mjs android/app/src/test/js/chat-interim-status-readiness.test.mjs android/app/src/test/js/chat-send-persistence-readiness.test.mjs android/app/src/test/js/brand-domain-readiness.test.mjs android/app/src/test/js/auth-refresh-backoff-readiness.test.mjs android/app/src/test/js/expo-updates-ota-readiness.test.mjs android/app/src/test/js/meta-sdk-readiness.test.mjs android/app/src/test/js/pilot-features-readiness.test.mjs android/app/src/test/js/connect-telegram-readiness.test.mjs android/app/src/test/js/voice-mode-readiness.test.mjs android/app/src/test/js/menu-commands-readiness.test.mjs android/app/src/test/js/routines-readiness.test.mjs android/app/src/test/js/connections-readiness.test.mjs android/app/src/test/js/skills-one-tap-readiness.test.mjs android/app/src/test/js/guided-firstrun-readiness.test.mjs android/app/src/test/js/skill-activation-coverage.test.mjs android/app/src/test/js/drawer-gesture-avatar-readiness.test.mjs android/app/src/test/js/fresh-emulator-install-readiness.test.mjs android/app/src/test/js/firebase-analytics-readiness.test.mjs android/app/src/test/js/agent-engine-readiness.test.mjs"
+  },
+  "dependencies": {
+    "@expo-google-fonts/geist": "^0.4.1",
+    "@expo-google-fonts/geist-mono": "^0.4.1",
+    "@expo-google-fonts/instrument-serif": "^0.4.1",
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-firebase/analytics": "^26.4.0",
+    "@react-native-firebase/app": "^26.4.0",
+    "@react-native-google-signin/google-signin": "^16.1.2",
+    "@react-navigation/native": "^7.2.2",
+    "@react-navigation/native-stack": "^7.14.12",
+    "@sentry/react-native": "^8.13.0",
+    "@sidekick/shared": "1.2.6",
+    "@supabase/supabase-js": "^2.105.3",
+    "expo": "~55.0.23",
+    "expo-apple-authentication": "~55.0.13",
+    "expo-asset": "~55.0.17",
+    "expo-audio": "~55.0.16",
+    "expo-av": "^16.0.8",
+    "expo-build-properties": "^55.0.13",
+    "expo-clipboard": "^55.0.13",
+    "expo-device": "~55.0.19",
+    "expo-document-picker": "~14.0.4",
+    "expo-file-system": "~55.0.24",
+    "expo-font": "~55.0.7",
+    "expo-iap": "^5.3.1",
+    "expo-image-picker": "~55.0.22",
+    "expo-linear-gradient": "^55.0.13",
+    "expo-notifications": "~55.0.25",
+    "expo-secure-store": "~55.0.13",
+    "expo-sharing": "~55.0.22",
+    "expo-splash-screen": "~55.0.20",
+    "expo-store-review": "~55.0.13",
+    "expo-tracking-transparency": "~55.0.13",
+    "expo-updates": "~55.0.24",
+    "lottie-react-native": "~7.3.6",
+    "react": "19.2.0",
+    "react-native": "0.83.6",
+    "react-native-fbsdk-next": "^13.4.3",
+    "react-native-reanimated": "4.2.1",
+    "react-native-safe-area-context": "5.6.2",
+    "react-native-screens": "4.23.0",
+    "react-native-svg": "15.15.3",
+    "react-native-url-polyfill": "^3.0.0",
+    "react-native-webview": "13.16.0",
+    "react-native-worklets": "0.7.4"
+  },
+  "devDependencies": {
+    "@expo/ngrok": "^4.1.3",
+    "@types/react": "^19.2.14",
+    "typescript": "^5.9.3"
+  },
+  "expo": {
+    "doctor": {
+      "appConfigFieldsNotSyncedCheck": {
+        "enabled": false
+      },
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "expo-av"
+        ]
+      }
+    },
+    "autolinking": {
+      "apple": {
+        "exclude": [
+          "expo-av"
+        ]
+      }
+    },
+    "install": {
+      "exclude": [
+        "@sentry/react-native",
+        "expo-document-picker",
+        "react-native"
+      ]
+    }
+  }
+}

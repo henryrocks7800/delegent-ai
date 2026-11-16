@@ -1,0 +1,27 @@
+appId: com.sidekick.v2
+name: SHOT-03 - main menu shows the breadth
+tags:
+  - appstore
+  - live-only
+# blocked-reason: App Store screenshot tool, not a test; run on purpose when refreshing store images
+---
+# App Store screenshot 3 of 4, mirroring the Play listing's 01-menu.png.
+# Third because it is the breadth shot: it shows a shopper how much more the
+# product is than the chat box they have just looked at.
+- runFlow: ../sweep-shared/signin.yaml
+
+- tapOn:
+    id: 'main-menu-button'
+# Wait on ROWS, not a container. There is no `menu.drawer` testID at all, which
+# is what failed the first cloud run; the rows are the stable handles the
+# working sweep uses. Waiting on the last section also means the frame is
+# captured after the slide-in has settled rather than mid-animation.
+- extendedWaitUntil:
+    visible:
+      id: 'menu.filesRow'
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: 'menu.skillsRow'
+    timeout: 20000
+- takeScreenshot: 'shot_03_menu'

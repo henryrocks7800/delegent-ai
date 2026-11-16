@@ -1,0 +1,26 @@
+{
+  "name": "@sidekick/billing",
+  "version": "1.2.6",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./server-flow": { "types": "./dist/serverFlow.d.ts", "default": "./dist/serverFlow.js" },
+    "./purchase-intents": { "types": "./dist/purchaseIntents.d.ts", "default": "./dist/purchaseIntents.js" },
+    "./stripe-recovery": { "types": "./dist/stripeRecovery.d.ts", "default": "./dist/stripeRecovery.js" },
+    "./portal-policy": { "types": "./dist/portalPolicy.d.ts", "default": "./dist/portalPolicy.js" },
+    "./usage-top-up": { "types": "./dist/usageTopUp.d.ts", "default": "./dist/usageTopUp.js" }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@sidekick/shared": "1.2.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
