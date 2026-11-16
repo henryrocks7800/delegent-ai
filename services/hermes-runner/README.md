@@ -10,7 +10,7 @@ Python FastAPI wrapper around the Hermes agent, with a volume at `/data/hermes`
 for the conversation, memories and files. The Worker reached it with per-user
 HMAC-signed requests, and its model calls went back through the Worker. The last
 image is pinned by digest in `RUNNER_IMAGE.lock.json` and archived at
-`ghcr.io/delegent-ai-ltd/delegent-runner-images`.
+`ghcr.io/your-org/delegent-runner-images`.
 
 The skills under `skills/delegent/` were the runner's instructions for each job;
 their ideas live on in the agent engine's instructions and tools.

@@ -125,7 +125,7 @@ function detectFlyCronMachine() {
 // would fail every hour and, worse, would mean somebody re-wired runner
 // provisioning without a deliberate decision to bring the runner model back.
 // The scripts and the provisioner package stay in the repo for that day; the
-// golden image is archived at ghcr.io/delegent-ai-ltd/delegent-runner-images.
+// golden image is archived at ghcr.io/your-org/delegent-runner-images.
 test('[series4-cron] no scheduled runner provisioner is committed (runners retired 2026-09-18)', () => {
   const matches = [
     detectGitHubActionsCron(),

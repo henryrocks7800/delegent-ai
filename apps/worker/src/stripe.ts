@@ -547,7 +547,7 @@ export interface MaybeDispatchProvisionInput {
  *
  * Kept as a named no-op rather than deleted at the three call sites: if the
  * runner model is ever brought back (the golden image is archived at
- * ghcr.io/delegent-ai-ltd/delegent-runner-images), this is the one place that
+ * ghcr.io/your-org/delegent-runner-images), this is the one place that
  * has to change back, and the call sites already pass what it would need.
  */
 export async function maybeDispatchProvisionOnActivation(_input: MaybeDispatchProvisionInput): Promise<void> {

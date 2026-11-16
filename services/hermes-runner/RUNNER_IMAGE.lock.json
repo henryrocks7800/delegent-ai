@@ -1,8 +1,8 @@
 {
   "_comment": "Backup pointer for the LAST Delegent Hermes runner golden image. 2026-09-18: every account moved to the agent engine (apps/agent), the per-user runners were destroyed and the Fly account closed (Alex's call), so the Fly registry no longer exists. Both images below were copied byte-for-byte to GitHub's container registry first by .github/workflows/runner-image-archive.yml, digests verified after the push, and 'archive' is where to pull them from if the old model is ever wanted again. The other recovery route is unchanged: rebuild from Dockerfile.fly + the pinned Hermes tag in scripts/install-hermes.sh (both committed).",
   "archive": {
-    "current": "ghcr.io/delegent-ai-ltd/delegent-runner-images:review-fixes-20260913",
-    "previous": "ghcr.io/delegent-ai-ltd/delegent-runner-images:onboarding-off-20260912",
+    "current": "ghcr.io/your-org/delegent-runner-images:review-fixes-20260913",
+    "previous": "ghcr.io/your-org/delegent-runner-images:onboarding-off-20260912",
     "note": "Same sha256 digests as 'current' and 'previous' below; pull by tag or by digest."
   },
   "current": {
@@ -17,7 +17,7 @@
   },
   "restore": [
     "echo $GITHUB_TOKEN | docker login ghcr.io -u <github user> --password-stdin",
-    "docker pull ghcr.io/delegent-ai-ltd/delegent-runner-images@sha256:876e6af82c6d64f5ad2420b95e614917c247c46e8c726cd8abe1363849ba45e1",
+    "docker pull ghcr.io/your-org/delegent-runner-images@sha256:876e6af82c6d64f5ad2420b95e614917c247c46e8c726cd8abe1363849ba45e1",
     "# OR rebuild from source (registry-independent): npm run runner:image:build"
   ]
 }

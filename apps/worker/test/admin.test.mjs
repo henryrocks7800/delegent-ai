@@ -481,12 +481,10 @@ test('the subscription select asks for every column the customer lists need', ()
 // ---------------------------------------------------------------------------
 // Capital expenditure ledger
 // ---------------------------------------------------------------------------
-test('the capex ledger matches the FreeAgent-transcribed total to the penny', () => {
-  // £854.39 of director-paid expenses (26) plus £155.93 of Mettle card
-  // purchases (8), both in FreeAgent's own GBP at each transaction date,
-  // transcribed 2026-08-12. If this fails because the ledger was updated,
-  // recompute against FreeAgent, not against the old number.
-  assert.equal(capexReceiptedTotalGbp(), 1010.32);
+test('the capex ledger total is the sum of its rows', () => {
+  // The public copy ships example rows; the total must equal their sum.
+  const expected = Math.round(CAPEX_LEDGER.reduce((sum, row) => sum + row.amountGbp, 0) * 100) / 100;
+  assert.equal(capexReceiptedTotalGbp(), expected);
   for (const row of CAPEX_LEDGER) {
     assert.ok(row.amountGbp > 0, `${row.vendor} has no amount`);
     assert.match(row.date, /^\d{4}-\d{2}-\d{2}$/, `${row.vendor} has a malformed date`);

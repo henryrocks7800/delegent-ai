@@ -107,7 +107,7 @@ crons = ["*/5 * * * *"]
 #                                   # `wrangler secret put GITHUB_DISPATCH_TOKEN
 #                                   # --env production`.
 #   GITHUB_DISPATCH_REPO            # Optional — owner/repo target for the
-#                                   # dispatch (defaults to delegent-ai-ltd/delegent-ai).
+#                                   # dispatch (defaults to your-org/delegent-ai).
 #   SIDEKICK_AGENT_SHARED_SECRET    # Signs Worker <-> agent engine requests
 #                                   # (runner auth v1 format) and the engine's
 #                                   # file links. The SAME value is a secret on

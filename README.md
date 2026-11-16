@@ -1,22 +1,36 @@
 # Delegent AI
 
-An AI coworker in your pocket: a consumer mobile app where a £3.99-a-month
-subscription gave each person a coworker they could chat with, dictate to or
-talk to. It read and answered email, sorted the inbox, found money people might
-be owed (delayed-flight compensation, forgotten refunds, unwanted
-subscriptions), planned trips, wrote letters and PDFs, and worked inside 35
-connected apps such as Gmail, Outlook and Google Calendar. Anything that would
-send, post or spend waited for the person's yes.
+An open-source AI coworker in your pocket. You chat with it, dictate to it or
+talk to it, and it gets things done: it reads and answers email, sorts your
+inbox, finds money you might be owed (delayed-flight compensation, forgotten
+refunds, unwanted subscriptions), plans trips, writes letters and PDFs, and
+works inside 35 connected apps such as Gmail, Outlook and Google Calendar.
+Anything that would send, post or spend waits for your yes.
 
-It was built and run by one person, with AI agents doing most of the
-engineering and operations, and shipped as a real product: published on Google
-Play and the App Store, with live card and Apple in-app billing, from May to
-November 2026. The service has now closed. The code is published as it stood,
-for anyone to learn from or reuse.
+It is a complete, production-grade stack: Android and iOS apps from one
+codebase, a web app, a marketing site, and a Cloudflare Workers backend with
+one Durable Object per person. It ran in production on Google Play and the App
+Store in 2026, with card and Apple in-app billing, and was built by one
+developer working with AI agents.
 
-> **Not maintained.** Every account, key and server this code once talked to
-> has been shut down. To run it you need your own Supabase project, Cloudflare
-> account, model provider and so on; see "Running it yourself" below.
+## Open for contributors
+
+This project is looking for contributors. Whether you want to self-host your
+own AI coworker, swap in a different model, improve the apps or just learn
+from a real end-to-end agent product, you are welcome.
+
+- **Start here:** issues labelled
+  [`good first issue`](https://github.com/henryrocks7800/delegent-ai/labels/good%20first%20issue)
+  and [`help wanted`](https://github.com/henryrocks7800/delegent-ai/labels/help%20wanted).
+- **Questions and ideas:** [Discussions](https://github.com/henryrocks7800/delegent-ai/discussions).
+- **How to contribute:** see [`CONTRIBUTING.md`](CONTRIBUTING.md). Fork, branch,
+  keep `npm run test` green, open a pull request.
+
+Good places to help right now: a one-command local setup, running on a local
+or any OpenAI-compatible model, and a Docker Compose setup for self-hosting.
+
+To run it you need your own Supabase project, Cloudflare account and model
+provider; see "Running it yourself" below.
 
 ## The system at a glance
 
@@ -100,7 +114,7 @@ this repo points at a working service any more.
 4. **Billing** is optional: without Stripe keys the paid routes simply refuse.
 
 Identifiers left in the code (domains, project ids, store ids) belonged to the
-original deployment and are dead; replace them with yours.
+original deployment and no longer work; replace them with yours.
 
 ## Licence
 

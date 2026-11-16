@@ -9,8 +9,8 @@ retired on 2026-09-18; its documents are in `docs/archive/`.
 > document as it stood when the service was live. It refers in places to
 > operating documents, deploy scripts and the secrets vault (`START_HERE.md`,
 > `OPERATIONS.md`, other `docs/*.md`, `scripts/ops/`, Doppler) that were part
-> of running the business and are not included here. The service has closed
-> and none of the hosts or ids named below are live.
+> of the original deployment and are not included here. None of the hosts or
+> ids named below are live; use your own.
 
 ---
 
@@ -18,7 +18,7 @@ retired on 2026-09-18; its documents are in `docs/archive/`.
 
 ```mermaid
 graph TD
-  subgraph Customers
+  subgraph Users
     AND["Android app<br/>Expo / React Native<br/>com.sidekick.v2"]
     IOS["iPhone and iPad app<br/>same codebase"]
     WEBAPP["Web app<br/>delegent-app.web.app"]
@@ -254,7 +254,7 @@ Cloudflare secrets and to GitHub Actions as repository secrets. How:
 
 ## 11. Watching it
 
-Sentry (EU, org `delegent-ai-ltd`) for the app and the Worker; the uptime and
+Sentry (EU, org `your-org`) for the app and the Worker; the uptime and
 smoke workflows open a GitHub issue on failure; `node scripts/internal/release-smoke-live.mjs`
 after every deploy; `npx wrangler tail` on any Worker for live logs; Alex's
 `/admin` page in the web app for customers, revenue and costs.

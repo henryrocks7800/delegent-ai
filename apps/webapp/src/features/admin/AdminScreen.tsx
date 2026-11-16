@@ -870,7 +870,7 @@ function Monitoring({ data }: { data: Dashboard }) {
       <div className="card p-4 text-body-sm text-textSecondary">
         <p className="font-medium text-textPrimary">Also watching, outside this page</p>
         <p>· The always-on box probes all public surfaces every 5 minutes and emails on any outage (uptime-watch).</p>
-        <p>· Sentry captures crashes for the app and the Worker (delegent-ai-ltd, EU).</p>
+        <p>· Sentry captures crashes for the app and the Worker (your-org, EU).</p>
         <p className="mt-1">Deeper aggregation (Sentry counts, snapshot ages, Actions minutes) is phase 2 of this dashboard.</p>
       </div>
     </div>

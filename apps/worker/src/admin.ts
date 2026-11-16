@@ -183,40 +183,9 @@ export interface CapexRow {
 }
 
 export const CAPEX_LEDGER: readonly CapexRow[] = [
-  { date: '2026-05-17', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits top-up (ref 1961-9218)', amountGbp: 9.45 },
-  { date: '2026-05-17', category: 'Office', vendor: 'Registered Office (UK) Ltd', description: 'Registered office + director service address, 1 year', amountGbp: 59.98 },
-  { date: '2026-05-19', category: 'Formation', vendor: 'Companies House (via Tide)', description: 'Incorporation fee, Delegent AI', amountGbp: 14.99 },
-  { date: '2026-05-20', category: 'Office', vendor: 'Tide / Hoxton Mix', description: 'Virtual office address (monthly; possible duplicate office service)', amountGbp: 27.59 },
-  { date: '2026-05-31', category: 'Compliance', vendor: 'ICO', description: 'Data protection fee registration', amountGbp: 52.0 },
-  { date: '2026-05-31', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits top-up (ref 2670-5791)', amountGbp: 8.06 },
-  { date: '2026-06-02', category: 'Hosting', vendor: 'Fly.io', description: 'Per-user runner hosting, monthly invoice', amountGbp: 72.64 },
-  { date: '2026-06-09', category: 'Platform fees', vendor: 'Google', description: 'Google Play developer registration (one-off)', amountGbp: 18.75 },
-  { date: '2026-06-11', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits top-up (ref 2150-6193)', amountGbp: 9.74 },
-  { date: '2026-06-12', category: 'Software', vendor: 'Zoho', description: 'Workplace Mail Lite, annual, customer82@example.com', amountGbp: 11.52 },
-  { date: '2026-06-29', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits top-up (ref 2113-4700)', amountGbp: 9.87 },
-  { date: '2026-06-29', category: 'Software', vendor: 'GitHub', description: 'Team seat, monthly (Mettle card)', amountGbp: 3.04 },
-  { date: '2026-07-02', category: 'Hosting', vendor: 'Fly.io', description: 'Per-user runner hosting, monthly invoice', amountGbp: 47.53 },
-  { date: '2026-07-08', category: 'AI services', vendor: 'Anthropic', description: 'Claude usage (ref 2947-3914-2075)', amountGbp: 8.99 },
-  { date: '2026-07-08', category: 'AI services', vendor: 'Anthropic', description: 'Claude usage (ref 2253-0048-7225)', amountGbp: 35.97 },
-  { date: '2026-07-08', category: 'AI services', vendor: 'Anthropic', description: 'Claude usage (ref 2750-3019-5912)', amountGbp: 112.39 },
-  { date: '2026-07-08', category: 'AI services', vendor: 'Anthropic', description: 'Claude usage (ref 2983-6883-1388)', amountGbp: 134.87 },
-  { date: '2026-07-08', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits top-up (ref 2604-3208)', amountGbp: 9.76 },
-  { date: '2026-07-16', category: 'AI services', vendor: 'OpenAI', description: 'API credit (Mettle card)', amountGbp: 4.5 },
-  { date: '2026-07-16', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2630-6247)', amountGbp: 23.48 },
-  { date: '2026-07-17', category: 'AI services', vendor: 'ElevenLabs', description: 'Text-to-speech API credit (Mettle card)', amountGbp: 5.55 },
-  { date: '2026-07-17', category: 'Advertising', vendor: 'Kling AI', description: 'Video generation for the promo video and advert assets', amountGbp: 18.48 },
-  { date: '2026-07-17', category: 'Advertising', vendor: 'Kling AI', description: 'Video generation for the promo video and advert assets', amountGbp: 6.46 },
-  { date: '2026-07-19', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2265-6628)', amountGbp: 23.63 },
-  { date: '2026-07-20', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2632-1484)', amountGbp: 23.65 },
-  { date: '2026-07-21', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2755-6818)', amountGbp: 23.67 },
-  { date: '2026-07-22', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2453-2013)', amountGbp: 23.76 },
-  { date: '2026-07-23', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2756-7206)', amountGbp: 19.01 },
-  { date: '2026-07-25', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2266-4915)', amountGbp: 23.87 },
-  { date: '2026-07-30', category: 'Software', vendor: 'GitHub', description: 'Team seat, monthly (Mettle card)', amountGbp: 3.01 },
-  { date: '2026-08-02', category: 'Hosting', vendor: 'Fly.io', description: 'Per-user runner hosting, monthly invoice', amountGbp: 39.54 },
-  { date: '2026-08-05', category: 'AI services', vendor: 'OpenRouter', description: 'LLM API credits auto top-up (ref 2172-2817)', amountGbp: 9.68 },
-  { date: '2026-08-07', category: 'Advertising', vendor: 'Meta', description: 'Company ad account top-up (Mettle card)', amountGbp: 100.0 },
-  { date: '2026-08-10', category: 'Advertising', vendor: 'Zeely AI', description: 'Ad video creation app (Mettle card)', amountGbp: 14.89 },
+  // Example rows only. Replace with your own one-off costs.
+  { date: '2026-01-01', category: 'Formation', vendor: 'Example registrar', description: 'Company formation (example)', amountGbp: 50 },
+  { date: '2026-01-02', category: 'App stores', vendor: 'Example store', description: 'Developer programme fee (example)', amountGbp: 25 },
 ];
 
 export function capexReceiptedTotalGbp(): number {
@@ -629,7 +598,7 @@ export function buildImportantDates(now: Date): ImportantDate[] {
       category: 'company',
       due: '2027-05-14',
       status: 'verify',
-      note: 'Due 14 days after the anniversary of incorporation, then annually. Confirm the exact date on the Companies House filing for company 00000000.',
+      note: 'Due 14 days after the anniversary of incorporation, then annually. Confirm the exact date on your Companies House filing.',
     },
     {
       label: 'First annual accounts (Companies House)',
